@@ -1,0 +1,6 @@
+# ignore all .pk (ppo agents) and .pt (demonstrations) we push them with git large files (lfs)
+.pk
+.pt
+
+# ignore pycache
+*.pyc
