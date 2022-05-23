@@ -1,0 +1,32 @@
+#Paths
+vanilla: False
+data_path: "generated_data/"
+env_path: "v3/"
+vanilla_path: "Peschl/"
+expe_path: "expert"
+demo_path: "demonstrations"
+disc_path: "discriminator"
+gene_path: "generator"
+moral_path: "moral_agents/"
+model_ext: ".pt"
+demo_ext: ".pk"
+model_name: "ppo_"
+
+
+# Editable parameters
+env: "v3"
+env_rad: "randomized_"
+nb_experts: 2
+experts_weights: [[0,1,0,1], [0,0,1,1]]
+geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
+
+
+#######
+# Peschl Values #
+#######
+# nb_demos: 1000
+
+#######
+# Test Values #
+#######
+nb_demos: 100

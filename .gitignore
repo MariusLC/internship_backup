@@ -1,6 +1,10 @@
 # ignore all .pk (ppo agents) and .pt (demonstrations) we push them with git large files (lfs)
-.pk
-.pt
+*.pk
+*.pt
 
 # ignore pycache
 *.pyc
+
+# ignore wandb files
+moral_rl/wandb/
+moral_rl/moral/wandb/
