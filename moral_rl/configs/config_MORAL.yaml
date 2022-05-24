@@ -1,6 +1,6 @@
 #Paths
 real_params: False
-vanilla: False
+vanilla: True
 data_path: "generated_data/"
 env_path: "v3/"
 vanilla_path: "Peschl/"
