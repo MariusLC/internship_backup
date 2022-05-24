@@ -135,14 +135,15 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
                 wandb.log({'Returns': ret})
             dataset.reset_trajectories()
 
+
+            # SAVE THE DISCRIMINATOR FOR THE MORAL STEP
+            torch.save(discriminator.state_dict(), discriminator_filename)
+
+            # SAVE THE GENERATOR FOR THE MORAL STEP ?
+            torch.save(ppo.state_dict(), generator_filename)
+
         # Prepare state input for next time step
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
 
         #vec_env.close()
-        # SAVE THE DISCRIMINATOR FOR THE MORAL STEP
-        torch.save(discriminator.state_dict(), discriminator_filename)
-
-        # SAVE THE GENERATOR FOR THE MORAL STEP ?
-        torch.save(ppo.state_dict(), generator_filename)
-    
