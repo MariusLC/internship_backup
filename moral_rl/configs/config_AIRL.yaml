@@ -24,9 +24,9 @@ geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate
 #######
 # Peschl Values #
 #######
-# env_steps: 6000000
+env_steps: 6000000
 
 #######
 # Test Values #
 #######
-env_steps: 1000
+# env_steps: 1000
