@@ -29,10 +29,10 @@ class GymWrapper(gym.Env):
             self.height = 16
             self.num_actions = 9
         elif env_id == 'randomized_v1':
-            self.layers = ('P','G')
-            self.width = 2
-            self.height = 2
-            self.num_actions = 5
+            self.layers = ('#', 'P', 'F', 'C')
+            self.width = 5
+            self.height = 5
+            self.num_actions = 9
 
         self.game = None
         self.np_random = None
