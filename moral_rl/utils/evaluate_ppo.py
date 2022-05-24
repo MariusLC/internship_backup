@@ -21,6 +21,8 @@ from moral.active_learning import *
 from moral.preference_giver import *
 from utils.generate_demos_not_main import *
 from utils.evaluate_ppo_not_main import *
+from utils.load_config import *
+from moral.airl import *
 
 def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):
 	states = []
@@ -101,7 +103,7 @@ if __name__ == '__main__':
 
 	# Init WandB & Parameters
 	wandb.init(project='test_discrim', config={
-		'env_id': env_rad+env,
+		'env_id': c["env_rad"]+c["env"],
 		'gamma': 0.999,
 		'batchsize_discriminator': 512,
 		#'env_steps': 9e6,
@@ -117,7 +119,7 @@ if __name__ == '__main__':
 	config = wandb.config
 
 	# Create Environment
-	vec_env = VecEnv(env_rad+env, 12)
+	vec_env = VecEnv(c["env_rad"]+c["env"], 12)
 	states = vec_env.reset()
 	states_tensor = torch.tensor(states).float().to(device)
 
@@ -139,7 +141,7 @@ if __name__ == '__main__':
 		rand_filename = path+c["demo_path"]+c["rand_path"]+c["demo_ext"]
 		generator_filename = path+c["gene_path"]+c["model_ext"]
 		discriminator_filename = path+c["disc_path"]+c["model_ext"]
-		print(demos_filename)
+		# print(demos_filename)
 
 		# discriminator
 		discrim_list = Discriminator(state_shape=state_shape, in_channels=in_channels).to(device)
@@ -153,7 +155,7 @@ if __name__ == '__main__':
 		# rand agents
 		rand_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
 
-		if config_yaml["generate_demos"] :
+		if c["generate_demos"] :
 			generate_demos_1_expert(c["env_rad"]+c["env"], c["nb_demos"], expert_filename, demos_filename)
 			generate_demos_1_expert(c["env_rad"]+c["env"], c["nb_demos"], expert_filename, rand_filename)
 

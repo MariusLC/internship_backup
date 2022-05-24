@@ -5,7 +5,8 @@ from moral.ppo_train_not_main import *
 
 # folder to load config file
 CONFIG_PATH = "configs/"
-CONFIG_FILENAME = "config_PPO_experts.yaml"
+# CONFIG_FILENAME = "config_PPO.yaml"
+CONFIG_FILENAME = "config_PPO_v1.yaml"
 
 if __name__ == '__main__':
 

@@ -78,5 +78,5 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
 
-    #vec_env.close()
-    torch.save(ppo.state_dict(), filename)
+        #vec_env.close()
+        torch.save(ppo.state_dict(), filename)
