@@ -24,7 +24,7 @@ from utils.evaluate_ppo_not_main import *
 from utils.load_config import *
 from moral.airl import *
 
-def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):
+def training_sampler_eval(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):
 	states = []
 	action_probabilities = []
 	next_states = []
@@ -74,7 +74,7 @@ def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, 
 def evaluate_discriminator(discriminator, optimizer, gamma, expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):
 	criterion = nn.CrossEntropyLoss()
 	states, next_states, action_probabilities, labels, latents\
-		= training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior)
+		= training_sampler_eval(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior)
 	if len(latents) > 0:
 		advantages = discriminator.forward(states, next_states, gamma, latents)
 	else:
@@ -136,21 +136,36 @@ if __name__ == '__main__':
 
 	for i in range(c["nb_experts"]):
 		path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
+
 		expert_filename = path+c["expe_path"]+c["model_ext"]
-		demos_filename = path+c["demo_path"]+c["demo_ext"]
-		rand_filename = path+c["demo_path"]+c["rand_path"]+c["demo_ext"]
 		generator_filename = path+c["gene_path"]+c["model_ext"]
 		discriminator_filename = path+c["disc_path"]+c["model_ext"]
+		discriminator_old_filename = path+c["disc_path"]+"2"+c["model_ext"]
+
+		demos_filename = path+c["demo_path"]+c["demo_ext"]
+		demos_filename = path+c["demo_path"]+"2"+c["demo_ext"]
+		rand_filename = path+c["demo_path"]+c["rand_path"]+c["demo_ext"]
+		gene_demos_filename = path+c["demo_path"]+c["gene"]+c["demo_ext"]
+		
 		# print(demos_filename)
+
+		# experts
+		expert_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+		expert_policy.load_state_dict(torch.load(expert_filename, map_location=torch.device('cpu')))
 
 		# discriminator
 		discrim_list = Discriminator(state_shape=state_shape, in_channels=in_channels).to(device)
 		discrim_list.load_state_dict(torch.load(discriminator_filename, map_location=torch.device('cpu')))
 		optimizer_discriminator = torch.optim.Adam(discrim_list.parameters(), lr=5e-5)
 
-		# experts
-		expert_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
-		expert_policy.load_state_dict(torch.load(expert_filename, map_location=torch.device('cpu')))
+		# old discriminator
+		discrim_old_list = Discriminator(state_shape=state_shape, in_channels=in_channels).to(device)
+		discrim_old_list.load_state_dict(torch.load(discriminator_old_filename, map_location=torch.device('cpu')))
+		optimizer_old_discriminator = torch.optim.Adam(discrim_old_list.parameters(), lr=5e-5)
+
+		# generator
+		gene_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+		gene_policy.load_state_dict(torch.load(generator_filename, map_location=torch.device('cpu')))
 
 		# rand agents
 		rand_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
@@ -158,12 +173,41 @@ if __name__ == '__main__':
 		if c["generate_demos"] :
 			generate_demos_1_expert(c["env_rad"]+c["env"], c["nb_demos"], expert_filename, demos_filename)
 			generate_demos_1_expert(c["env_rad"]+c["env"], c["nb_demos"], expert_filename, rand_filename)
+			generate_demos_1_expert(c["env_rad"]+c["env"], c["nb_demos"], expert_filename, gene_demos_filename)
 
 		# Load demonstrations & evaluate ppo
 		expert_trajectories = pickle.load(open(demos_filename, 'rb'))
-		print(evaluate_ppo(expert_policy, config))
+		print("eval expert = ", evaluate_ppo(expert_policy, config))
 		rand_trajectories = pickle.load(open(rand_filename, 'rb'))
-		print(evaluate_ppo(rand_policy, config))
+		print("eval rand = ", evaluate_ppo(rand_policy, config))
+		gene_trajectories = pickle.load(open(gene_demos_filename, 'rb'))
+		print("eval gene = ", evaluate_ppo(gene_policy, config))
+
+		d_loss, fake_acc, real_acc = evaluate_discriminator(discriminator=discrim_list,
+															optimizer=optimizer_discriminator,
+															gamma=config.gamma,
+															expert_trajectories=expert_trajectories,
+															policy_trajectories=gene_trajectories,
+															ppo=gene_policy,
+															batch_size=config.batchsize_discriminator)
+		print("new gene and new discrim")
+		print('Discriminator Loss ', d_loss)
+		print('Fake Accuracy ', fake_acc)
+		print('Real Accuracy ', real_acc)
+
+		d_loss, fake_acc, real_acc = evaluate_discriminator(discriminator=discrim_old_list,
+															optimizer=optimizer_old_discriminator,
+															gamma=config.gamma,
+															expert_trajectories=expert_trajectories,
+															policy_trajectories=gene_trajectories,
+															ppo=gene_policy,
+															batch_size=config.batchsize_discriminator)
+		print("new gene and old dicrim")
+		print('Discriminator Loss ', d_loss)
+		print('Fake Accuracy ', fake_acc)
+		print('Real Accuracy ', real_acc)
+
+
 		d_loss, fake_acc, real_acc = evaluate_discriminator(discriminator=discrim_list,
 															optimizer=optimizer_discriminator,
 															gamma=config.gamma,
@@ -171,19 +215,19 @@ if __name__ == '__main__':
 															policy_trajectories=rand_trajectories,
 															ppo=rand_policy,
 															batch_size=config.batchsize_discriminator)
-
+		print("rand policy and new discrim")
 		print('Discriminator Loss ', d_loss)
 		print('Fake Accuracy ', fake_acc)
 		print('Real Accuracy ', real_acc)
 
-		d_loss, fake_acc, real_acc = evaluate_discriminator(discriminator=discrim_list,
-															optimizer=optimizer_discriminator,
+		d_loss, fake_acc, real_acc = evaluate_discriminator(discriminator=discrim_old_list,
+															optimizer=optimizer_old_discriminator,
 															gamma=config.gamma,
 															expert_trajectories=expert_trajectories,
 															policy_trajectories=rand_trajectories,
-															ppo=expert_policy,
+															ppo=rand_policy,
 															batch_size=config.batchsize_discriminator)
-
+		print("rand policy and old discrim")
 		print('Discriminator Loss ', d_loss)
 		print('Fake Accuracy ', fake_acc)
 		print('Real Accuracy ', real_acc)

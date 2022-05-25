@@ -33,6 +33,11 @@ class GymWrapper(gym.Env):
             self.width = 5
             self.height = 5
             self.num_actions = 9
+        elif env_id == 'randomized_v1_test':
+            self.layers = ('#', 'P', 'F', 'C')
+            self.width = 5
+            self.height = 5
+            self.num_actions = 9
 
         self.game = None
         self.np_random = None
@@ -63,6 +68,8 @@ class GymWrapper(gym.Env):
             self.game = envs.randomized_v3.make_game()
         elif self.env_id == 'randomized_v1':
             self.game = envs.randomized_v1.make_game()
+        elif self.env_id == 'randomized_v1_test':
+            self.game = envs.randomized_v1_test.make_game()
 
         obs, _, _ = self.game.its_showtime()
         return self._obs_to_np_array(obs)
