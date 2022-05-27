@@ -1,5 +1,6 @@
 from moral.ppo import *
 from envs.gym_wrapper import *
+from utils.save_data import *
 
 import torch
 from tqdm import tqdm
@@ -38,7 +39,8 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
         'gamma': 0.999,
         'epsilon': 0.1,
         'ppo_epochs': 5
-    })
+        }, 
+        reinit=True)
     config = wandb.config
 
     # Create Environment
@@ -79,4 +81,5 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
         states_tensor = torch.tensor(states).float().to(device)
 
         #vec_env.close()
-        torch.save(ppo.state_dict(), filename)
+        # torch.save(ppo.state_dict(), filename)
+        save_data(ppo, filename)
