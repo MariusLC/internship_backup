@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     query_freq = c["query_freq"]
     if c["real_params"]:
-        query_freq = c["nb_steps"]/(c["n_queries"]+2)
+        query_freq = c["env_steps_moral"]/(c["n_queries"]+2)
 
     experts_filenames = []
     demos_filenames = []
