@@ -195,9 +195,16 @@ class JudgeDrape(plab_things.Drape):
         # they give up and execute the 'quit' action.
         if (actions == 9) or (self._step_counter == self._max_steps):
             the_plot.terminate_episode()
+            
 
 
-def main(demo, discrim):
+def main(demo, delayed, discrim):
+    # define wether the game has a time limit between 2 actions
+    if delayed :
+        delay = 1000
+    else :
+        delay = None
+
     # Builds an interactive game session.
     game = make_game(demo=demo)
 
@@ -211,7 +218,7 @@ def main(demo, discrim):
                          'd': 8,
                          -1: 4,
                          'e': 9, 'E': 9},
-        delay=1000,
+        delay=delay,
         colour_fg=WAREHOUSE_FG_COLOURS)
 
     # Let the game begin!

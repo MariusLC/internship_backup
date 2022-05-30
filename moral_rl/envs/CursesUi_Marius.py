@@ -8,6 +8,9 @@ import textwrap
 from pycolab import cropping
 from pycolab.protocols import logging as plab_logging
 
+# import Setuptools
+# export TERM=xterm-256color
+
 
 class CursesUi_Marius(human_ui.CursesUi):
     def __init__(self, discrim,

@@ -21,7 +21,8 @@ env: "v1_test"
 env_rad: "randomized_"
 expert_weights: [0,1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
-
+demo: False
+delayed: False
 
 #######
 # Peschl Values #

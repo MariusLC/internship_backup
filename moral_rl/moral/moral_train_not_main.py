@@ -4,6 +4,7 @@ from moral.active_learning import *
 from moral.preference_giver import *
 from envs.gym_wrapper import *
 from utils.evaluate_ppo import evaluate_ppo
+from utils.save_data import *
 
 from tqdm import tqdm
 import torch
@@ -213,4 +214,5 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
         states_tensor = torch.tensor(states).float().to(device)
 
     #vec_env.close()
-    torch.save(ppo.state_dict(), moral_filename)
+    # torch.save(ppo.state_dict(), moral_filename)
+    save_data(ppo, moral_filename)
