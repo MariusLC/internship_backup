@@ -13,6 +13,7 @@ def save_data(data, filename):
     # print(path)
     if not os.path.exists(path):
         os.makedirs(path)
+    print("saved")
     torch.save(data.state_dict(), filename)
 
 def save_demos(dataset, demos_filename):

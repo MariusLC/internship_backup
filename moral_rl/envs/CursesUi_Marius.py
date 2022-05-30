@@ -13,13 +13,16 @@ from pycolab.protocols import logging as plab_logging
 
 
 class CursesUi_Marius(human_ui.CursesUi):
-    def __init__(self, discrim,
+    def __init__(self, discrim, filename,
                 keys_to_actions, delay=None, repainter=None, colour_fg=None, colour_bg=None, croppers=None):
         # making ing the basis curseUi
         super().__init__(keys_to_actions, delay, repainter, colour_fg, colour_bg, croppers)
 
         # adding discrim to arguments for testing
         self.discrim_to_test = discrim
+
+        # file to write on
+        self.filename = filename
 
 
     # def hello_world(self):
@@ -55,12 +58,21 @@ class CursesUi_Marius(human_ui.CursesUi):
         elif reward is not None:
           self._total_return += reward
 
-        print("action picked = ", action)
-        print("action picked keycode = ", keycode)
-        print("observation = ", observation)
-        print("observations= ", observations)
-        print("reward = ", reward)
-        print("infos = ", infos)
+
+        # with open(filename) as file:
+        #     config = yaml.safe_load(file)
+
+        f = open(self.filename, "a")
+        f.write("action picked = "+ str(action))
+        f.write("action picked keycode = "+ str(keycode))
+        f.write("observation = "+ str(observation))
+        f.write("observations= "+ str(observations))
+        f.write("reward = "+ str(reward))
+        f.write("infos = "+ str(infos))
+        f.close()
+
+        # discrim eval
+        # self.discrim_to_test.forward()
 
     def crop_and_repaint(self, observation):
           # Helper for game display: applies all croppers to the observation, then
