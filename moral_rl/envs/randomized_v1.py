@@ -89,7 +89,7 @@ class MailDrape(plab_things.Drape):
 
         if the_plot.frame == 0:
             # Random initialization of player, fire and citizen
-            random_positions = np.random.choice(3*3, size=N_CITIZEN+1, replace=False)
+            random_positions = np.random.choice(3*3, size=N_MAIL+N_CITIZEN+1, replace=False)
             for i in range(N_MAIL):
                 tmp_idx = scalar_to_idx(random_positions[i])
                 self.curtain[tmp_idx] = True

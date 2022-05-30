@@ -134,6 +134,8 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
                        'Real Accuracy': real_acc})
             for ret in dataset.log_returns():
                 wandb.log({'Returns': ret})
+            for adv in dataset.log_advantages():
+                wandb.log({'Advantages': adv})
             dataset.reset_trajectories()
 
 

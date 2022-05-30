@@ -22,6 +22,6 @@ if __name__ == '__main__':
         generator_filename = path+c["gene_path"]+c["model_ext"]
         discriminator_filename = path+c["disc_path"]+c["model_ext"]
         # print(demos_filename)
-        airl_train_1_expert(c["env_rad"]+c["env"], c["env_steps"], demos_filename, generator_filename, discriminator_filename, prints=True)
+        airl_train_1_expert(c["env_rad"]+c["env"], c["env_steps"], demos_filename, generator_filename, discriminator_filename, prints=False)
 
 

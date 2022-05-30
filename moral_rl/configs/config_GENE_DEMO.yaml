@@ -18,7 +18,7 @@ model_name: "ppo_"
 env: "v3"
 env_rad: "randomized_"
 nb_experts: 1
-experts_weights: [[0,1,1,1]]
+experts_weights: [[0,1,0,1]]
 # nb_experts: 1
 # experts_weights: [[0,1]]
 geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
@@ -27,9 +27,9 @@ geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate
 #######
 # Peschl Values #
 #######
-# nb_demos: 1000
+nb_demos: 1000
 
 #######
 # Test Values #
 #######
-nb_demos: 100
+# nb_demos: 100
