@@ -13,6 +13,7 @@ import torch
 # folder to load config file
 CONFIG_PATH = "configs/"
 CONFIG_FILENAME = "config_Ui.yaml"
+FILENAME = "generated_data/logs_test.txt"
 
 # Device Check
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -75,6 +76,6 @@ if __name__ == '__main__':
 
 
     if (c["env_rad"]+c["env"]) == "randomized_v1_test":
-    	# this is calling the game
-    	# randomized_v1_test.main(discrim)
-    	main(False, discrim)
+        # this is calling the game
+        # randomized_v1_test.main(discrim)
+        main(c["demo"], c["delayed"], discrim, FILENAME)

@@ -6,6 +6,7 @@ from envs.randomized_v2 import MAX_STEPS as max_steps_v2
 from envs.randomized_v3 import MAX_STEPS as max_steps_v3
 import pickle
 import argparse
+from utils.save_data import *
 
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -60,4 +61,5 @@ def generate_demos_1_expert(env_id, nb_demos, expert_filename, demos_filename):
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
 
-    pickle.dump(dataset, open(demos_filename, 'wb'))
+    # pickle.dump(dataset, open(demos_filename, 'wb'))
+    save_demos(dataset, demos_filename)

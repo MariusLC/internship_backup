@@ -2,6 +2,7 @@ from moral.ppo import PPO, TrajectoryDataset, update_policy
 from envs.gym_wrapper import *
 from moral.airl import *
 from utils.evaluate_ppo import *
+from utils.save_data import *
 
 from tqdm import tqdm
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -133,14 +134,18 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
                        'Real Accuracy': real_acc})
             for ret in dataset.log_returns():
                 wandb.log({'Returns': ret})
+            for adv in dataset.log_advantages():
+                wandb.log({'Advantages': adv})
             dataset.reset_trajectories()
 
 
             # SAVE THE DISCRIMINATOR FOR THE MORAL STEP
-            torch.save(discriminator.state_dict(), discriminator_filename)
+            # torch.save(discriminator.state_dict(), discriminator_filename)
+            save_data(discriminator, discriminator_filename)
 
             # SAVE THE GENERATOR FOR THE MORAL STEP ?
-            torch.save(ppo.state_dict(), generator_filename)
+            # torch.save(ppo.state_dict(), generator_filename)
+            save_data(ppo, generator_filename)
 
         # Prepare state input for next time step
         states = next_states.copy()

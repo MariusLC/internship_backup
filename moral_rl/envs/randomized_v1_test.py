@@ -92,7 +92,7 @@ class MailDrape(plab_things.Drape):
 
         if the_plot.frame == 0:
             # Random initialization of player, fire and citizen
-            random_positions = np.random.choice(3*3, size=N_CITIZEN+1, replace=False)
+            random_positions = np.random.choice(3*3, size=N_CITIZEN+N_MAIL+1, replace=False)
             for i in range(N_MAIL):
                 tmp_idx = scalar_to_idx(random_positions[i])
                 self.curtain[tmp_idx] = True
@@ -195,14 +195,21 @@ class JudgeDrape(plab_things.Drape):
         # they give up and execute the 'quit' action.
         if (actions == 9) or (self._step_counter == self._max_steps):
             the_plot.terminate_episode()
+            
 
 
-def main(demo, discrim):
+def main(demo, delayed, discrim, filename):
+    # define wether the game has a time limit between 2 actions
+    if delayed :
+        delay = 1000
+    else :
+        delay = None
+
     # Builds an interactive game session.
     game = make_game(demo=demo)
 
 
-    ui = CursesUi_Marius(discrim=discrim,
+    ui = CursesUi_Marius(discrim=discrim, filename=filename,
         keys_to_actions={curses.KEY_UP: 0, curses.KEY_DOWN: 1,
                          curses.KEY_LEFT: 2, curses.KEY_RIGHT: 3,
                          'z': 5,
@@ -211,7 +218,7 @@ def main(demo, discrim):
                          'd': 8,
                          -1: 4,
                          'e': 9, 'E': 9},
-        delay=1000,
+        delay=delay,
         colour_fg=WAREHOUSE_FG_COLOURS)
 
     # Let the game begin!

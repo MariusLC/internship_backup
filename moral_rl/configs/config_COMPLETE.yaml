@@ -18,7 +18,11 @@ model_name: "ppo_"
 env: "v3"
 env_rad: "randomized_"
 nb_experts: 2
+<<<<<<< HEAD
 experts_weights: [[0,1,0,1],[0,0,1,0]]
+=======
+experts_weights: [[0,1,1,1], [0,0,0,0]]
+>>>>>>> 9bd231d89526057a0804ae34a4e5480713144dc2
 ratio: [1, 1, 1]
 geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 
