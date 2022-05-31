@@ -22,6 +22,22 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 GAMMA = 0.999
 
+def printing_correctly(filename, action, obs, reward, discrim_advantages, discrim_rewards, log_probs, discount, done):
+    f = open(filename, "a")
+    infos = [{'board' : [{'player_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 80), 0, 1)], 
+                        'citizen_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 67), 0, 1)],
+                        'delivery_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 70), 0, 1)]}],
+            'action' : action[0],
+            'reward' : reward,
+            'discrim_eval' : discrim_advantages.item(),
+            'discrim_rewards' : discrim_rewards.item(),
+            'log_probs' : log_probs[0],
+            'discount' : discount,
+            'done': done}]
+    f.write("\n\n"+str(infos))
+    f.close()
+
+
 class Action_evaluator():
     def __init__(self, discrim, env, filename):
         self.discrim = discrim
@@ -39,16 +55,18 @@ class Action_evaluator():
         next_state_tensor = torch.tensor(next_state).to(device).float()
         discrim_advantages = self.discrim.forward(self.state, next_state_tensor, GAMMA)
 
-        f = open(self.filename, "a")
-        f.write("\nactions picked = "+ str(action))
-        f.write("\nstate = "+ str(self.state))
-        f.write("\nrewards = "+ str(rewards))
-        f.write("\ndiscount = "+ str(discount))
-        f.write("\ndiscrim_advantages = "+ str(discrim_advantages))
-        # f.write("\ndiscrim_rewards = "+ str(discrim_rewards))
-        f.write("\ndone = "+ str(done))
-        f.write("\ninfo = "+ str(info))
-        f.close()
+        printing_correctly(self.filename, action, obs, rewards, discrim_advantages, None, None, discount, done)
+
+        # f = open(self.filename, "a")
+        # f.write("\nactions picked = "+ str(action))
+        # f.write("\nobs = "+ str(obs))
+        # f.write("\nrewards = "+ str(rewards))
+        # f.write("\ndiscount = "+ str(discount))
+        # f.write("\ndiscrim_advantages = "+ str(discrim_advantages))
+        # # f.write("\ndiscrim_rewards = "+ str(discrim_rewards))
+        # f.write("\ndone = "+ str(done))
+        # f.write("\ninfo = "+ str(info))
+        # f.close()
 
         self.state = next_state_tensor
 
@@ -60,27 +78,28 @@ class Action_manager(Action_evaluator):
         self.ppo = ppo
 
     def act(self):
-        actions, log_probs = self.ppo.act(self.state)
-        obs, rewards, discount, next_state, done, info = env.step_demo(actions)
+        action, log_probs = self.ppo.act(self.state)
+        obs, rewards, discount, next_state, done, info = env.step_demo(action)
         action_prob = torch.exp(torch.tensor(log_probs)).to(device).float()
         next_state_tensor = torch.tensor(next_state).to(device).float()
         discrim_advantages, discrim_rewards = self.discrim.predict_reward_2(self.state, next_state_tensor, GAMMA, action_prob)
 
-        f = open(self.filename, "a")
-        f.write("\nactions picked = "+ str(actions))
-        f.write("\nstate = "+ str(self.state))
-        f.write("\nrewards = "+ str(rewards))
-        f.write("\ndiscount = "+ str(discount))
-        f.write("\ndiscrim_advantages = "+ str(discrim_advantages))
-        f.write("\ndiscrim_rewards = "+ str(discrim_rewards))
-        f.write("\ndone = "+ str(done))
-        f.write("\ninfo = "+ str(info))
-        f.close()
+        printing_correctly(self.filename, action, obs, rewards, discrim_advantages, discrim_rewards, log_probs, discount, done)
+
+        # f = open(self.filename, "a")
+        # f.write("\nactions picked = "+ str(actions))
+        # f.write("\nstate = "+ str(self.state))
+        # f.write("\nrewards = "+ str(rewards))
+        # f.write("\ndiscount = "+ str(discount))
+        # f.write("\ndiscrim_advantages = "+ str(discrim_advantages))
+        # f.write("\ndiscrim_rewards = "+ str(discrim_rewards))
+        # f.write("\ndone = "+ str(done))
+        # f.write("\ninfo = "+ str(info))
+        # f.close()
 
         self.state = next_state_tensor
 
         return obs, rewards
-
 
 
 if __name__ == '__main__':
