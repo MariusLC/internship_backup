@@ -22,51 +22,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 GAMMA = 0.999
 
-class Policy():
-    def __init__(self, ppo, discrim, env, filename):
-        self.ppo = ppo
-        self.discrim = discrim
-        self.env = env
-        self.filename = filename
-        # self.state = state
-        # self.next_state = None
-
-    def initial_state(self, obs):
-        states = self.env._obs_to_np_array(obs)
-        states_tensor = torch.tensor(states).float().to(device)
-        self.state=states_tensor
-
-    def act(self):
-        # airl_state = torch.tensor(states).to(device).float()
-        # airl_next_state = torch.tensor(next_states).to(device).float()
-
-        actions, log_probs = self.ppo.act(self.state)
-        # new step fct to have infos for discrim and the ui
-        obs, rewards, discount, next_state, done, info = env.step_demo(actions)
-        action_prob = torch.exp(torch.tensor(log_probs)).to(device).float()
-        next_state_tensor = torch.tensor(next_state).to(device).float()
-        discrim_advantages, discrim_rewards = self.discrim.predict_reward_2(self.state, next_state_tensor, GAMMA, action_prob)
-
-        f = open(self.filename, "a")
-        f.write("\nactions picked = "+ str(actions))
-        f.write("\nstate = "+ str(self.state))
-        f.write("\nrewards = "+ str(rewards))
-        f.write("\ndiscount = "+ str(discount))
-        f.write("\ndiscrim_advantages = "+ str(discrim_advantages))
-        f.write("\ndiscrim_rewards = "+ str(discrim_rewards))
-        f.write("\ndone = "+ str(done))
-        f.write("\ninfo = "+ str(info))
-        f.close()
-
-        self.state = next_state_tensor
-
-        # # Prepare state input for next time step
-        # states = next_states.copy()
-        # states_tensor = torch.tensor(states).float().to(device)
-
-        return obs, rewards
-
-class Discrim():
+class Action_evaluator():
     def __init__(self, discrim, env, filename):
         self.discrim = discrim
         self.env = env
@@ -96,11 +52,35 @@ class Discrim():
 
         self.state = next_state_tensor
 
-        # # Prepare state input for next time step
-        # states = next_states.copy()
-        # states_tensor = torch.tensor(states).float().to(device)
+        return obs, rewards
+
+class Action_manager(Action_evaluator):
+    def __init__(self, discrim, env, filename, ppo):
+        super().__init__(discrim, env, filename)
+        self.ppo = ppo
+
+    def act(self):
+        actions, log_probs = self.ppo.act(self.state)
+        obs, rewards, discount, next_state, done, info = env.step_demo(actions)
+        action_prob = torch.exp(torch.tensor(log_probs)).to(device).float()
+        next_state_tensor = torch.tensor(next_state).to(device).float()
+        discrim_advantages, discrim_rewards = self.discrim.predict_reward_2(self.state, next_state_tensor, GAMMA, action_prob)
+
+        f = open(self.filename, "a")
+        f.write("\nactions picked = "+ str(actions))
+        f.write("\nstate = "+ str(self.state))
+        f.write("\nrewards = "+ str(rewards))
+        f.write("\ndiscount = "+ str(discount))
+        f.write("\ndiscrim_advantages = "+ str(discrim_advantages))
+        f.write("\ndiscrim_rewards = "+ str(discrim_rewards))
+        f.write("\ndone = "+ str(done))
+        f.write("\ninfo = "+ str(info))
+        f.close()
+
+        self.state = next_state_tensor
 
         return obs, rewards
+
 
 
 if __name__ == '__main__':
@@ -113,9 +93,6 @@ if __name__ == '__main__':
 
     # Create Environment
     env = make_env_demo(c["env_rad"]+c["env"], 0, (int(str(time.time()).replace('.', '')[-8:])))()
-    # vec_env = VecEnv(c["env_rad"]+c["env"], 12)
-    # states = env.reset()
-    # states_tensor = torch.tensor(states).float().to(device)
 
     # Fetch Shapes
     n_actions = env.action_space.n
@@ -137,10 +114,6 @@ if __name__ == '__main__':
     rand_filename = path+c["demo_path"]+c["rand_path"]+c["demo_ext"]
     gene_demos_filename = path+c["demo_path"]+c["gene"]+c["demo_ext"]
 
-    # experts
-    expert_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
-    expert_policy.load_state_dict(torch.load(expert_filename, map_location=torch.device('cpu')))
-
     # discriminator
     discrim = Discriminator(state_shape=state_shape, in_channels=in_channels).to(device)
     discrim.load_state_dict(torch.load(discriminator_filename, map_location=torch.device('cpu')))
@@ -150,53 +123,35 @@ if __name__ == '__main__':
     # gene_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
     # gene_policy.load_state_dict(torch.load(generator_filename, map_location=torch.device('cpu')))
 
-    if not c["demo"]:
-
-        policy = Discrim(discrim, env, FILENAME)
-
-        # define wether the game has a time limit between 2 actions
-        if c["delayed"] :
-            delay = 1000
-        else :
-            delay = None
-
-        # we have to give a keys to actions to all possible actions from env ?
-        ui = CursesUi_Marius(policy=policy,
+    if c["demo"]:
+        # experts
+        expert_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+        expert_policy.load_state_dict(torch.load(expert_filename, map_location=torch.device('cpu')))
+        policy = Action_manager(discrim, env, FILENAME, expert_policy)
+        keys_to_actions={'e': 9, 'E': 9, 'a': None}
+    else:
+        policy = Action_evaluator(discrim, env, FILENAME)
         keys_to_actions={curses.KEY_UP: 0, curses.KEY_DOWN: 1,
-                         curses.KEY_LEFT: 2, curses.KEY_RIGHT: 3,
-                         'z': 5,
-                         's': 6,
-                         'q': 7,
-                         'd': 8,
-                         -1: 4,
-                         'e': 9, 'E': 9},
+                     curses.KEY_LEFT: 2, curses.KEY_RIGHT: 3,
+                     'z': 5,
+                     's': 6,
+                     'q': 7,
+                     'd': 8,
+                     -1: 4,
+                     'e': 9, 'E': 9,}
+
+    # define wether the game has a time limit between 2 actions
+    if c["delayed"] :
+        delay = 1000
+    else :
+        delay = None
+
+    # we have to give a keys to actions to all possible actions from env ?
+    ui = CursesUi_Marius(
+        policy=policy,
+        keys_to_actions=keys_to_actions,
         delay=delay,
         colour_fg=WAREHOUSE_FG_COLOURS)
 
-        # Let the game begin!
-        ui.play(env.game)
-
-        # # this is calling the game
-        # # randomized_v1_test.main(discrim)
-        # main(False, c["delayed"], policy)
-
-    else :
-
-        policy = Policy(expert_policy, discrim, env, FILENAME)
-
-        # define wether the game has a time limit between 2 actions
-        if c["delayed"] :
-            delay = 1000
-        else :
-            delay = None
-
-        # we have to give a keys to actions to all possible actions from env ?
-        ui = CursesUi_Marius(policy=policy,
-            keys_to_actions={'a':0,
-                             -1: 4,
-                             'e': 9, 'E': 9},
-            delay=delay,
-            colour_fg=WAREHOUSE_FG_COLOURS)
-
-        # Let the game begin!
-        ui.play(env.game)
+    # Let the game begin!
+    ui.play(env.game)

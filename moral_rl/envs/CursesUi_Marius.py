@@ -27,7 +27,7 @@ class CursesUi_Marius(human_ui.CursesUi):
         # agent's policy that will choose the actions
         self.policy = policy
 
-    def demo(self, screen): # only 'A' can make action and the policy is picking the action
+    def fct(self, screen):
       keycode = screen.getch()
       if keycode == curses.KEY_PPAGE:    # Page Up? Show the game console.
         paint_console = True
@@ -35,55 +35,11 @@ class CursesUi_Marius(human_ui.CursesUi):
         paint_console = False
       elif keycode in self._keycodes_to_actions:
         action = self._keycodes_to_actions[keycode]
-        if action == 0: # policy pick action
+        if action == None:
           observation, reward = self.policy.act()
-          # the policy is already playing the action
-          # observation, reward, discount = self._game.play(action)
-          observations = self.crop_and_repaint(observation)
-          if self._total_return is None:
-            self._total_return = reward
-          elif reward is not None:
-            self._total_return += reward
+        else:
+          observation, reward = self.policy.act(action)
 
-    def manual(self, screen):
-      keycode = screen.getch()
-      if keycode == curses.KEY_PPAGE:    # Page Up? Show the game console.
-        paint_console = True
-      elif keycode == curses.KEY_NPAGE:  # Page Down? Hide the game console.
-        paint_console = False
-      elif keycode in self._keycodes_to_actions:
-        # self.do_something(keycode)
-        action = self._keycodes_to_actions[keycode]
-        observation, reward = self.policy.act(action)
-        # observation, reward, discount = self._game.play(action)
-        observations = self.crop_and_repaint(observation)
-        if self._total_return is None:
-          self._total_return = reward
-        elif reward is not None:
-          self._total_return += reward
-
-
-    # from pycolab
-    def OLD_do_something(self, keycode):
-        # Convert the keycode to a game action and send that to the engine.
-        # Receive a new observation, reward, discount; crop and repaint; update
-        # total return.
-        action = self._keycodes_to_actions[keycode]
-        observation, reward, _ = self._game.play(action)
-        observations = self.crop_and_repaint(observation)
-        if self._total_return is None:
-          self._total_return = reward
-        elif reward is not None:
-          self._total_return += reward
-
-
-    # new function to print discrim rewards from actions
-    def do_something(self, keycode):
-        # Convert the keycode to a game action and send that to the engine.
-        # Receive a new observation, reward, discount; crop and repaint; update
-        # total return.
-        action = self._keycodes_to_actions[keycode]
-        observation, reward, discount = self._game.play(action)
         observations = self.crop_and_repaint(observation)
         if self._total_return is None:
           self._total_return = reward
@@ -168,8 +124,7 @@ class CursesUi_Marius(human_ui.CursesUi):
 
           #####
           # FUNCTION TO EXECUTE
-          self.manual(screen)
-          # self.demo(screen)
+          self.fct(screen)
           ##########
 
           # Update the game display, regardless of whether we've called the game's
