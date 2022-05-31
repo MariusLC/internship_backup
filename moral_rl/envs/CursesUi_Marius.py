@@ -52,7 +52,15 @@ class CursesUi_Marius(human_ui.CursesUi):
       elif keycode == curses.KEY_NPAGE:  # Page Down? Hide the game console.
         paint_console = False
       elif keycode in self._keycodes_to_actions:
-        self.do_something(keycode)
+        # self.do_something(keycode)
+        action = self._keycodes_to_actions[keycode]
+        observation, reward = self.policy.act(action)
+        # observation, reward, discount = self._game.play(action)
+        observations = self.crop_and_repaint(observation)
+        if self._total_return is None:
+          self._total_return = reward
+        elif reward is not None:
+          self._total_return += reward
 
 
     # from pycolab
@@ -81,24 +89,6 @@ class CursesUi_Marius(human_ui.CursesUi):
           self._total_return = reward
         elif reward is not None:
           self._total_return += reward
-
-
-        # with open(filename) as file:
-        #     config = yaml.safe_load(file)
-
-        # f = open(self.filename, "a")
-        # f.write("\naction picked = "+ str(action))
-        # f.write("\naction picked keycode = "+ str(keycode))
-        # f.write("\nobservation = "+ str(observation))
-        # # f.write("\nobservations= "+ str(observations))
-        # f.write("\nreward = "+ str(reward))
-        # f.write("\ndiscount = "+ str(discount))
-        # f.write("\ndiscrim_eval = "+str(self.discrim.predict_reward_2(state, next_state, gamma, action_probability)))
-        # # f.write("\nboard = "+str(self._game._backdrop))
-        # f.close()
-
-        # discrim eval
-        # self.discrim_to_test.forward()
 
     def crop_and_repaint(self, observation):
           # Helper for game display: applies all croppers to the observation, then
@@ -178,8 +168,8 @@ class CursesUi_Marius(human_ui.CursesUi):
 
           #####
           # FUNCTION TO EXECUTE
-          # self.manual(screen)
-          self.demo(screen)
+          self.manual(screen)
+          # self.demo(screen)
           ##########
 
           # Update the game display, regardless of whether we've called the game's

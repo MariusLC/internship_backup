@@ -66,6 +66,42 @@ class Policy():
 
         return obs, rewards
 
+class Discrim():
+    def __init__(self, discrim, env, filename):
+        self.discrim = discrim
+        self.env = env
+        self.filename = filename
+
+    def initial_state(self, obs):
+        states = self.env._obs_to_np_array(obs)
+        states_tensor = torch.tensor(states).float().to(device)
+        self.state=states_tensor
+
+    def act(self, action):
+        # new step fct to have infos for discrim and the ui
+        obs, rewards, discount, next_state, done, info = env.step_demo(action)
+        next_state_tensor = torch.tensor(next_state).to(device).float()
+        discrim_advantages = self.discrim.forward(self.state, next_state_tensor, GAMMA)
+
+        f = open(self.filename, "a")
+        f.write("\nactions picked = "+ str(action))
+        f.write("\nstate = "+ str(self.state))
+        f.write("\nrewards = "+ str(rewards))
+        f.write("\ndiscount = "+ str(discount))
+        f.write("\ndiscrim_advantages = "+ str(discrim_advantages))
+        # f.write("\ndiscrim_rewards = "+ str(discrim_rewards))
+        f.write("\ndone = "+ str(done))
+        f.write("\ninfo = "+ str(info))
+        f.close()
+
+        self.state = next_state_tensor
+
+        # # Prepare state input for next time step
+        # states = next_states.copy()
+        # states_tensor = torch.tensor(states).float().to(device)
+
+        return obs, rewards
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -114,15 +150,39 @@ if __name__ == '__main__':
     # gene_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
     # gene_policy.load_state_dict(torch.load(generator_filename, map_location=torch.device('cpu')))
 
-    policy = Policy(expert_policy, discrim, env, FILENAME)
-
     if not c["demo"]:
 
-        # this is calling the game
-        # randomized_v1_test.main(discrim)
-        main(False, c["delayed"], policy)
+        policy = Discrim(discrim, env, FILENAME)
+
+        # define wether the game has a time limit between 2 actions
+        if c["delayed"] :
+            delay = 1000
+        else :
+            delay = None
+
+        # we have to give a keys to actions to all possible actions from env ?
+        ui = CursesUi_Marius(policy=policy,
+        keys_to_actions={curses.KEY_UP: 0, curses.KEY_DOWN: 1,
+                         curses.KEY_LEFT: 2, curses.KEY_RIGHT: 3,
+                         'z': 5,
+                         's': 6,
+                         'q': 7,
+                         'd': 8,
+                         -1: 4,
+                         'e': 9, 'E': 9},
+        delay=delay,
+        colour_fg=WAREHOUSE_FG_COLOURS)
+
+        # Let the game begin!
+        ui.play(env.game)
+
+        # # this is calling the game
+        # # randomized_v1_test.main(discrim)
+        # main(False, c["delayed"], policy)
 
     else :
+
+        policy = Policy(expert_policy, discrim, env, FILENAME)
 
         # define wether the game has a time limit between 2 actions
         if c["delayed"] :
