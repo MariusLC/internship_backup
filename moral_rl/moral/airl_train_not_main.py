@@ -40,7 +40,8 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
             'entropy_reg': 0,
             'gamma': 0.999,
             'epsilon': 0.1,
-            'ppo_epochs': 5
+            'ppo_epochs': 5,
+            'demos_filename': demos_filename
             }, 
         reinit=True)
     config = wandb.config

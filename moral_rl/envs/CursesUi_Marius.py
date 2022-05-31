@@ -13,23 +13,47 @@ from pycolab.protocols import logging as plab_logging
 
 
 class CursesUi_Marius(human_ui.CursesUi):
-    def __init__(self, discrim, filename,
+    def __init__(self, policy,
                 keys_to_actions, delay=None, repainter=None, colour_fg=None, colour_bg=None, croppers=None):
         # making ing the basis curseUi
         super().__init__(keys_to_actions, delay, repainter, colour_fg, colour_bg, croppers)
 
-        # adding discrim to arguments for testing
-        self.discrim_to_test = discrim
+        # # adding discrim to arguments for testing
+        # self.discrim_to_test = discrim
 
-        # file to write on
-        self.filename = filename
+        # # file to write on
+        # self.filename = filename
 
+        # agent's policy that will choose the actions
+        self.policy = policy
 
-    # def hello_world(self):
-    #     print("hiii")
+    def demo(self, screen): # only 'A' can make action and the policy is picking the action
+      keycode = screen.getch()
+      if keycode == curses.KEY_PPAGE:    # Page Up? Show the game console.
+        paint_console = True
+      elif keycode == curses.KEY_NPAGE:  # Page Down? Hide the game console.
+        paint_console = False
+      elif keycode in self._keycodes_to_actions:
+        action = self._keycodes_to_actions[keycode]
+        if action == 0: # policy pick action
+          observation, reward = self.policy.act()
+          # the policy is already playing the action
+          # observation, reward, discount = self._game.play(action)
+          observations = self.crop_and_repaint(observation)
+          if self._total_return is None:
+            self._total_return = reward
+          elif reward is not None:
+            self._total_return += reward
 
-    # def play(self, game):
-    #     print("play")
+    def manual(self, screen):
+      keycode = screen.getch()
+      if keycode == curses.KEY_PPAGE:    # Page Up? Show the game console.
+        paint_console = True
+      elif keycode == curses.KEY_NPAGE:  # Page Down? Hide the game console.
+        paint_console = False
+      elif keycode in self._keycodes_to_actions:
+        self.do_something(keycode)
+
 
     # from pycolab
     def OLD_do_something(self, keycode):
@@ -51,7 +75,7 @@ class CursesUi_Marius(human_ui.CursesUi):
         # Receive a new observation, reward, discount; crop and repaint; update
         # total return.
         action = self._keycodes_to_actions[keycode]
-        observation, reward, infos = self._game.play(action)
+        observation, reward, discount = self._game.play(action)
         observations = self.crop_and_repaint(observation)
         if self._total_return is None:
           self._total_return = reward
@@ -62,14 +86,16 @@ class CursesUi_Marius(human_ui.CursesUi):
         # with open(filename) as file:
         #     config = yaml.safe_load(file)
 
-        f = open(self.filename, "a")
-        f.write("action picked = "+ str(action))
-        f.write("action picked keycode = "+ str(keycode))
-        f.write("observation = "+ str(observation))
-        f.write("observations= "+ str(observations))
-        f.write("reward = "+ str(reward))
-        f.write("infos = "+ str(infos))
-        f.close()
+        # f = open(self.filename, "a")
+        # f.write("\naction picked = "+ str(action))
+        # f.write("\naction picked keycode = "+ str(keycode))
+        # f.write("\nobservation = "+ str(observation))
+        # # f.write("\nobservations= "+ str(observations))
+        # f.write("\nreward = "+ str(reward))
+        # f.write("\ndiscount = "+ str(discount))
+        # f.write("\ndiscrim_eval = "+str(self.discrim.predict_reward_2(state, next_state, gamma, action_probability)))
+        # # f.write("\nboard = "+str(self._game._backdrop))
+        # f.close()
 
         # discrim eval
         # self.discrim_to_test.forward()
@@ -136,6 +162,12 @@ class CursesUi_Marius(human_ui.CursesUi):
             screen, observations, self._total_return, elapsed=datetime.timedelta())
 
         # Oh boy, play the game!
+
+        # initialize state in policy
+        self.policy.initial_state(observation)
+        #####################################
+
+
         while not self._game.game_over:
           # Wait (or not, depending) for user input, and convert it to an action.
           # Unrecognised keycodes cause the game display to repaint (updating the
@@ -143,13 +175,12 @@ class CursesUi_Marius(human_ui.CursesUi):
           # message display) but don't trigger a call to the game engine's play()
           # method. Note that the timeout "keycode" -1 is treated the same as any
           # other keycode here.
-          keycode = screen.getch()
-          if keycode == curses.KEY_PPAGE:    # Page Up? Show the game console.
-            paint_console = True
-          elif keycode == curses.KEY_NPAGE:  # Page Down? Hide the game console.
-            paint_console = False
-          elif keycode in self._keycodes_to_actions:
-            self.do_something(keycode)
+
+          #####
+          # FUNCTION TO EXECUTE
+          # self.manual(screen)
+          self.demo(screen)
+          ##########
 
           # Update the game display, regardless of whether we've called the game's
           # play() method.

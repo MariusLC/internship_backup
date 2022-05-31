@@ -198,7 +198,7 @@ class JudgeDrape(plab_things.Drape):
             
 
 
-def main(demo, delayed, discrim, filename):
+def main(demo, delayed, policy):
     # define wether the game has a time limit between 2 actions
     if delayed :
         delay = 1000
@@ -209,7 +209,7 @@ def main(demo, delayed, discrim, filename):
     game = make_game(demo=demo)
 
 
-    ui = CursesUi_Marius(discrim=discrim, filename=filename,
+    ui = CursesUi_Marius(policy=policy,
         keys_to_actions={curses.KEY_UP: 0, curses.KEY_DOWN: 1,
                          curses.KEY_LEFT: 2, curses.KEY_RIGHT: 3,
                          'z': 5,
