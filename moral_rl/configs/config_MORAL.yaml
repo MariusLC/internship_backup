@@ -37,13 +37,13 @@ geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate
 #######
 # Test Values #
 #######
-# env_steps: 100
-# n_queries: 2
-# query_freq: 99
+env_steps: 100
+n_queries: 2
+query_freq: 99
 
 #######
 # Test Queries Values #
 #######
-env_steps: 10000
-n_queries: 2
-query_freq: 50
+# env_steps: 10000
+# n_queries: 2
+# query_freq: 50
