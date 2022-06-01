@@ -23,6 +23,12 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
 
     nb_experts = len(generators_filenames)
 
+    # w_posterior_size = 0
+    # if env == "randomized_v3":
+    #     w_posterior_size = 3
+    # elif env == "randomized_v1":
+    #     w_posterior_size = 2
+
     # Config
     wandb.init(
         project='MORAL',
@@ -44,6 +50,9 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
         reinit=True)
     config = wandb.config
     env_steps = int(config.env_steps/config.n_workers)
+
+    # if c["real_params"] :
+    #     query_freq = int(env_steps/(config.n_queries+2))
 
     # Create Environment
     vec_env = VecEnv(config.env_id, config.n_workers)
@@ -89,6 +98,7 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
     w_posterior_mean = w_posterior.mean(axis=0)
     volume_buffer = VolumeBuffer()
     preference_giver = PreferenceGiverv3(ratio=config.ratio)
+
 
     for t in tqdm(range(env_steps)):
         # print("T = ",t)
@@ -165,16 +175,22 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
         # vectorized_rewards = [[r[0], airl_rewards_0[i], airl_rewards_1[i]] for i, r in enumerate(rewards)]
         # scalarized_rewards = [np.dot(w_posterior_mean, r[0:3]) for r in vectorized_rewards]
 
-        vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
-        scalarized_rewards = [np.dot(w_posterior_mean, r[0:3]) for r in vectorized_rewards]
-
-
-
-
+        # v3-Environment
+        # vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+        # scalarized_rewards = [np.dot(w_posterior_mean, r[0:3]) for r in vectorized_rewards]
 
         # v2-Environment
         #vectorized_rewards = [[r[0], airl_rewards_0[i]] for i, r in enumerate(rewards)]
         #scalarized_rewards = [np.dot(w_posterior_mean, r) for r in vectorized_rewards]
+
+        # v1-Environment
+        # vectorized_rewards = [[r[0], airl_rewards_0[i]] for i, r in enumerate(rewards)]
+        # scalarized_rewards = [np.dot(w_posterior_mean, r) for r in vectorized_rewards]
+
+        vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+        scalarized_rewards = [np.dot(w_posterior_mean, r[0:nb_experts+1]) for r in vectorized_rewards]
+
+
 
         # Logging obtained rewards for active learning
         volume_buffer.log_rewards(vectorized_rewards)
@@ -182,7 +198,7 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
         volume_buffer.log_statistics(rewards)
         # Add experience to PPO dataset
         train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs)
-        print("train_ready = ",train_ready)
+        # print("train_ready = ",train_ready)
 
         if train_ready:
             # Log Objectives
