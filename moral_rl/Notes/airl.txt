@@ -103,3 +103,16 @@ QUESTION SUBSISTANTES :
 1/ POURQUOI COMPARER AUX VALEURS RÉELLES DES AGENTS DANS MORAL.PY ET NON PAS LES VALEURS ESTIMÉES PAR LE SYSTÈME ?
 
 2/ POURQUOI PRENDRE UNIQUEMENT LES 3 PREMIERS OBJECTIFS DANS LA FONCTION SAMPLE_RETURN_PAIR ?
+
+
+
+
+
+
+
+####################################################
+NOTES SUR LA COMPREHESION DE LA NOTATION DU DISCRIMINATOR
+
+La notation du discriminator (résultat de forward) ne dépend que de l'état de départ et d'arrivé de l'action. 
+-> Cela a pour conséquence que toutes les actions qui ne changent pas d'état, les actions de grab qui ne collectent rien par exemple, sont toutes notées de la même manière.
+-> Ce n'est pas le cas pour le predict_reward du discriminator, car celui ci dépend également de la probabilité de l'agent jugé de choisir l'action (plus l'action a de chance d'être choisie moins bien elle est notée)

@@ -35,3 +35,11 @@ visualiser les fichiers de logs/errors :
 
 	nano OAR.[JOB_ID].stderr
 	-> nano permet également de modifier des fichiers à partir du terminal
+
+copier des fichiers :
+
+du pc au cluster :
+	cp -r ~/Documents/backup/moral_rl/generated_data/v1/rand/ generated_data/v1/
+
+du cluster au pc :
+	cp -r generated_data/v1/rand/ ~/Documents/backup/moral_rl/generated_data/v1/

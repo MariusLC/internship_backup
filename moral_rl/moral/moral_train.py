@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     query_freq = c["query_freq"]
     if c["real_params"]:
-        query_freq = c["nb_steps"]/(c["n_queries"]+2)
+        query_freq = c["env_steps"]/(c["n_queries"]+2)
 
     gene_or_expe_filenames = []
     demos_filenames = []

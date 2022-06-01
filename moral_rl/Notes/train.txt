@@ -42,6 +42,9 @@ Missing key(s) in state_dict: "reward_conv1.weight", "reward_conv1.bias", "rewar
  -> solution : j'ai changé pour utiliser DiscriminatorMLP partout..
 
  -> autre problème : Dans moral_train on appelle la fonction estimate_utopia de la classe Discriminator, cette fonction n'est pas présente dans DIscriminatorMLP. j'ai donc changer pour Discriminator partout au lieu de discriminatorMLP.
+
+
+ 3/ quand je lance plusieurs executions sur le cluster, en modifiant le fichier de config pour les différentes executions, chaque execution lit le fichier au moment de l'execution effective sur le noeud du cluster. Ce qui signifie que si je lance plusieurs executions successives, elles vont toutes avoir le même fichier de config (car je l'ai modifié avant que l'execution se lance..)
  
  !!!!!!!!!!!!!!!!!!!!!!!!!!
  
