@@ -50,6 +50,10 @@ class PPO(nn.Module):
         trajectory_states = torch.tensor(tau['states']).float().to(device)
         trajectory_actions = torch.tensor(tau['actions']).to(device)
         action_probabilities, critic_values = self.forward(trajectory_states)
+        print("action_probabilities = ", action_probabilities)
+        print("len(action_probabilities) = ", action_probabilities.shape)
+        print("trajectory_states = ", trajectory_states)
+        print("len(trajectory_states) = ", trajectory_states.shape)
         dist = Categorical(action_probabilities)
         action_entropy = dist.entropy().mean()
         action_log_probabilities = dist.log_prob(trajectory_actions)
@@ -179,3 +183,63 @@ def update_policy(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg
         overall_loss.backward()
         # print(ppo.state_dict().keys())
         optimizer.step()
+
+
+def update_policy_v2(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg, target_kl=0.01):
+    for epoch in range(n_epochs):
+        batch_loss = 0
+        value_loss = 0
+        for i, tau in enumerate(dataset.trajectories):
+            reward_togo = 0
+            returns = []
+            normalized_reward = np.array(tau['rewards'])
+            normalized_reward = (normalized_reward - normalized_reward.mean())/(normalized_reward.std()+1e-5)
+            for r in normalized_reward[::-1]:
+                # Compute rewards-to-go and advantage estimates
+                reward_togo = r + gamma * reward_togo
+                returns.insert(0, reward_togo)
+            action_log_probabilities, critic_values, action_entropy = ppo.evaluate_trajectory(tau)
+
+            kl = (torch.tensor(tau['log_probs']).detach().to(device) - action_log_probabilities).mean()
+            if kl > 1.5 * target_kl:
+                print('Early stopping at step %d due to reaching max kl.'%i)
+                break
+
+            advantages = torch.tensor(returns).to(device) - critic_values.detach().to(device)
+            likelihood_ratios = torch.exp(action_log_probabilities - torch.tensor(tau['log_probs']).detach().to(device))
+            clipped_losses = -torch.min(likelihood_ratios * advantages, g_clip(epsilon, advantages))
+            batch_loss += torch.mean(clipped_losses) - entropy_reg * action_entropy
+            value_loss += torch.mean((torch.tensor(returns).to(device) - critic_values) ** 2)
+
+
+            overall_loss = batch_loss + value_loss
+            optimizer.zero_grad()
+            overall_loss.backward()
+            optimizer.step()
+
+
+def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg):
+    for epoch in range(n_epochs):
+        batch_loss = 0
+        value_loss = 0
+        for i, tau in enumerate(dataset.trajectories):
+            reward_togo = 0
+            returns = []
+            normalized_reward = np.array(tau['rewards'])
+            normalized_reward = (normalized_reward - normalized_reward.mean())/(normalized_reward.std()+1e-5)
+            for r in normalized_reward[::-1]:
+                # Compute rewards-to-go and advantage estimates
+                reward_togo = r + gamma * reward_togo
+                returns.insert(0, reward_togo)
+            action_log_probabilities, critic_values, action_entropy = ppo.evaluate_trajectory(tau)
+            advantages = torch.tensor(returns).to(device) - critic_values.detach().to(device)
+            likelihood_ratios = torch.exp(action_log_probabilities - torch.tensor(tau['log_probs']).detach().to(device))
+            clipped_losses = -torch.min(likelihood_ratios * advantages, g_clip(epsilon, advantages))
+            batch_loss += torch.mean(clipped_losses) - entropy_reg * action_entropy
+            value_loss += torch.mean((torch.tensor(returns).to(device) - critic_values) ** 2)
+
+
+            overall_loss = batch_loss + value_loss
+            optimizer.zero_grad()
+            overall_loss.backward()
+            optimizer.step()

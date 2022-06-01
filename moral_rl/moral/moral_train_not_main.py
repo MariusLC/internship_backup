@@ -158,38 +158,17 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
         airl_state = torch.tensor(states).to(device).float()
         airl_next_state = torch.tensor(next_states).to(device).float()
 
-
-
-
-
         airl_rewards_list = []
         for j in range(nb_experts):
             airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma).squeeze(1))
         for j in range(nb_experts):
             airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
 
-        # airl_rewards_0 = discriminator_0.forward(airl_state, airl_next_state, config.gamma).squeeze(1)
-        # airl_rewards_1 = discriminator_1.forward(airl_state, airl_next_state, config.gamma).squeeze(1)
-        # airl_rewards_0 = airl_rewards_0.detach().cpu().numpy() * [0 if i else 1 for i in done]
-        # airl_rewards_1 = airl_rewards_1.detach().cpu().numpy() * [0 if i else 1 for i in done]
-        # vectorized_rewards = [[r[0], airl_rewards_0[i], airl_rewards_1[i]] for i, r in enumerate(rewards)]
-        # scalarized_rewards = [np.dot(w_posterior_mean, r[0:3]) for r in vectorized_rewards]
-
-        # v3-Environment
-        # vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
-        # scalarized_rewards = [np.dot(w_posterior_mean, r[0:3]) for r in vectorized_rewards]
-
-        # v2-Environment
-        #vectorized_rewards = [[r[0], airl_rewards_0[i]] for i, r in enumerate(rewards)]
-        #scalarized_rewards = [np.dot(w_posterior_mean, r) for r in vectorized_rewards]
-
-        # v1-Environment
-        # vectorized_rewards = [[r[0], airl_rewards_0[i]] for i, r in enumerate(rewards)]
-        # scalarized_rewards = [np.dot(w_posterior_mean, r) for r in vectorized_rewards]
-
+        # print("rewards = ", rewards)
         vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+        # print("vectorized_rewards = ", vectorized_rewards)
         scalarized_rewards = [np.dot(w_posterior_mean, r[0:nb_experts+1]) for r in vectorized_rewards]
-
+        # print("scalarized_rewards = ", scalarized_rewards)
 
 
         # Logging obtained rewards for active learning

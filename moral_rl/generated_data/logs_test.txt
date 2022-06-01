@@ -139,3 +139,31 @@
 [{'board': [{'player_pos': [(3, 1)], 'citizen_pos': [(1, 1), (1, 3)], 'delivery_pos': [(1, 2)]}], 'action': 5, 'reward': array([0., 0.]), 'discrim_eval': -2.795985460281372, 'discrim_rewards': -2.2786412239074707, 'log_probs': -0.5173443, 'discount': 1.0, 'done': False}]
 
 [{'board': [{'player_pos': [(3, 1)], 'citizen_pos': [(1, 1), (1, 3)], 'delivery_pos': [(1, 2)]}], 'action': 2, 'reward': array([0., 0.]), 'discrim_eval': -2.795985460281372, 'discrim_rewards': 4.323982238769531, 'log_probs': -7.119968, 'discount': 0.0, 'done': True}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3), (3, 1)], 'delivery_pos': [(1, 2), (3, 3)]}], 'action': 6, 'reward': array([0., 0.]), 'discrim_eval': -2.6744375228881836, 'discrim_rewards': -2.140010118484497, 'log_probs': -0.5344274, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3), (3, 1)], 'delivery_pos': [(1, 2), (3, 3)]}], 'action': 6, 'reward': array([0., 0.]), 'discrim_eval': -2.6744375228881836, 'discrim_rewards': -2.140010118484497, 'log_probs': -0.5344274, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3), (3, 1)], 'delivery_pos': [(1, 2), (3, 3)]}], 'action': 5, 'reward': array([0., 0.]), 'discrim_eval': -2.6744375228881836, 'discrim_rewards': -0.14060616493225098, 'log_probs': -2.5338314, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3), (3, 1)], 'delivery_pos': [(1, 2), (3, 3)]}], 'action': 6, 'reward': array([0., 0.]), 'discrim_eval': -2.6744375228881836, 'discrim_rewards': -2.140010118484497, 'log_probs': -0.5344274, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2), (3, 3)]}], 'action': 7, 'reward': array([0., 1.]), 'discrim_eval': -1.5443910360336304, 'discrim_rewards': 0.5700229406356812, 'log_probs': -2.114414, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2), (3, 3)]}], 'action': 6, 'reward': array([0., 0.]), 'discrim_eval': -2.3635060787200928, 'discrim_rewards': -0.9522984027862549, 'log_probs': -1.4112077, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2)]}], 'action': 8, 'reward': array([1., 0.]), 'discrim_eval': -2.6179749965667725, 'discrim_rewards': -1.4220646619796753, 'log_probs': -1.1959103, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2)]}], 'action': 8, 'reward': array([0., 0.]), 'discrim_eval': -2.395637273788452, 'discrim_rewards': -1.2137941122055054, 'log_probs': -1.1818432, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2)]}], 'action': 5, 'reward': array([0., 0.]), 'discrim_eval': -2.395637273788452, 'discrim_rewards': -1.1906548738479614, 'log_probs': -1.2049824, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2)]}], 'action': 1, 'reward': array([0., 0.]), 'discrim_eval': -2.395637273788452, 'discrim_rewards': 2.3461315631866455, 'log_probs': -4.741769, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2)]}], 'action': 6, 'reward': array([0., 0.]), 'discrim_eval': -2.395637273788452, 'discrim_rewards': -1.008316159248352, 'log_probs': -1.3873211, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2)]}], 'action': 6, 'reward': array([0., 0.]), 'discrim_eval': -2.395637273788452, 'discrim_rewards': -1.008316159248352, 'log_probs': -1.3873211, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 2)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2)]}], 'action': 5, 'reward': array([0., 0.]), 'discrim_eval': -2.395637273788452, 'discrim_rewards': -1.1906548738479614, 'log_probs': -1.2049824, 'discount': 1.0, 'done': False}]
+
+[{'board': [{'player_pos': [(3, 3)], 'citizen_pos': [(2, 3)], 'delivery_pos': [(1, 2)]}], 'action': 3, 'reward': array([0., 0.]), 'discrim_eval': -2.051917791366577, 'discrim_rewards': 1.0153412818908691, 'log_probs': -3.067259, 'discount': 0.0, 'done': True}]

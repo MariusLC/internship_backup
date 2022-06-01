@@ -32,6 +32,7 @@ class PreferenceGiverv3:
             self.ratio_normalized.append(elem/ratio_sum)
 
     def query_pair(self, ret_a, ret_b):
+        print("query_pair = "+str(ret_a)+" , "+str(ret_b))
 
         if self.pbrl:
             ret_a_copy = ret_a.copy()[:-1]
@@ -56,8 +57,13 @@ class PreferenceGiverv3:
             ret_b_normalized.append(ret_b_copy[i]/ret_b_sum)
 
         # scipy.stats.entropy(pk, qk=None, base=None, axis=0) = S = sum(pk * log(pk / qk), axis=axis)
+        print("ret_a_normalized = ", ret_a_normalized)
+        print("ret_b_normalized = ", ret_b_normalized)
+        print("self.ratio_normalized = ", self.ratio_normalized)
         kl_a = st.entropy(ret_a_normalized, self.ratio_normalized)
         kl_b = st.entropy(ret_b_normalized, self.ratio_normalized)
+        print("kl_a = ", kl_a)
+        print("kl_b = ", kl_b)
 
         if self.pbrl:
             print(kl_a)

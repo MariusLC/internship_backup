@@ -67,7 +67,7 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
         train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs, rewards)
 
         if train_ready:
-            update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
+            update_policy_v2(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
                           entropy_reg=config.entropy_reg)
             objective_logs = dataset.log_objectives()
             for i in range(objective_logs.shape[1]):
