@@ -3,7 +3,7 @@ vanilla: False
 data_path: "generated_data/"
 env_path: "v1/"
 vanilla_path: "Peschl/"
-expe_path: "expert_test"
+expe_path: "expert_test_2"
 demo_path: "demonstrations"
 disc_path: "discriminator"
 gene_path: "generator"
