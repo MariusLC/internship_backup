@@ -27,7 +27,7 @@ if __name__ == '__main__':
     gene_or_expe_filenames = []
     demos_filenames = []
     discriminators_filenames = []
-    moral_filename = c["data_path"]+c["env_path"]+vanilla_path+c["moral_path"]+str(c["experts_weights"])+c["model_ext"]
+    moral_filename = c["data_path"]+c["env_path"]+vanilla_path+c["moral_path"]+str(c["experts_weights"])+c["special_name_agent"]+c["model_ext"]
     for i in range(c["nb_experts"]):
         path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
         gene_or_expe_filenames.append(path+gene_or_expert+c["model_ext"])
