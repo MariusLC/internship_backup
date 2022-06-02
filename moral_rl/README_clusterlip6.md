@@ -43,3 +43,4 @@ du pc au cluster :
 
 du cluster au pc :
 	cp -r generated_data/v1/rand/ ~/Documents/backup/moral_rl/generated_data/v1/
+	cp 'generated_data/v3/[0, 0, 1, 0]/expert.pt' '~/Documents/backup/moral_rl/generated_data/v3/[0, 0, 1, 0]/'

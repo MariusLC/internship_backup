@@ -249,8 +249,8 @@ def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
             value_loss += ((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2).sum()
             kl += (torch.tensor(np.array(tau['log_probs'])).detach().to(device) - action_log_probabilities).sum()
 
-            # batch_loss_2 += torch.mean(clipped_losses) - entropy_reg * action_entropy
-            # value_loss_2 += torch.mean((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2)
+            batch_loss_2 += torch.mean(clipped_losses) - entropy_reg * action_entropy
+            value_loss_2 += torch.mean((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2)
 
         kl = kl / dataset.nb_act
         # print(dataset.batch_size)
@@ -261,12 +261,13 @@ def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
             break
 
         overall_loss = (batch_loss + value_loss - entropy_reg * action_entropy) / dataset.nb_act
-
-        # overall_loss_2 = (batch_loss_2 + value_loss_2) / dataset.batch_size
+        overall_loss_2 = (batch_loss_2 + value_loss_2) / dataset.batch_size
 
         # print("overall_loss = ", overall_loss)
         # print("overall_loss_2 = ", overall_loss_2)
+        wandb.log({'overall_loss': overall_loss})
+        wandb.log({'overall_loss_2': overall_loss_2})
 
         optimizer.zero_grad()
-        overall_loss.backward()
+        overall_loss_2.backward()
         optimizer.step()
