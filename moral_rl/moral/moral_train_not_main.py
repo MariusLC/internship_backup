@@ -43,7 +43,7 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
             'preference_noise': 0,
             'n_workers': 12,
             'lr_ppo': 3e-4,
-            'entropy_reg': 0.25,
+            'entropy_reg': 0.05,
             'gamma': 0.999,
             'epsilon': 0.1,
             'ppo_epochs': 5},
