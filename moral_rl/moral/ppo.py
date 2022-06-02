@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
 import numpy as np
+import math
 
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -50,6 +51,15 @@ class PPO(nn.Module):
         trajectory_states = torch.tensor(np.array(tau['states'])).float().to(device)
         trajectory_actions = torch.tensor(np.array(tau['actions'])).to(device)
         action_probabilities, critic_values = self.forward(trajectory_states)
+
+        print(action_probabilities[0][0])
+        if math.isnan(action_probabilities[0][0]):
+            print("there is a nan value in result of forward in evaluate_trajectory")
+            print(trajectory_actions)
+            print(trajectory_actions.shape)
+            print(trajectory_states)
+            print(trajectory_states.shape)
+
         # print("len(action_probabilities) = ", action_probabilities.shape)
         dist = Categorical(action_probabilities)
         action_entropy = dist.entropy().mean()
