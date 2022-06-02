@@ -63,6 +63,7 @@ class PPO(nn.Module):
 
 class TrajectoryDataset:
     def __init__(self, batch_size, n_workers):
+        self.nb_act = 0
         self.batch_size = batch_size
         self.n_workers = n_workers
         self.trajectories = []
@@ -77,6 +78,7 @@ class TrajectoryDataset:
 
     def reset_trajectories(self):
         self.trajectories = []
+        self.nb_act = 0
 
     def write_tuple(self, states, actions, rewards, done, log_probs, logs=None, gamma=0.999):
         # Takes states of shape (n_workers, state_shape[0], state_shape[1])
@@ -92,6 +94,7 @@ class TrajectoryDataset:
 
             if done[i]:
                 self.trajectories.append(self.buffer[i].copy())
+                self.nb_act += len(self.buffer[i]['states'])
                 self.reset_buffer(i)
 
         # print("nb traj = ",len(self.trajectories))
@@ -224,8 +227,9 @@ def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
     for epoch in range(n_epochs):
         batch_loss = 0
         value_loss = 0
+        batch_loss_2 = 0
+        value_loss_2 = 0
         kl = 0
-        nb_act = 0
         for i, tau in enumerate(dataset.trajectories):
             # print("i = ", i)
             reward_togo = 0
@@ -241,18 +245,28 @@ def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
             advantages = torch.tensor(returns).to(device) - critic_values.detach().to(device)
             likelihood_ratios = torch.exp(action_log_probabilities - torch.tensor(np.array(tau['log_probs'])).detach().to(device))
             clipped_losses = -torch.min(likelihood_ratios * advantages, g_clip(epsilon, advantages))
-            batch_loss += torch.mean(clipped_losses) - entropy_reg * action_entropy
-            value_loss += torch.mean((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2)
+            batch_loss += clipped_losses.sum()
+            value_loss += ((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2).sum()
             kl += (torch.tensor(np.array(tau['log_probs'])).detach().to(device) - action_log_probabilities).sum()
-            nb_act += len(action_log_probabilities)
-            
-        kl = kl / nb_act
-        print("kl = ", kl)
+
+            # batch_loss_2 += torch.mean(clipped_losses) - entropy_reg * action_entropy
+            # value_loss_2 += torch.mean((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2)
+
+        kl = kl / dataset.nb_act
+        # print(dataset.batch_size)
+        # print(dataset.nb_act)
+        # print("kl = ", kl)
         if kl > 1.5 * target_kl:
             print('Early stopping at step %d due to reaching max kl.'%i)
             break
 
-        overall_loss = batch_loss + value_loss
+        overall_loss = (batch_loss + value_loss - entropy_reg * action_entropy) / dataset.nb_act
+
+        # overall_loss_2 = (batch_loss_2 + value_loss_2) / dataset.batch_size
+
+        # print("overall_loss = ", overall_loss)
+        # print("overall_loss_2 = ", overall_loss_2)
+
         optimizer.zero_grad()
         overall_loss.backward()
         optimizer.step()
