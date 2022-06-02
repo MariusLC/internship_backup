@@ -38,6 +38,7 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
             #'env_steps': 8e6,
             'env_steps': env_steps_moral,
             'batchsize_ppo': 12,
+            # 'batchsize_ppo': 12,
             #'n_queries': 50,
             'n_queries': 2,
             'preference_noise': 0,
