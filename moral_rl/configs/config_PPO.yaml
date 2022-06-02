@@ -30,4 +30,4 @@ geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate
 #######
 # Test Values #
 #######
-env_steps: 1000
+env_steps: 10000
