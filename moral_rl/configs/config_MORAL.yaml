@@ -20,9 +20,9 @@ special_name_agent: ""
 env: "v3"
 env_rad: "randomized_"
 nb_experts: 2
-experts_weights: [[0,1]]
+#experts_weights: [[0,1]]
 #ratio: [1,1]
-experts_weights: [[0,1,0,1], [0,0,1,1]]
+experts_weights: [[0,1,0,1], [0,0,1,0]]
 ratio: [1, 1, 1]
 geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 
@@ -30,21 +30,21 @@ geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate
 #######
 # Peschl Values #
 #######
-# env_steps: 8000000
-# n_queries: 50
+env_steps: 8000000
+n_queries: 50
 #### query_freq: 153 846 # env_steps_moral/(n_queries+2)
 
 
 #######
 # Test Values #
 #######
-# env_steps: 100
-# n_queries: 2
-# query_freq: 99
+#env_steps: 100
+#n_queries: 2
+query_freq: 99
 
 #######
 # Test Queries Values #
 #######
-env_steps: 10000
-n_queries: 2
-query_freq: 500
+#env_steps: 10000
+#n_queries: 2
+#query_freq: 500

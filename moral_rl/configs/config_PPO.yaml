@@ -3,7 +3,7 @@ vanilla: False
 data_path: "generated_data/"
 env_path: "v4/"
 vanilla_path: "Peschl/"
-expe_path: "expert_test"
+expe_path: "expert_test_2"
 demo_path: "demonstrations"
 disc_path: "discriminator"
 gene_path: "generator"
@@ -25,9 +25,9 @@ geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate
 #######
 # Peschl Values #
 #######
-# env_steps: 9000000
+env_steps: 9000000
 
 #######
 # Test Values #
 #######
-env_steps: 1000
+#env_steps: 1000
