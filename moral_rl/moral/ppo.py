@@ -223,7 +223,7 @@ def update_policy_v2(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
             optimizer.step()
 
 
-def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg, target_kl=0.01):
+def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg, wandb, target_kl=0.01):
     for epoch in range(n_epochs):
         batch_loss = 0
         value_loss = 0
