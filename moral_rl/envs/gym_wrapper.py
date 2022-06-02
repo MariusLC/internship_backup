@@ -57,6 +57,11 @@ class GymWrapper(gym.Env):
             self.width = 5
             self.height = 5
             self.num_actions = 9
+        elif env_id == 'randomized_v4':
+            self.layers = ('#', 'P', 'F', 'C')
+            self.width = 8
+            self.height = 8
+            self.num_actions = 9
 
         self.game = None
         self.np_random = None
@@ -89,6 +94,8 @@ class GymWrapper(gym.Env):
             self.game = envs.randomized_v1.make_game()
         elif self.env_id == 'randomized_v1_test':
             self.game = envs.randomized_v1_test.make_game()
+        elif self.env_id == 'randomized_v4':
+            self.game = envs.randomized_v4.make_game()
 
         obs, _, _ = self.game.its_showtime()
         return self._obs_to_np_array(obs)
@@ -127,6 +134,11 @@ class GymWrapper_demo(GymWrapper):
             self.width = 5
             self.height = 5
             self.num_actions = 9
+        elif env_id == 'randomized_v4':
+            self.layers = ('#', 'P', 'F', 'C')
+            self.width = 8
+            self.height = 8
+            self.num_actions = 9
 
         self.game = None
         self.np_random = None
@@ -156,6 +168,8 @@ class GymWrapper_demo(GymWrapper):
             self.game = envs.randomized_v1.make_game()
         elif self.env_id == 'randomized_v1_test':
             self.game = envs.randomized_v1_test.make_game()
+        elif self.env_id == 'randomized_v4':
+            self.game = envs.randomized_v4.make_game()
 
         # obs, _, _ = self.game.its_showtime()
         # return self._obs_to_np_array(obs)
