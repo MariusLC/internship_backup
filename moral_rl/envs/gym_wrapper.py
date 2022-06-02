@@ -1,6 +1,8 @@
 import envs.randomized_v1
 import envs.randomized_v2 
 import envs.randomized_v3
+import envs.randomized_v1_test
+import envs.randomized_v4
 from pycolab import rendering
 from typing import Callable
 import gym

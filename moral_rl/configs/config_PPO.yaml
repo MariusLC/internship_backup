@@ -1,7 +1,7 @@
 #Paths
 vanilla: False
 data_path: "generated_data/"
-env_path: "v1/"
+env_path: "v4/"
 vanilla_path: "Peschl/"
 expe_path: "expert_test"
 demo_path: "demonstrations"
@@ -14,7 +14,7 @@ model_name: "ppo_"
 
 
 # Editable parameters
-env: "v1"
+env: "v4"
 env_rad: "randomized_"
 nb_experts: 1
 # experts_weights: [[0,1,0,0]]

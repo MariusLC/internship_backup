@@ -52,7 +52,7 @@ class PPO(nn.Module):
         trajectory_actions = torch.tensor(np.array(tau['actions'])).to(device)
         action_probabilities, critic_values = self.forward(trajectory_states)
 
-        print(action_probabilities[0][0])
+        # print(action_probabilities[0][0])
         if math.isnan(action_probabilities[0][0]):
             print("there is a nan value in result of forward in evaluate_trajectory")
             print(trajectory_actions)
