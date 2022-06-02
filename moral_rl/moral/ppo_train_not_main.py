@@ -34,11 +34,11 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
         'batchsize_ppo': 12,
         'n_workers': 12,
         'lr_ppo': 3e-4,
-        'entropy_reg': 0.05,
+        'entropy_reg': 0.01,
         'lambd': lambd,
         'gamma': 0.999,
         'epsilon': 0.1,
-        'ppo_epochs': 5
+        'ppo_epochs': 50
         }, 
         reinit=True)
     config = wandb.config
@@ -64,10 +64,10 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
         next_states, rewards, done, info = vec_env.step(actions)
         scalarized_rewards = [sum([config.lambd[i] * r[i] for i in range(len(r))]) for r in rewards]
 
-        train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs, rewards)
+        train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs, rewards, gamma=config.gamma)
 
         if train_ready:
-            update_policy_v2(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
+            update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
                           entropy_reg=config.entropy_reg)
             objective_logs = dataset.log_objectives()
             for i in range(objective_logs.shape[1]):

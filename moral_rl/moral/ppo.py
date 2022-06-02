@@ -68,22 +68,23 @@ class TrajectoryDataset:
         self.trajectories = []
         # self.buffer = [{'states': [], 'actions': [], 'rewards': [], 'log_probs': [], 'latents': None, 'logs': []}
         #                for i in range(n_workers)]
-        self.buffer = [{'states': [], 'actions': [], 'rewards': [], 'advantages': [], 'log_probs': [], 'latents': None, 'logs': []}
+        self.buffer = [{'states': [], 'actions': [], 'rewards': [], 'advantages': [], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
                        for i in range(n_workers)]
 
     def reset_buffer(self, i):
         # self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'log_probs': [], 'latents': None, 'logs': []}
-        self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'advantages':[], 'log_probs': [], 'latents': None, 'logs': []}
+        self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'advantages':[], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
 
     def reset_trajectories(self):
         self.trajectories = []
 
-    def write_tuple(self, states, actions, rewards, done, log_probs, logs=None):
+    def write_tuple(self, states, actions, rewards, done, log_probs, logs=None, gamma=0.999):
         # Takes states of shape (n_workers, state_shape[0], state_shape[1])
         for i in range(self.n_workers):
             self.buffer[i]['states'].append(states[i])
             self.buffer[i]['actions'].append(actions[i])
             self.buffer[i]['rewards'].append(rewards[i])
+            self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
             self.buffer[i]['log_probs'].append(log_probs[i])
 
             if logs is not None:
@@ -100,12 +101,13 @@ class TrajectoryDataset:
         else:
             return False
 
-    def write_tuple_2(self, states, actions, rewards, advantages, done, log_probs, logs=None):
+    def write_tuple_2(self, states, actions, rewards, advantages, done, log_probs, logs=None, gamma=0.999):
         # Takes states of shape (n_workers, state_shape[0], state_shape[1])
         for i in range(self.n_workers):
             self.buffer[i]['states'].append(states[i])
             self.buffer[i]['actions'].append(actions[i])
             self.buffer[i]['rewards'].append(rewards[i])
+            self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
             self.buffer[i]['advantages'].append(advantages[i])
             self.buffer[i]['log_probs'].append(log_probs[i])
 
@@ -191,7 +193,7 @@ def update_policy_v2(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
             # print("i = ", i)
             reward_togo = 0
             returns = []
-            normalized_reward = np.array(np.array(tau['rewards']))
+            normalized_reward = np.array(tau['rewards'])
             normalized_reward = (normalized_reward - normalized_reward.mean())/(normalized_reward.std()+1e-5)
             for r in normalized_reward[::-1]:
                 # Compute rewards-to-go and advantage estimates
@@ -218,11 +220,14 @@ def update_policy_v2(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
             optimizer.step()
 
 
-def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg):
+def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg, target_kl=0.01):
     for epoch in range(n_epochs):
         batch_loss = 0
         value_loss = 0
+        kl = 0
+        nb_act = 0
         for i, tau in enumerate(dataset.trajectories):
+            # print("i = ", i)
             reward_togo = 0
             returns = []
             normalized_reward = np.array(tau['rewards'])
@@ -232,14 +237,22 @@ def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
                 reward_togo = r + gamma * reward_togo
                 returns.insert(0, reward_togo)
             action_log_probabilities, critic_values, action_entropy = ppo.evaluate_trajectory(tau)
-            advantages = torch.tensor(np.array(returns)).to(device) - critic_values.detach().to(device)
-            likelihood_ratios = torch.exp(action_log_probabilities - torch.tensor(tnp.array(au['log_probs'])).detach().to(device))
+
+            advantages = torch.tensor(returns).to(device) - critic_values.detach().to(device)
+            likelihood_ratios = torch.exp(action_log_probabilities - torch.tensor(np.array(tau['log_probs'])).detach().to(device))
             clipped_losses = -torch.min(likelihood_ratios * advantages, g_clip(epsilon, advantages))
             batch_loss += torch.mean(clipped_losses) - entropy_reg * action_entropy
             value_loss += torch.mean((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2)
+            kl += (torch.tensor(np.array(tau['log_probs'])).detach().to(device) - action_log_probabilities).sum()
+            nb_act += len(action_log_probabilities)
+            
+        kl = kl / nb_act
+        print("kl = ", kl)
+        if kl > 1.5 * target_kl:
+            print('Early stopping at step %d due to reaching max kl.'%i)
+            break
 
-
-            overall_loss = batch_loss + value_loss
-            optimizer.zero_grad()
-            overall_loss.backward()
-            optimizer.step()
+        overall_loss = batch_loss + value_loss
+        optimizer.zero_grad()
+        overall_loss.backward()
+        optimizer.step()
