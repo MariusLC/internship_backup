@@ -187,8 +187,8 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
             objective_logs = []
 
             # Update Models
-            update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
-                          entropy_reg=config.entropy_reg)
+            update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
+                          entropy_reg=config.entropy_reg, wandb=wandb)
             for ret in dataset.log_returns():
                 wandb.log({'Returns': ret})
 

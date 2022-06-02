@@ -2,7 +2,7 @@
 real_params: False
 vanilla: False
 data_path: "generated_data/"
-env_path: "v1/"
+env_path: "v3/"
 vanilla_path: "Peschl/"
 expe_path: "expert"
 demo_path: "demonstrations"
@@ -16,13 +16,13 @@ model_name: "ppo_"
 
 
 # Editable parameters
-env: "v1"
+env: "v3"
 env_rad: "randomized_"
-nb_experts: 1
-#experts_weights: [[0,1,0,1], [0,0,1,1]]
-ratio: [1,1]
-#ratio: [1, 1, 1]
+nb_experts: 2
 experts_weights: [[0,1]]
+#ratio: [1,1]
+experts_weights: [[0,1,0,1], [0,0,1,1]]
+ratio: [1, 1, 1]
 geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 
 

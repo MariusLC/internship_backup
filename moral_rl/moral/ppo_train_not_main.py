@@ -68,7 +68,7 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
 
         if train_ready:
             update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
-                          entropy_reg=config.entropy_reg)
+                          entropy_reg=config.entropy_reg, wandb=wandb)
             objective_logs = dataset.log_objectives()
             for i in range(objective_logs.shape[1]):
                 wandb.log({'Obj_' + str(i): objective_logs[:, i].mean()})
