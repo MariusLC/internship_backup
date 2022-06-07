@@ -170,7 +170,12 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
         vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
         # print("vectorized_rewards = ", vectorized_rewards)
         scalarized_rewards = [np.dot(w_posterior_mean, r[0:nb_experts+1]) for r in vectorized_rewards]
-        # print("scalarized_rewards = ", scalarized_rewards)
+        
+        mean_rew = np.array(vectorized_rewards).mean(axis=0)
+        for i in range(len(mean_rew)):
+            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
+            wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
+            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * mean_rew[i]})
 
 
         # Logging obtained rewards for active learning
