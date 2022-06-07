@@ -1,5 +1,5 @@
 #Paths
-real_params: False
+real_params: True
 vanilla: False
 data_path: "generated_data/"
 env_path: "v3/"
