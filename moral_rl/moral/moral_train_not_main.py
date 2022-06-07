@@ -19,7 +19,7 @@ import os
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_filenames, discriminators_filenames, moral_filename):
+def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, generators_filenames, discriminators_filenames, moral_filename):
 
     nb_experts = len(generators_filenames)
 
@@ -47,7 +47,8 @@ def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_fi
             'entropy_reg': 0.25,
             'gamma': 0.999,
             'epsilon': 0.1,
-            'ppo_epochs': 5},
+            'ppo_epochs': 5,
+            'lambd': lambd},
         reinit=True)
     config = wandb.config
     env_steps = int(config.env_steps/config.n_workers)

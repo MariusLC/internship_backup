@@ -59,6 +59,11 @@ class PPO(nn.Module):
             print(trajectory_actions.shape)
             print(trajectory_states)
             print(trajectory_states.shape)
+            for state in tau['states']:
+                action_probabilities, critic_values = self.forward(torch.tensor(np.array(state)).float().to(device))
+                if math.isnan(action_probabilities[0][0]):
+                    print("this state gives a action_proba of nan : ")
+                    print(state)
 
         # print("len(action_probabilities) = ", action_probabilities.shape)
         dist = Categorical(action_probabilities)
@@ -248,7 +253,6 @@ def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
                 reward_togo = r + gamma * reward_togo
                 returns.insert(0, reward_togo)
             action_log_probabilities, critic_values, action_entropy = ppo.evaluate_trajectory(tau)
-
             advantages = torch.tensor(returns).to(device) - critic_values.detach().to(device)
             likelihood_ratios = torch.exp(action_log_probabilities - torch.tensor(np.array(tau['log_probs'])).detach().to(device))
             clipped_losses = -torch.min(likelihood_ratios * advantages, g_clip(epsilon, advantages))

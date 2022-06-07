@@ -53,4 +53,4 @@ if __name__ == '__main__':
     if c["geneORexpert"]:
         gene_or_expe_filenames = experts_filenames
 
-    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["env_steps_moral"], query_freq, gene_or_expe_filenames, discriminators_filenames, moral_filename)
+    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps_moral"], query_freq, gene_or_expe_filenames, discriminators_filenames, moral_filename)
