@@ -35,16 +35,19 @@ class CursesUi_Marius(human_ui.CursesUi):
         paint_console = False
       elif keycode in self._keycodes_to_actions:
         action = self._keycodes_to_actions[keycode]
-        if action == None:
-          observation, reward = self.policy.act()
+        if action == "eval_discrim" :
+          observation, reward = self.policy.eval_discrim(self._keycodes_to_actions)
         else:
-          observation, reward = self.policy.act(action)
+          if action == None:
+            observation, reward = self.policy.act()          
+          else:
+            observation, reward = self.policy.act(action)
 
-        observations = self.crop_and_repaint(observation)
-        if self._total_return is None:
-          self._total_return = reward
-        elif reward is not None:
-          self._total_return += reward
+          observations = self.crop_and_repaint(observation)
+          if self._total_return is None:
+            self._total_return = reward
+          elif reward is not None:
+            self._total_return += reward
 
     def crop_and_repaint(self, observation):
           # Helper for game display: applies all croppers to the observation, then

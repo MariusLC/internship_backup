@@ -2,7 +2,7 @@
 generate_demos: False
 vanilla: False
 data_path: "generated_data/"
-env_path: "v1/"
+env_path: "v3/"
 vanilla_path: "Peschl/"
 expe_path: "expert"
 demo_path: "demonstrations"
@@ -17,11 +17,11 @@ model_name: "ppo_"
 
 
 # Editable parameters
-env: "v1_test"
+env: "v3_test_discrim_eval"
 env_rad: "randomized_"
-expert_weights: [0,1]
+expert_weights: [0,1,1,1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
-demo: True
+demo: False
 delayed: False
 
 #######
