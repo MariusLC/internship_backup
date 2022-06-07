@@ -57,38 +57,38 @@ if __name__ == '__main__':
 	# output.backward()
 	# print(input.grad)
 
-	ratio = [1, 1, 3]
-	# res_a = [10, 10, 30]
-	res_a = [15, 15, 20]
-	# res_b = [1, 1, 48]
-	res_b = [48, 1, 1]
+	# ratio = [1, 1, 3]
+	# # res_a = [10, 10, 30]
+	# res_a = [15, 15, 20]
+	# # res_b = [1, 1, 48]
+	# res_b = [48, 1, 1]
 
-	ratio_normalized = [r/sum(ratio) for r in ratio]
-	print(ratio_normalized)
+	# ratio_normalized = [r/sum(ratio) for r in ratio]
+	# print(ratio_normalized)
 
-	ret_a_copy = res_a.copy()
-	ret_b_copy = res_b.copy()
+	# ret_a_copy = res_a.copy()
+	# ret_b_copy = res_b.copy()
 
-	ret_a_normalized = []
-	ret_b_normalized = []
+	# ret_a_normalized = []
+	# ret_b_normalized = []
 
-	for i in range(len(ret_a_copy)):
-		# To avoid numerical instabilities in KL
-		ret_a_copy[i] += 1e-5
-		ret_b_copy[i] += 1e-5
+	# for i in range(len(ret_a_copy)):
+	# 	# To avoid numerical instabilities in KL
+	# 	ret_a_copy[i] += 1e-5
+	# 	ret_b_copy[i] += 1e-5
 
-	ret_a_sum = sum(ret_a_copy)
-	ret_b_sum = sum(ret_b_copy)
+	# ret_a_sum = sum(ret_a_copy)
+	# ret_b_sum = sum(ret_b_copy)
 
-	for i in range(len(ret_a_copy)):
-		ret_a_normalized.append(ret_a_copy[i]/ret_a_sum)
-		ret_b_normalized.append(ret_b_copy[i]/ret_b_sum)
+	# for i in range(len(ret_a_copy)):
+	# 	ret_a_normalized.append(ret_a_copy[i]/ret_a_sum)
+	# 	ret_b_normalized.append(ret_b_copy[i]/ret_b_sum)
 
-	# scipy.stats.entropy(pk, qk=None, base=None, axis=0) = S = sum(pk * log(pk / qk), axis=axis)
-	kl_a = st.entropy(ret_a_normalized, ratio_normalized)
-	kl_b = st.entropy(ret_b_normalized, ratio_normalized)
-	print(kl_a)
-	print(kl_b)
+	# # scipy.stats.entropy(pk, qk=None, base=None, axis=0) = S = sum(pk * log(pk / qk), axis=axis)
+	# kl_a = st.entropy(ret_a_normalized, ratio_normalized)
+	# kl_b = st.entropy(ret_b_normalized, ratio_normalized)
+	# print(kl_a)
+	# print(kl_b)
 
 	# kl_a = st.entropy([1/2, 1/2], qk=[9/10, 1/10])
 	# print(kl_a)
@@ -101,7 +101,7 @@ if __name__ == '__main__':
 	# kl_a = st.entropy([9/10, 1/10], [8/10, 2/10])
 	# print(kl_a)
 
-	config_yaml = load_config(CONFIG_FILENAME)
+	c = load_config(CONFIG_FILENAME)
 
 	#PARAMS CONFIG
 	nb_experts = 2
@@ -130,4 +130,29 @@ if __name__ == '__main__':
 	    experts_filenames.append("saved_models/Peschl_res/"+model_name+env+"_"+str(lambd_list[i])+model_ext)
 	    discriminators_filenames.append("saved_models/Peschl_res/discriminator_"+env+"_"+str(lambd_list[i])+model_ext)
 
-	moral_train_n_experts(ratio, env_rad+env, experts_filenames, discriminators_filenames, moral_filename)
+	moral_train_n_experts(ratio, env_rad+env, lambd_list, experts_filenames, discriminators_filenames, moral_filename)
+
+	vanilla_path = ""
+    if c["vanilla"]:
+        vanilla_path = c["vanilla_path"]
+
+    # will impact the utopia point calculated
+    gene_or_expert = c["gene_path"]
+    if c["geneORexpert"]:
+        gene_or_expert = c["expe_path"]
+
+    query_freq = c["query_freq"]
+    if c["real_params"]:
+        query_freq = c["env_steps"]/(c["n_queries"]+2)
+
+    gene_or_expe_filenames = []
+    demos_filenames = []
+    discriminators_filenames = []
+    moral_filename = c["data_path"]+c["env_path"]+vanilla_path+c["moral_path"]+str(c["experts_weights"])+c["special_name_agent"]+c["model_ext"]
+    for i in range(c["nb_experts"]):
+        path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
+        gene_or_expe_filenames.append(path+gene_or_expert+c["model_ext"])
+        demos_filenames.append(path+c["demo_path"]+c["demo_ext"])
+        discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
+
+    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, gene_or_expe_filenames, discriminators_filenames, moral_filename)
