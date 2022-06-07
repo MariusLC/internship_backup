@@ -276,5 +276,5 @@ def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
         wandb.log({'overall_loss_2': overall_loss_2})
 
         optimizer.zero_grad()
-        overall_loss_2.backward()
+        overall_loss.backward()
         optimizer.step()

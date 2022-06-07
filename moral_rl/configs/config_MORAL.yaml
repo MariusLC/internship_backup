@@ -1,5 +1,5 @@
 #Paths
-real_params: False
+real_params: True
 vanilla: False
 data_path: "generated_data/"
 env_path: "v3/"
@@ -12,7 +12,7 @@ moral_path: "moral_agents/"
 model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
-special_name_agent: ""
+special_name_agent: "vanilla"
 
 
 
@@ -22,7 +22,8 @@ env_rad: "randomized_"
 nb_experts: 2
 #experts_weights: [[0,1]]
 #ratio: [1,1]
-experts_weights: [[0,1,0,1], [0,0,1,0]]
+experts_weights: [[0,1,0,1],[0,0,1,1]]
+#ratio: [1,1]
 ratio: [1, 1, 1]
 geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 
