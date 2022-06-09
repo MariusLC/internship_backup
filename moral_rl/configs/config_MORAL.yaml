@@ -18,7 +18,7 @@ special_name_agent: "old_settings_131_test_curves"
 # Editable parameters
 env: "v3"
 env_rad: "randomized_"
-experts: 2
+nb_experts: 2
 # experts_weights: [[0,1]]
 # ratio: [1,1]
 experts_weights: [[0,1,0,1],[0,0,1,1]]
