@@ -167,10 +167,12 @@ class Discriminator(nn.Module):
 
         # pourquoi diviser en fonction du point d'utopie si eval = true ?
         # plus le point d'utopie est proche de 0, plus la valeur si dessous est grande ..
-        # (et donc plus l'action qui amène de state à  nexte_state est plébicitée)
+        # (et donc plus l'action qui amène de state à  nexte_state est plébicitée)            
         if self.eval:
-            return advantage
-            #return advantage/np.abs(self.utopia_point)
+            # print(" advantage = ", advantage)
+            # print(" return advantage = ", advantage/np.abs(self.utopia_point))
+            return advantage/np.abs(self.utopia_point)
+            #return advantage
         else:
             return advantage
 
@@ -240,9 +242,10 @@ class Discriminator(nn.Module):
             states = next_states.copy()
             states_tensor = torch.tensor(states).float().to(device)
 
-        # l'utopia point est simplement la moyenne des rewards estimés des trajectoires finies sur steps pas de temps,
+        # l'utopia point est simplement la moyenne des rewards estimés par le discriminateur des trajectoires finies sur n pas de temps,
         # en se référant à l'imitation policy pour le choix des actions
         self.utopia_point = sum(estimated_returns)/len(estimated_returns)
+        # print(" self.utopia_point = ", self.utopia_point)
 
         return self.utopia_point
 

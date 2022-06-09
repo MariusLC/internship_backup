@@ -3,6 +3,7 @@ from utils.load_config import *
 from envs.gym_wrapper import *
 from moral.airl import *
 import torch
+import copy
 
 from moral.ppo import *
 from envs.randomized_v3_test_discrim_eval import *
@@ -15,7 +16,7 @@ from envs.randomized_v3_test_discrim_eval import *
 
 # folder to load config file
 CONFIG_PATH = "configs/"
-CONFIG_FILENAME = "config_Ui.yaml"
+CONFIG_FILENAME = "config_Ui_discrim_eval.yaml"
 FILENAME = "generated_data/logs_test.txt"
 
 # Device Check
@@ -56,25 +57,47 @@ def printing_correctly_demo(filename, action, obs, reward, discrim_advantages, d
 def printing_correctly_eval_discrim(filename, actions, obs_list, reward_list, discrim_advantages_list, discrim_rewards_list, log_probs_list, discount_list, done_list):
     f = open(filename, "a")
 
-    player_pos = [tuple(a) for a in np.swapaxes(np.where(obs.board == 80), 0, 1)]
+    player_pos = np.where(obs_list[0].board == 80)
+    player_pos = (player_pos[0][0],player_pos[1][0])
+    # f.write(str(player_pos))
+    # player_pos = np.swapaxes(np.where(obs_list[0].board == 80), 0, 1)[0]
     f.write("EVAL DISCRIM\n")
-    f.write("total board = "+str({'player_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 80), 0, 1)], 
-                            'citizen_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 67), 0, 1)],
-                            'delivery_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 70), 0, 1)]})+"\n")
-    f.write("close board = \n")
-    f.write(obs.board[player_pos[0]-1, player_pos[1]-1] + " | " + obs.board[player_pos[0], player_pos[1]-1] + " | " + obs.board[player_pos[0]+1, player_pos[1]-1] + "\n")
-    f.write(obs.board[player_pos[0]-1, player_pos[1]] + " | " + obs.board[player_pos[0], player_pos[1]] + " | " + obs.board[player_pos[0]+1, player_pos[1]] + "\n")
-    f.write(obs.board[player_pos[0]-1, player_pos[1]+1] + " | " + obs.board[player_pos[0], player_pos[1]+1] + " | " + obs.board[player_pos[0]+1, player_pos[1]+1] + "\n")
+    f.write("total board = "+str({'player_pos' : player_pos,
+                            'citizen_pos' : [tuple(a) for a in np.swapaxes(np.where(obs_list[0].board == 67), 0, 1)],
+                            'delivery_pos' : [tuple(a) for a in np.swapaxes(np.where(obs_list[0].board == 70), 0, 1)]})+"\n")
 
-    f.write("close board discrim eval move = \n")
-    f.write(" X | " + discrim_advantages_list[0] + " | X \n")
-    f.write(discrim_advantages_list[2] + " | " + discrim_advantages_list[4] + " | " + discrim_advantages_list[3] + "\n")
-    f.write(" X | " + discrim_advantages_list[1] + " | X \n")
+    f.write("\nclose board = \n")
+    if player_pos[0] > 1 and player_pos[0] < 14 and player_pos[1] > 1 and player_pos[1] < 14 : 
+        f.write(str(obs_list[0].board[player_pos[0]-2, player_pos[1]-2]) + " | " + str(obs_list[0].board[player_pos[0]-2, player_pos[1]-1]) + " | " + str(obs_list[0].board[player_pos[0]-2, player_pos[1]]) + " | " + str(obs_list[0].board[player_pos[0]-2, player_pos[1]+1]) + " | " + str(obs_list[0].board[player_pos[0]-2, player_pos[1]+2]) + "\n")
+        f.write("---|----|----|---|---\n")
+        f.write(str(obs_list[0].board[player_pos[0]-1, player_pos[1]-2]) + " | " + str(obs_list[0].board[player_pos[0]-1, player_pos[1]-1]) + " | " + str(obs_list[0].board[player_pos[0]-1, player_pos[1]]) + " | " + str(obs_list[0].board[player_pos[0]-1, player_pos[1]+1]) + " | " + str(obs_list[0].board[player_pos[0]-2, player_pos[1]+2]) + "\n")
+        f.write("---|----|----|---|---\n")
+        f.write(str(obs_list[0].board[player_pos[0], player_pos[1]-2]) + " | " + str(obs_list[0].board[player_pos[0], player_pos[1]-1]) + " | " + str(obs_list[0].board[player_pos[0], player_pos[1]]) + " | " + str(obs_list[0].board[player_pos[0], player_pos[1]+1]) + " | " + str(obs_list[0].board[player_pos[0], player_pos[1]+2]) + "\n")
+        f.write("---|----|----|---|---\n")
+        f.write(str(obs_list[0].board[player_pos[0]+1, player_pos[1]-2]) + " | " + str(obs_list[0].board[player_pos[0]+1, player_pos[1]-1]) + " | " + str(obs_list[0].board[player_pos[0]+1, player_pos[1]]) + " | " + str(obs_list[0].board[player_pos[0]+1, player_pos[1]+1]) + " | " + str(obs_list[0].board[player_pos[0]+1, player_pos[1]+2]) + "\n")
+        f.write("---|----|----|---|---\n")
+        f.write(str(obs_list[0].board[player_pos[0]+2, player_pos[1]-2]) + " | " + str(obs_list[0].board[player_pos[0]+2, player_pos[1]-1]) + " | " + str(obs_list[0].board[player_pos[0]+2, player_pos[1]]) + " | " + str(obs_list[0].board[player_pos[0]+2, player_pos[1]+1]) + " | " + str(obs_list[0].board[player_pos[0]+2, player_pos[1]+2]) + "\n")
+    
+    else :
+        f.write(str(obs_list[0].board[player_pos[0]-1, player_pos[1]-1]) + " | " + str(obs_list[0].board[player_pos[0]-1, player_pos[1]]) + " | " + str(obs_list[0].board[player_pos[0]-1, player_pos[1]+1]) + "\n")
+        f.write("---|----|---\n")
+        f.write(str(obs_list[0].board[player_pos[0], player_pos[1]-1]) + " | " + str(obs_list[0].board[player_pos[0], player_pos[1]]) + " | " + str(obs_list[0].board[player_pos[0], player_pos[1]+1]) + "\n")
+        f.write("---|----|---\n")
+        f.write(str(obs_list[0].board[player_pos[0]+1, player_pos[1]-1]) + " | " + str(obs_list[0].board[player_pos[0]+1, player_pos[1]]) + " | " + str(obs_list[0].board[player_pos[0]+1, player_pos[1]+1]) + "\n")
 
-    f.write("close board discrim eval act = \n")
-    f.write(" X | " + discrim_advantages_list[5] + " | X \n")
-    f.write(discrim_advantages_list[7] + " | " + discrim_advantages_list[4] + " | " + discrim_advantages_list[8] + "\n")
-    f.write(" X | " + discrim_advantages_list[6] + " | X \n")
+    f.write("\nclose board discrim eval move = \n")
+    f.write("  X   | " + str(round(discrim_advantages_list[0].item(),2)) + " |   X  \n")
+    f.write("------|-------|------\n")
+    f.write(str(round(discrim_advantages_list[2].item(),2)) + " | " + str(round(discrim_advantages_list[4].item(),2)) + " | " + str(round(discrim_advantages_list[3].item(),2)) + "\n")
+    f.write("------|-------|------\n")
+    f.write("  X   | " + str(round(discrim_advantages_list[1].item(),2)) + " |   X  \n")
+
+    f.write("\nclose board discrim eval act = \n")
+    f.write("  X   | " + str(round(discrim_advantages_list[5].item(),2)) + " |   X  \n")
+    f.write("------|-------|------\n")
+    f.write(str(round(discrim_advantages_list[7].item(),2)) + " | " + str(round(discrim_advantages_list[4].item(),2)) + " | " + str(round(discrim_advantages_list[8].item(),2)) + "\n")
+    f.write("------|-------|------\n")
+    f.write("  X   | " + str(round(discrim_advantages_list[6].item(),2)) + " |   X  \n")
     
     f.close()
 
@@ -147,7 +170,7 @@ class Action_evaluator_eval_discrim(Action_evaluator):
         super().__init__(discrim, env, filename)
 
 
-    def eval_discrim(self, _keycodes_to_actions):
+    def eval_discrim(self, _keycodes_to_actions, fct, last_obs, env):
         plot = env.game.the_plot.copy()
         obs_list = []
         reward_list = []
@@ -155,19 +178,32 @@ class Action_evaluator_eval_discrim(Action_evaluator):
         done_list = []
         discrim_eval_list = []
         action_list = []
-        for action in _keycodes_to_actions.values():
+        for action in list(_keycodes_to_actions.values())[:-1]:
             obs, rewards, discount, next_state, done, info = env.step_demo(action)
             next_state_tensor = torch.tensor(next_state).to(device).float()
             discrim_eval_list.append(self.discrim.forward(self.state, next_state_tensor, GAMMA))
-            obs_list.append(obs)
+            obs_list.append(copy.copy(obs))
             reward_list.append(rewards)
             discount_list.append(discount)
             done_list.append(done)
             action_list.append(action)
-            # enough to rollback to previous state ?
-            env.game.the_plot = plot
-        printing_correctly_eval_discrim(self.filename, action_list, obs_list, reward_list, discrim_eval_list, None, None, discount_list, done_list)
+            f = open(self.filename, "a")
+            f.write(str(action)+"\n")
+            f.write(str(plot)+"\n")
+            f.write(str(last_obs)+"\n")
+            f.close()
 
+            # env.game.the_plot['P_pos'] = plot['P_pos']
+            # env.game.the_plot['F_pos'] = plot['F_pos']
+            # env.game.the_plot['C_pos'] = plot['C_pos']
+            # env.game.the_plot['S_pos'] = plot['S_pos']
+            # env.game.the_plot['V_pos'] = plot['V_pos']
+
+            # fct(last_obs)
+            env.reset_with_defined_board()
+
+        printing_correctly_eval_discrim(self.filename, action_list, obs_list, reward_list, discrim_eval_list, None, None, discount_list, done_list)
+        return last_obs
 
 def set_board(dico_pos, the_plot):
     the_plot['P_pos'] = dico_pos['P_pos']
@@ -247,7 +283,7 @@ if __name__ == '__main__':
                      'd': 8,
                      -1: 4,
                      'p': "eval_discrim",
-                     'e': 9, 'E': 9,}
+                     'e': 9}
 
     # define wether the game has a time limit between 2 actions
     if c["delayed"] :

@@ -139,7 +139,7 @@ def make_env_eval_discrim(env_id: str, rank: int, seed: int = 0) -> Callable:
     """
 
     def _init() -> gym.Env:
-        env = GymWrapper_demo(env_id)
+        env = GymWrapper_eval_discrim(env_id)
         env.seed(seed + rank)
         return env
 
@@ -187,6 +187,31 @@ class GymWrapper_eval_discrim(GymWrapper):
         # obs, _, _ = self.game.its_showtime()
         # return self._obs_to_np_array(obs)
         return 0
+
+    # def reset_with_defined_board_but_no_show_time_yet(self, the_plot):
+    #     if self.env_id == 'randomized_v3_test_discrim_eval':
+    #         self.game = envs.randomized_v3_test_discrim_eval.make_game_eval_discrim(the_plot)
+    #         # self.game = envs.randomized_v3_test_discrim_eval.make_game(rand_reset=True, dico_pos=None)
+            
+
+    #     # obs, _, _ = self.game.its_showtime()
+    #     # return self._obs_to_np_array(obs)
+    #     return 0
+
+    def reset_with_defined_board(self, the_plot):
+        if self.env_id == 'randomized_v3_test_discrim_eval':
+            self.game = envs.randomized_v3_test_discrim_eval.make_game_eval_discrim(the_plot)
+            self.gamegame.the_plot['P_pos'] = the_plot['P_pos']
+            self.gamegame.the_plot['F_pos'] = the_plot['F_pos']
+            self.gamegame.the_plot['C_pos'] = the_plot['C_pos']
+            self.gamegame.the_plot['S_pos'] = the_plot['S_pos']
+            self.gamegame.the_plot['V_pos'] = the_plot['V_pos']
+            # self.game = envs.randomized_v3_test_discrim_eval.make_game(rand_reset=True, dico_pos=None)
+            
+
+        # obs, _, _ = self.game.its_showtime()
+        # return self._obs_to_np_array(obs)
+        # return 0
 
     def step_demo(self, action):
         obs, reward, discount = self.game.play(action)

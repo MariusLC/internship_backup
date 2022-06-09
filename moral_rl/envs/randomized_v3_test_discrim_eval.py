@@ -10,6 +10,7 @@ import copy
 import argparse
 import sys
 
+from envs.ascii_art_Marius import ascii_art_to_game_Marius
 from pycolab import ascii_art
 # from pycolab import human_ui
 from pycolab import rendering
@@ -75,6 +76,32 @@ DELIVERY_FG_COLOURS = {' ': (870, 838, 678),  # Floor.
                         'S': (999, 500, 0),      # Street.
                         'V': (900, 0, 20)}      # Vase.
 
+def make_game_eval_discrim(the_plot, seed=None, demo=False, rand_reset=True, dico_pos=None):
+    delivery_art = DELIVERY_ART
+    what_lies_beneath = BACKGROUND_ART
+    sprites = {'P': PlayerSprite}
+
+    if demo:
+        raise NotImplementedError
+    else:
+        drapes = {'X': JudgeDrape}
+
+    drapes['F'] = MailDrape
+    drapes['C'] = CitizenDrape
+    drapes['S'] = StreetDrape
+    drapes['V'] = VaseDrape
+
+    update_schedule = [['F'],
+                       ['C'],
+                       ['S'],
+                       ['V'],
+                       ['X'],
+                       ['P']]
+    
+    print("ascii Marius")
+    return ascii_art_to_game_Marius(the_plot,
+        delivery_art, what_lies_beneath, sprites, drapes,
+        update_schedule=update_schedule)
 
 def make_game(seed=None, demo=False, rand_reset=True, dico_pos=None):
     delivery_art = DELIVERY_ART
@@ -97,23 +124,7 @@ def make_game(seed=None, demo=False, rand_reset=True, dico_pos=None):
                        ['V'],
                        ['X'],
                        ['P']]
-
-    # if rand_reset:
-    #     # Random initialization of player, fire and citizen
-    #     random_positions = np.random.choice(14*14, size=N_MAIL+N_CITIZEN+N_STREET+N_VASE+1, replace=False)
-    #     the_plot['P_pos'] = scalar_to_idx(random_positions[-1])
-    #     the_plot['F_pos'] = [scalar_to_idx(i) for i in random_positions[0:N_MAIL]]
-    #     the_plot['C_pos'] = [scalar_to_idx(i) for i in random_positions[N_MAIL:N_MAIL+N_CITIZEN]]
-    #     the_plot['S_pos'] = [scalar_to_idx(i) for i in random_positions[N_MAIL+N_CITIZEN:N_MAIL+N_CITIZEN+N_STREET]]
-    #     the_plot['V_pos'] = [scalar_to_idx(i) for i in random_positions[N_MAIL+N_CITIZEN+N_STREET:N_MAIL+N_CITIZEN+N_STREET+N_VASE]]
-    # else :
-    #     the_plot['P_pos'] = dico_pos['P_pos']
-    #     the_plot['F_pos'] = dico_pos['F_pos']
-    #     the_plot['C_pos'] = dico_pos['C_pos']
-    #     the_plot['S_pos'] = dico_pos['S_pos']
-    #     the_plot['V_pos'] = dico_pos['V_pos']
-
-
+    
     return ascii_art.ascii_art_to_game(
         delivery_art, what_lies_beneath, sprites, drapes,
         update_schedule=update_schedule)
@@ -355,7 +366,7 @@ def main(demo, delayed, policy):
                          'q': 7,
                          'd': 8,
                          -1: 4,
-                         'e': 9, 'E': 9},
+                         'e': 9},
         delay=delay,
         colour_fg=DELIVERY_FG_COLOURS)
 

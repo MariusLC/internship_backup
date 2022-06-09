@@ -17,8 +17,7 @@ model_name: "ppo_"
 
 
 # Editable parameters
-env: "v3_test"
-# env: "v3_test_discrim_eval"
+env: "v3_test_discrim_eval"
 env_rad: "randomized_"
 expert_weights: [0,1,0,1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
