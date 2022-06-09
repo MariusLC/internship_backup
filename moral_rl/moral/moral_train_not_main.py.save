@@ -19,7 +19,7 @@ import os
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, generators_filenames, discriminators_filenames, moral_filename):
+def moral_train_n_experts(env, ratio, env_steps_moral, query_freq, generators_filenames, discriminators_filenames, moral_filename):
 
     nb_experts = len(generators_filenames)
 
@@ -47,8 +47,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
             'entropy_reg': 0.25,
             'gamma': 0.999,
             'epsilon': 0.1,
-            'ppo_epochs': 5,
-            'lambd': lambd},
+            'ppo_epochs': 5},
         reinit=True)
     config = wandb.config
     env_steps = int(config.env_steps/config.n_workers)
@@ -170,12 +169,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
         vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
         # print("vectorized_rewards = ", vectorized_rewards)
         scalarized_rewards = [np.dot(w_posterior_mean, r[0:nb_experts+1]) for r in vectorized_rewards]
-        
-        mean_rew = np.array(vectorized_rewards).mean(axis=0)
-        for i in range(len(mean_rew)):
-            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
-            wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
-            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * mean_rew[i]})
+        # print("scalarized_rewards = ", scalarized_rewards)
 
 
         # Logging obtained rewards for active learning
@@ -194,8 +188,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
             objective_logs = []
 
             # Update Models
-            #update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg)
-            update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
+            update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
             for ret in dataset.log_returns():
                 wandb.log({'Returns': ret})
 
@@ -214,7 +207,6 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
         # Prepare state input for next time step
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
-        save_data(ppo, moral_filename)
 
     #vec_env.close()
     # torch.save(ppo.state_dict(), moral_filename)

@@ -169,7 +169,8 @@ class Discriminator(nn.Module):
         # plus le point d'utopie est proche de 0, plus la valeur si dessous est grande ..
         # (et donc plus l'action qui amène de state à  nexte_state est plébicitée)
         if self.eval:
-            return advantage/np.abs(self.utopia_point)
+            return advantage
+            #return advantage/np.abs(self.utopia_point)
         else:
             return advantage
 
