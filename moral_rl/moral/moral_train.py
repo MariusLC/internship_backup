@@ -24,8 +24,8 @@ if __name__ == '__main__':
     if c["real_params"]:
         env_steps = int(c["env_steps"]/12)
         query_freq = int(env_steps/(c["n_queries"]+2))
-        print("env_steps = ", env_steps)
-        print("query_freq = ", query_freq)
+        # print("env_steps = ", env_steps)
+        # print("query_freq = ", query_freq)
 
     gene_or_expe_filenames = []
     demos_filenames = []
