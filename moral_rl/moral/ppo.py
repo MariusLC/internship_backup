@@ -170,10 +170,10 @@ def update_policy(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg
     for epoch in range(n_epochs):
         batch_loss = 0
         value_loss = 0
-        # print("epoch = ",epoch)
         for i, tau in enumerate(dataset.trajectories):
             reward_togo = 0
             returns = []
+            # rewards are scalarized rewards (discrim.forward * w_posterior[i])
             normalized_reward = np.array(tau['rewards'])
             normalized_reward = (normalized_reward - normalized_reward.mean())/(normalized_reward.std()+1e-5)
             for r in normalized_reward[::-1]:
@@ -183,22 +183,12 @@ def update_policy(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg
             action_log_probabilities, critic_values, action_entropy = ppo.evaluate_trajectory(tau)
             advantages = torch.tensor(np.array(returns)).to(device) - critic_values.detach().to(device)
             likelihood_ratios = torch.exp(action_log_probabilities - torch.tensor(np.array(tau['log_probs'])).detach().to(device))
-            # print("likelihood_ratios = ", likelihood_ratios)
             clipped_losses = -torch.min(likelihood_ratios * advantages, g_clip(epsilon, advantages))
             batch_loss += torch.mean(clipped_losses) - entropy_reg * action_entropy
-
-            #batch_loss += torch.mean(-torch.min(likelihood_ratios * advantages, g_clip(epsilon, advantages))) - entropy_reg * action_entropy
-
             value_loss += torch.mean((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2)
         overall_loss = (batch_loss + value_loss) / dataset.batch_size
-        # print("overall_loss = ",overall_loss)
         optimizer.zero_grad()
-        # print(ppo.state_dict().keys())
-        # print(ppo.state_dict())
-        # print(overall_loss)
-        # print(overall_loss[grad_fn])
         overall_loss.backward()
-        # print(ppo.state_dict().keys())
         optimizer.step()
 
 

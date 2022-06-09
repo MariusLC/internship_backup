@@ -22,12 +22,27 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 GAMMA = 0.999
 
-def printing_correctly(filename, action, obs, reward, discrim_advantages, discrim_rewards, log_probs, discount, done):
+def printing_correctly(filename, action, obs, reward, discrim_advantages, discount, done):
     f = open(filename, "a")
     infos = [{'board' : [{'player_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 80), 0, 1)], 
                         'citizen_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 67), 0, 1)],
                         'delivery_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 70), 0, 1)]}],
-            'action' : action[0],
+            'action' : action,
+            # 'action' : action[0],
+            'reward' : reward,
+            'discrim_eval' : discrim_advantages.item(),
+            'discount' : discount,
+            'done': done}]
+    f.write("\n\n"+str(infos))
+    f.close()
+
+def printing_correctly_manager(filename, action, obs, reward, discrim_advantages, discrim_rewards, log_probs, discount, done):
+    f = open(filename, "a")
+    infos = [{'board' : [{'player_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 80), 0, 1)], 
+                        'citizen_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 67), 0, 1)],
+                        'delivery_pos' : [tuple(a) for a in np.swapaxes(np.where(obs.board == 70), 0, 1)]}],
+            'action' : action,
+            # 'action' : action[0],
             'reward' : reward,
             'discrim_eval' : discrim_advantages.item(),
             'discrim_rewards' : discrim_rewards.item(),
@@ -55,7 +70,7 @@ class Action_evaluator():
         next_state_tensor = torch.tensor(next_state).to(device).float()
         discrim_advantages = self.discrim.forward(self.state, next_state_tensor, GAMMA)
 
-        printing_correctly(self.filename, action, obs, rewards, discrim_advantages, None, None, discount, done)
+        printing_correctly(self.filename, action, obs, rewards, discrim_advantages, discount, done)
 
         # f = open(self.filename, "a")
         # f.write("\nactions picked = "+ str(action))
@@ -84,7 +99,7 @@ class Action_manager(Action_evaluator):
         next_state_tensor = torch.tensor(next_state).to(device).float()
         discrim_advantages, discrim_rewards = self.discrim.predict_reward_2(self.state, next_state_tensor, GAMMA, action_prob)
 
-        printing_correctly(self.filename, action, obs, rewards, discrim_advantages, discrim_rewards, log_probs, discount, done)
+        printing_correctly_manager(self.filename, action, obs, rewards, discrim_advantages, discrim_rewards, log_probs, discount, done)
 
         # f = open(self.filename, "a")
         # f.write("\nactions picked = "+ str(actions))

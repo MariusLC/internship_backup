@@ -12,14 +12,12 @@ import wandb
 import argparse
 import yaml
 import os
+import math
 
 import numpy as np
 import math
 import scipy.stats as st
 
-from moral.active_learning import *
-from moral.preference_giver import *
-from moral.TEST_moral_train_not_main import *
 
 # folder to load config file
 CONFIG_PATH = "moral/"
@@ -27,132 +25,157 @@ CONFIG_FILENAME = "config_MORAL.yaml"
 
 # Function to load yaml configuration file
 def load_config(config_name):
-    with open(os.path.join(CONFIG_PATH, config_name)) as file:
-        config = yaml.safe_load(file)
+	with open(os.path.join(CONFIG_PATH, config_name)) as file:
+		config = yaml.safe_load(file)
 
-    return config
+	return config
+
+D = 3
+
+def w_prior(w):
+	if np.linalg.norm(w) <=1 and np.all(np.array(w) >= 0):
+		return (2**D)/(math.pi**(D/2)/math.gamma(D/2 + 1))
+	else:
+		return 0
+
+# @staticmethod
+def f_loglik(w, delta, pref):
+	return np.log(np.minimum(1, np.exp(pref*np.dot(w, delta)) + 1e-5))
+
+# @staticmethod
+def vanilla_loglik(w, delta, pref):
+	return np.log(1/(1+np.exp(-pref*np.dot(w, delta))))
+
+# @staticmethod
+def propose_w_prob(w1, w2):
+	q = st.multivariate_normal(mean=w1, cov=1).pdf(w2)
+	return q
+
+# @staticmethod
+def propose_w(w_curr):
+	w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
+	return w_new
+
+def posterior_log_prob(deltas, prefs, w):
+	f_logliks = []
+	for i in range(len(prefs)):
+		f_logliks.append(f_loglik(w, deltas[i], prefs[i]))
+	loglik = np.sum(f_logliks)
+	log_prior = np.log(w_prior(w) + 1e-5)
+
+	return loglik + log_prior
+
+def mcmc_vanilla(deltas, prefs, warmup, n_iter, w_init='mode'):
+		if w_init == 'mode':
+			w_init = [0 for i in range(D)]
+
+		w_arr = []
+		w_curr = w_init
+		accept_rates = []
+		accept_cum = 0
+
+		for i in range(1, warmup + n_iter + 1):
+			w_new = propose_w(w_curr)
+			
+
+			prob_curr = posterior_log_prob(deltas, prefs, w_curr)
+			
+			prob_new = posterior_log_prob(deltas, prefs, w_new)
+			
+			if prob_new > prob_curr:
+				print("w_new = ", w_new)
+				print("prob_curr = ", prob_curr)
+				print("prob_new = ", prob_new)
+				acceptance_ratio = 1
+			else:
+				qr = propose_w_prob(w_curr, w_new) / propose_w_prob(w_new, w_curr)
+				acceptance_ratio = np.exp(prob_new - prob_curr) * qr
+				print("acceptance_ratio = ", acceptance_ratio)
+				print("qr = ", qr)
+				print("np.exp(prob_new - prob_curr) = ", np.exp(prob_new - prob_curr))
+			acceptance_prob = min(1, acceptance_ratio)
+
+			if acceptance_prob > st.uniform(0, 1).rvs():
+				w_curr = w_new
+				accept_cum = accept_cum + 1
+				# print(w_new)
+				w_arr.append(w_new)
+			else:
+				# print("w_curr = ", w_curr)
+				w_arr.append(w_curr)
+
+			accept_rates.append(accept_cum / i)
+
+		accept_rates = np.array(accept_rates)[warmup:]
+		return np.array(w_arr)[warmup:]
+
+def f_loglik_print(w, delta, pref):
+	print(delta)
+	temp = []
+	for i in range(len(delta)):
+		print("temps = ",w[i]*delta[i])
+		temp.append(w[i]*delta[i])
+	print(np.array(temp)*pref)
+	return np.log(np.minimum(1, np.exp(pref*np.dot(w, delta)) + 1e-5))
 
 if __name__ == '__main__':
 
+	# preference_giver = PreferenceGiverv3(ratio=[1,3,1])
 
-	# loss = nn.CrossEntropyLoss()
+	deltas = np.array([
+		[  0.  ,        80.24958384 ,-77.16231537],
+		[   0.   ,      -125.59433675 ,  42.68571472],
+		[ -3.    ,      81.9175384 , -48.91356659],
+		[  1.     ,    103.90283465 ,-54.73291779],
+		[ -2.    ,      69.03929481 ,-36.77306366],
+		[ -1.     ,     57.22481468 ,-33.91828156],
+		[  2.    ,      81.65642965 ,-52.90368652],
+		[  0.     ,    -79.31589961 , 48.51434326],
+		[   5.    ,       -3.78819871 ,-127.3263855 ]
+	])
 
-	# # Example of target with class indices
-	# input = torch.randn(3, 5, requires_grad=True)
-	# print(input)
-	# target = torch.empty(3, dtype=torch.long).random_(5)
-	# print(target)
-	# output = loss(input, target)
-	# print(output)
-	# output.backward()
-	# print(input.grad)
+	prefs = [
+		-1,
+		-1,
+		-1,
+		1,
+		1,
+		1,
+		-1,
+		-1,
+		1
+	]
+	d=len([1,3,1]) # dim ratio lambd
+	n_iter=10000
+	warmup=1000
 
-	# Example of target with class probabilities
-	# input = torch.randn(3, 5, requires_grad=True)
-	# print(input)
-	# target = torch.randn(3, 5).softmax(dim=1)
-	# print(target)
-	# output = loss(input, target)
-	# print(output)
-	# output.backward()
-	# print(input.grad)
+	# w_posterior = np.zeros(3)
+	w_posterior_mean = [0, 0, 0]
+	i = 1
 
-	# ratio = [1, 1, 3]
-	# # res_a = [10, 10, 30]
-	# res_a = [15, 15, 20]
-	# # res_b = [1, 1, 48]
-	# res_b = [48, 1, 1]
 
-	# ratio_normalized = [r/sum(ratio) for r in ratio]
-	# print(ratio_normalized)
+	for i in range(len(deltas)):
+		# a = f_loglik_print(w_posterior_mean, deltas[i], prefs[i])
+		# print("a = ", a)
+		w_new = propose_w(w_posterior_mean)
+		b = f_loglik_print(w_new, deltas[i], prefs[i])
+		print("b = ", b)
 
-	# ret_a_copy = res_a.copy()
-	# ret_b_copy = res_b.copy()
+	# while(not math.isnan(w_posterior_mean[0])):
+	# 	# preference = preference_giver.query_pair(ret_a, ret_b)
 
-	# ret_a_normalized = []
-	# ret_b_normalized = []
 
-	# for i in range(len(ret_a_copy)):
-	# 	# To avoid numerical instabilities in KL
-	# 	ret_a_copy[i] += 1e-5
-	# 	ret_b_copy[i] += 1e-5
+	# 	# w_posterior = mcmc_vanilla(deltas[:i], prefs[:i], warmup, n_iter)
+	# 	# w_posterior = mcmc_vanilla(deltas[-1:], prefs[-1:], warmup, n_iter)
+	# 	w_posterior = mcmc_vanilla(deltas, prefs, warmup, n_iter)
+	# 	print("w_posterior = ", str(w_posterior))
+	# 	w_posterior_mean = w_posterior.mean(axis=0)
+	# 	print("w_posterior_mean = ", str(w_posterior_mean))
+	# 	# making a 1 norm vector from w_posterior
+	# 	w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+	# 	print(f'Posterior Mean {w_posterior_mean}')
+	# 	# print(np.log(w_prior(np.array([0., 0., 0.])) + 1e-5))
+	# 	if i < len(deltas):
+	# 		i += 1
 
-	# ret_a_sum = sum(ret_a_copy)
-	# ret_b_sum = sum(ret_b_copy)
-
-	# for i in range(len(ret_a_copy)):
-	# 	ret_a_normalized.append(ret_a_copy[i]/ret_a_sum)
-	# 	ret_b_normalized.append(ret_b_copy[i]/ret_b_sum)
-
-	# # scipy.stats.entropy(pk, qk=None, base=None, axis=0) = S = sum(pk * log(pk / qk), axis=axis)
-	# kl_a = st.entropy(ret_a_normalized, ratio_normalized)
-	# kl_b = st.entropy(ret_b_normalized, ratio_normalized)
-	# print(kl_a)
-	# print(kl_b)
-
-	# kl_a = st.entropy([1/2, 1/2], qk=[9/10, 1/10])
-	# print(kl_a)
-	# kl_a = st.entropy([9/10, 1/10], qk=[1/2, 1/2])
-	# print(kl_a)
-	# kl_a = st.entropy([1/2, 1/2], qk=[1/4, 3/4])
-	# print(kl_a)
-	# kl_a = st.entropy([9/10, 1/10], qk=[8/10, 2/10])
-	# print(kl_a)
-	# kl_a = st.entropy([9/10, 1/10], [8/10, 2/10])
-	# print(kl_a)
-
-	c = load_config(CONFIG_FILENAME)
-
-	#PARAMS CONFIG
-	nb_experts = 2
-	lambd_list = [[0,0,1,1],[0,1,0,1]]
-	nb_demos = config_yaml["nb_demos"]
-
-	# PATHS & NAMES
-	data_path = config_yaml["data_path"]
-	expe_path = config_yaml["expe_path"]
-	demo_path = config_yaml["demo_path"]
-	disc_path = config_yaml["disc_path"]
-	gene_path = config_yaml["gene_path"]
-	moral_path = config_yaml["moral_path"]
-	model_ext = config_yaml["model_ext"]
-	demo_ext = config_yaml["demo_ext"]
-	env_rad = config_yaml["env_rad"]
-	env = config_yaml["env"]
-	model_name = config_yaml["model_name"]
-
-	experts_filenames = []
-	demos_filenames = []
-	generators_filenames = []
-	discriminators_filenames = []
-	moral_filename = data_path+moral_path+model_name+env+"_"+str(lambd_list)+model_ext
-	for i in range(nb_experts):
-	    experts_filenames.append("saved_models/Peschl_res/"+model_name+env+"_"+str(lambd_list[i])+model_ext)
-	    discriminators_filenames.append("saved_models/Peschl_res/discriminator_"+env+"_"+str(lambd_list[i])+model_ext)
-
-	moral_train_n_experts(ratio, env_rad+env, lambd_list, experts_filenames, discriminators_filenames, moral_filename)
-
-	vanilla_path = ""
-    if c["vanilla"]:
-        vanilla_path = c["vanilla_path"]
-
-    # will impact the utopia point calculated
-    gene_or_expert = c["gene_path"]
-    if c["geneORexpert"]:
-        gene_or_expert = c["expe_path"]
-
-    query_freq = c["query_freq"]
-    if c["real_params"]:
-        query_freq = c["env_steps"]/(c["n_queries"]+2)
-
-    gene_or_expe_filenames = []
-    demos_filenames = []
-    discriminators_filenames = []
-    moral_filename = c["data_path"]+c["env_path"]+vanilla_path+c["moral_path"]+str(c["experts_weights"])+c["special_name_agent"]+c["model_ext"]
-    for i in range(c["nb_experts"]):
-        path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
-        gene_or_expe_filenames.append(path+gene_or_expert+c["model_ext"])
-        demos_filenames.append(path+c["demo_path"]+c["demo_ext"])
-        discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
-
-    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, gene_or_expe_filenames, discriminators_filenames, moral_filename)
+	

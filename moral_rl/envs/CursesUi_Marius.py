@@ -13,7 +13,7 @@ from pycolab.protocols import logging as plab_logging
 
 
 class CursesUi_Marius(human_ui.CursesUi):
-    def __init__(self, policy,
+    def __init__(self, policy, 
                 keys_to_actions, delay=None, repainter=None, colour_fg=None, colour_bg=None, croppers=None):
         # making ing the basis curseUi
         super().__init__(keys_to_actions, delay, repainter, colour_fg, colour_bg, croppers)
@@ -27,6 +27,8 @@ class CursesUi_Marius(human_ui.CursesUi):
         # agent's policy that will choose the actions
         self.policy = policy
 
+        self.last_obs = None
+
     def fct(self, screen):
       keycode = screen.getch()
       if keycode == curses.KEY_PPAGE:    # Page Up? Show the game console.
@@ -36,12 +38,14 @@ class CursesUi_Marius(human_ui.CursesUi):
       elif keycode in self._keycodes_to_actions:
         action = self._keycodes_to_actions[keycode]
         if action == "eval_discrim" :
-          observation, reward = self.policy.eval_discrim(self._keycodes_to_actions)
+          observation = self.policy.eval_discrim(self._keycodes_to_actions, self.crop_and_repaint, env)
+          # self.crop_and_repaint(observation)
         else:
           if action == None:
             observation, reward = self.policy.act()          
           else:
             observation, reward = self.policy.act(action)
+          self.last_obs = observation
 
           observations = self.crop_and_repaint(observation)
           if self._total_return is None:
