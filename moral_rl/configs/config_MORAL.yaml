@@ -12,7 +12,7 @@ moral_path: "moral_agents/"
 model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
-special_name_agent: "old_settings_131_new_mcmc"
+special_name_agent: "old_settings_131_new_normalization"
 
 
 # Editable parameters

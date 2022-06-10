@@ -301,6 +301,43 @@ class Discriminator(nn.Module):
 
         return self.upper_bound, self.lower_bound
 
+    def estimate_utopia_v3(self, imitation_policy, config, steps=10000):
+        env = GymWrapper(config.env_id)
+        states = env.reset()
+        states_tensor = torch.tensor(states).float().to(device)
+
+        # Fetch Shapes
+        n_actions = env.action_space.n
+        obs_shape = env.observation_space.shape
+        state_shape = obs_shape[:-1]
+        in_channels = obs_shape[-1]
+
+        # Init returns
+        estimated_returns = []
+        running_returns = 0
+
+        for t in range(steps):
+            actions, log_probs = imitation_policy.act(states_tensor)
+            next_states, rewards, done, info = env.step(actions)
+
+            airl_state = torch.tensor(states).to(device).float()
+            airl_next_state = torch.tensor(next_states).to(device).float()
+            airl_rewards = self.forward(airl_state, airl_next_state, config.gamma).item()
+            if done:
+                airl_rewards = 0
+                next_states = env.reset()
+            running_returns += airl_rewards
+
+            if done:
+                estimated_returns.append(running_returns)
+                running_returns = 0
+
+            states = next_states.copy()
+            states_tensor = torch.tensor(states).float().to(device)
+        self.upper_bound = max(estimated_returns)
+        self.lower_bound = min(estimated_returns)
+        return self.upper_bound, self.lower_bound
+
 
 def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):
     states = []
