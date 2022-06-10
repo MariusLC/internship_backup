@@ -201,3 +201,6 @@ class VolumeBuffer:
         self.best_returns = None
         self.best_observed_returns = (None, None)
 
+    def get_data(self):
+        return self.objective_logs, self.observed_logs
+

@@ -19,6 +19,15 @@ import os
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
+DELIVERY_UPPER_BOUND = 12
+DELIVERY_LOWER_BOUND = 0
+
+def normalize_delivery(rew_delivery):
+    print(rew_delivery)
+    print((rew_delivery - DELIVERY_LOWER_BOUND)/(DELIVERY_UPPER_BOUND - DELIVERY_LOWER_BOUND))
+    return (rew_delivery - DELIVERY_LOWER_BOUND)/(DELIVERY_UPPER_BOUND - DELIVERY_LOWER_BOUND)
+
+
 def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, generators_filenames, discriminators_filenames, moral_filename):
 
     nb_experts = len(generators_filenames)
@@ -77,14 +86,21 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
     # Expert i
     discriminator_list = []
     generator_list = []
-    utop_list = []
+    # utop_list = []
     for i in range(nb_experts):
         discriminator_list.append(Discriminator(state_shape=state_shape, in_channels=in_channels).to(device))
         discriminator_list[i].load_state_dict(torch.load(discriminators_filenames[i], map_location=torch.device('cpu')))
         generator_list.append(PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device))
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
-        utop_list.append(discriminator_list[i].estimate_utopia(generator_list[i], config))
-        print(f'Reward Normalization 0: {utop_list[i]}')
+
+
+        upper_bound, lower_bound = discriminator_list[i].estimate_utopia_v2(generator_list[i], config)
+        print("Upper_bound agent "+str(i)+": "+str(upper_bound))
+        print("Lower_bound agent "+str(i)+": "+str(lower_bound))
+        # utop_list.append(discriminator_list[i].estimate_utopia(generator_list[i], config))
+        # print(f'Reward Normalization 0: {utop_list[i]}')
+
+
         discriminator_list[i].set_eval()
 
 
@@ -168,22 +184,19 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
 
         airl_rewards_list = []
         for j in range(nb_experts):
-            airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma).squeeze(1))
+            # airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma).squeeze(1))
+            airl_rewards_list.append(discriminator_list[j].forward_v2(airl_state, airl_next_state, config.gamma).squeeze(1))
         for j in range(nb_experts):
             airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
 
         # print("rewards = ", rewards)
+
+
+        # Normalization to bound delviery values between 0 and 1. To change because we use env ground truth values
+        # vectorized_rewards = [ [normalize_delivery(r[0])] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
         vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
         # print("vectorized_rewards = ", vectorized_rewards)
         scalarized_rewards = [np.dot(w_posterior_mean, r[0:nb_experts+1]) for r in vectorized_rewards]
-        
-        # print("vectorized_rewards = ", vectorized_rewards)
-        mean_rew = np.array(vectorized_rewards).mean(axis=0)
-        # print("mean_rew = ", mean_rew)
-        for i in range(len(mean_rew)):
-            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
-            wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
-            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * mean_rew[i]})
 
 
         # Logging obtained rewards for active learning
@@ -193,6 +206,21 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
         # Add experience to PPO dataset
         train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs)
         # print("train_ready = ",train_ready)
+
+
+        # print("vectorized_rewards = ", vectorized_rewards)
+        mean_rew = np.array(vectorized_rewards).mean(axis=0)
+        returns_vb, rewards_vb = volume_buffer.get_data()
+        rewards_vb = np.array(rewards_vb)
+        rewards_vb = rewards_vb.mean(axis=0)
+        rewards_vb = rewards_vb.mean(axis=0)
+        print(rewards_vb)
+        for i in range(len(mean_rew)):
+            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
+            wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
+            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * mean_rew[i]})
+            wandb.log({'rewards_mean ['+str(i)+']': rewards_vb[i]})
+
 
         if train_ready:
             # Log Objectives
