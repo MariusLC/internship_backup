@@ -144,13 +144,16 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
 
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
-            w_posterior = preference_learner.mcmc_vanilla()
+            w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
             print("w_posterior = ", w_posterior)
             w_posterior_mean = w_posterior.mean(axis=0)
             print("w_posterior_mean = ", w_posterior_mean)
-            # making a 1 norm vector from w_posterior
-            w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
-            print(f'Posterior Mean {w_posterior_mean}')
+            if sum(w_posterior_mean) != 0: 
+                # making a 1 norm vector from w_posterior
+                w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+                print(f'New Posterior Mean {w_posterior_mean}')
+            else :
+                print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
             volume_buffer.reset()
 
@@ -176,7 +179,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
         
         # print("vectorized_rewards = ", vectorized_rewards)
         mean_rew = np.array(vectorized_rewards).mean(axis=0)
-        print("mean_rew = ", mean_rew)
+        # print("mean_rew = ", mean_rew)
         for i in range(len(mean_rew)):
             wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
             wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
