@@ -75,7 +75,6 @@ class PPO(nn.Module):
 
 class TrajectoryDataset:
     def __init__(self, batch_size, n_workers):
-        self.nb_act = 0
         self.batch_size = batch_size
         self.n_workers = n_workers
         self.trajectories = []
@@ -83,14 +82,21 @@ class TrajectoryDataset:
         #                for i in range(n_workers)]
         self.buffer = [{'states': [], 'actions': [], 'rewards': [], 'advantages': [], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
                        for i in range(n_workers)]
+        self.returns_min = math.inf
+        self.returns_max = -math.inf
+        self.sum = 0
+        self.nb_act = 0
 
     def reset_buffer(self, i):
         # self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'log_probs': [], 'latents': None, 'logs': []}
-        self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'advantages':[], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
+        self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'advantages':[], 'returns':[], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
 
     def reset_trajectories(self):
         self.trajectories = []
         self.nb_act = 0
+        self.sum = 0
+        self.returns_min = math.inf
+        self.returns_max = -math.inf
 
     def write_tuple(self, states, actions, rewards, done, log_probs, logs=None, gamma=0.999):
         # Takes states of shape (n_workers, state_shape[0], state_shape[1])
@@ -98,7 +104,7 @@ class TrajectoryDataset:
             self.buffer[i]['states'].append(states[i])
             self.buffer[i]['actions'].append(actions[i])
             self.buffer[i]['rewards'].append(rewards[i])
-            self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
+            # self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
             self.buffer[i]['log_probs'].append(log_probs[i])
 
             if logs is not None:
@@ -122,7 +128,7 @@ class TrajectoryDataset:
             self.buffer[i]['states'].append(states[i])
             self.buffer[i]['actions'].append(actions[i])
             self.buffer[i]['rewards'].append(rewards[i])
-            self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
+            # self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
             self.buffer[i]['advantages'].append(advantages[i])
             self.buffer[i]['log_probs'].append(log_probs[i])
 
@@ -133,14 +139,35 @@ class TrajectoryDataset:
                 self.trajectories.append(self.buffer[i].copy())
                 self.reset_buffer(i)
 
-        # print("nb traj = ",len(self.trajectories))
-        # print("batch_size = ", self.batch_size)
+    def write_tuple_3(self, states, actions, rewards, returns, done, log_probs, logs=None, gamma=0.999):
+        # Takes states of shape (n_workers, state_shape[0], state_shape[1])
+        for i in range(self.n_workers):
+            self.buffer[i]['states'].append(states[i])
+            self.buffer[i]['actions'].append(actions[i])
+            self.buffer[i]['rewards'].append(rewards[i])
+            self.buffer[i]['returns'].append(returns[i])
+            # self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
+            self.buffer[i]['log_probs'].append(log_probs[i])
+
+            self.returns_min = min(self.returns_min, returns[i])
+            self.returns_max = max(self.returns_max, returns[i])
+            self.sum += returns[i]
+            self.nb_act += 1
+
+            if logs is not None:
+                self.buffer[i]['logs'].append(logs[i])
+
+            if done[i]:
+                self.trajectories.append(self.buffer[i].copy())
+                # self.nb_act += len(self.buffer[i]['states'])
+                self.reset_buffer(i)
+
         if len(self.trajectories) >= self.batch_size:
             return True
         else:
             return False
 
-    def log_returns(self):
+    def log_rewards(self):
         # Calculates (undiscounted) returns in self.trajectories
         returns = [0 for i in range(len(self.trajectories))]
         for i, tau in enumerate(self.trajectories):
@@ -154,6 +181,13 @@ class TrajectoryDataset:
             returns[i] = sum(tau['advantages'])
         return returns
 
+    def log_returns(self):
+        # Calculates (undiscounted) returns in self.trajectories
+        returns = [0 for i in range(len(self.trajectories))]
+        for i, tau in enumerate(self.trajectories):
+            returns[i] = sum(tau['returns'])
+        return returns
+
     def log_objectives(self):
         # Calculates achieved objectives objectives in self.trajectories
         objective_logs = []
@@ -161,6 +195,32 @@ class TrajectoryDataset:
             objective_logs.append(list(np.array(tau['logs']).sum(axis=0)))
 
         return np.array(objective_logs)
+    
+
+    def normalize_v1(self, value):
+        normalization_v1 = (value - self.returns_min)/(self.returns_max - self.returns_min)
+        return normalization_v1
+
+    def normalize_v2(self, value):
+        normalization_v1 = self.normalization_v1(value)
+        mean = self.sum / self.nb_act
+        normalization_v2 = normalization_v1/abs(mean)
+        return normalization_v2
+
+    def normalize_v3(self, value):
+        returns = 0
+        for tau in self.trajectories:
+            returns += sum(tau['returns'])
+        mean_over_1_traj = returns/len(self.trajectories)
+        normalization_v3 = value/abs(mean_over_1_traj)
+
+        # mean_over_1_traj = self.sum / self.nb_act
+        # normalization_v2 = normalization_v1/abs(mean)
+        
+        return normalization_v3
+
+        
+
 
 def g_clip(epsilon, A):
     return torch.tensor([1 + epsilon if i else 1 - epsilon for i in A >= 0]).to(device) * A

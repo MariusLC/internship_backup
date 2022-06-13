@@ -27,8 +27,20 @@ def normalize_delivery(rew_delivery):
     print((rew_delivery - DELIVERY_LOWER_BOUND)/(DELIVERY_UPPER_BOUND - DELIVERY_LOWER_BOUND))
     return (rew_delivery - DELIVERY_LOWER_BOUND)/(DELIVERY_UPPER_BOUND - DELIVERY_LOWER_BOUND)
 
+def normalize_v0(value, dataset):
+    return value
 
-def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, generators_filenames, discriminators_filenames, moral_filename):
+def normalize_v1(value, dataset):
+    return dataset.normalize_v1(value)
+
+def normalize_v2(value):
+    return dataset.normalize_v2(value)
+
+def normalize_v3(value):
+    return dataset.normalize_v3(value)
+
+
+def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_eth_norm, eth_norm, generators_filenames, discriminators_filenames, moral_filename):
 
     nb_experts = len(generators_filenames)
 
@@ -94,9 +106,10 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        upper_bound, lower_bound = discriminator_list[i].estimate_utopia_v2(generator_list[i], config)
+        upper_bound, lower_bound, mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config)
         print("Upper_bound agent "+str(i)+": "+str(upper_bound))
         print("Lower_bound agent "+str(i)+": "+str(lower_bound))
+        print("Mean agent "+str(i)+": "+str(mean))
         # utop_list.append(discriminator_list[i].estimate_utopia(generator_list[i], config))
         # print(f'Reward Normalization 0: {utop_list[i]}')
 
@@ -184,8 +197,13 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
 
         airl_rewards_list = []
         for j in range(nb_experts):
+
+
             # airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma).squeeze(1))
-            airl_rewards_list.append(discriminator_list[j].forward_v2(airl_state, airl_next_state, config.gamma).squeeze(1))
+            # airl_rewards_list.append(discriminator_list[j].forward_v2(airl_state, airl_next_state, config.gamma).squeeze(1))
+            airl_rewards_list.append(discriminator_list[j].eth_norm(airl_state, airl_next_state, config.gamma).squeeze(1))
+
+
         for j in range(nb_experts):
             airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
 
@@ -194,7 +212,12 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
 
         # Normalization to bound delviery values between 0 and 1. To change because we use env ground truth values
         # vectorized_rewards = [ [normalize_delivery(r[0])] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
-        vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+        # vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+        # noramlization
+        vectorized_rewards = [ [non_eth_norm(r[0])] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+
+
+
         # print("vectorized_rewards = ", vectorized_rewards)
         scalarized_rewards = [np.dot(w_posterior_mean, r[0:nb_experts+1]) for r in vectorized_rewards]
 
@@ -204,8 +227,10 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
         # Logging true objectives for automatic preferences
         volume_buffer.log_statistics(rewards)
         # Add experience to PPO dataset
-        train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs)
-        # print("train_ready = ",train_ready)
+
+
+        # train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs)
+        train_ready = dataset.write_tuple_3(states, actions, scalarized_rewards, rewards, done, log_probs)
 
 
         # print("vectorized_rewards = ", vectorized_rewards)
@@ -232,8 +257,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
             # Update Models
             update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg)
             #update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
-            for ret in dataset.log_returns():
-                wandb.log({'Returns': ret})
+            for rew in dataset.log_rewards():
+                wandb.log({'Returns': rew})
 
             # Sample two random trajectories & compare expected volume removal with best pair
             # print("compare_delta")

@@ -89,6 +89,8 @@ class Discriminator(nn.Module):
         self.in_channels = in_channels
         self.eval = False
         self.utopia_point = None
+        self.upper_bound = 0
+        self.lower_bound = 0
 
         # Latent conditioning
         if latent_dim is not None:
@@ -177,7 +179,7 @@ class Discriminator(nn.Module):
         else:
             return advantage
 
-    def forward_v2(self, state, next_state, gamma, latent=None):
+    def forward_v1(self, state, next_state, gamma, latent=None):
         reward = self.g(state, latent)
         value_state = self.h(state, latent)
         value_next_state = self.h(next_state, latent)
@@ -187,6 +189,17 @@ class Discriminator(nn.Module):
             return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
             # standardisation
             # we have to calculate mean in predict utopia first.
+        else:
+            return advantage
+
+    def forward_v2(self, state, next_state, gamma, latent=None):
+        reward = self.g(state, latent)
+        value_state = self.h(state, latent)
+        value_next_state = self.h(next_state, latent)
+        advantage = reward + gamma*value_next_state - value_state         
+        if self.eval:
+            # classic normalization
+            return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/self.utopia_point
         else:
             return advantage
 
@@ -301,7 +314,7 @@ class Discriminator(nn.Module):
 
         return self.upper_bound, self.lower_bound
 
-    def estimate_utopia_v3(self, imitation_policy, config, steps=10000):
+    def estimate_utopia_all(self, imitation_policy, config, steps=10000):
         env = GymWrapper(config.env_id)
         states = env.reset()
         states_tensor = torch.tensor(states).float().to(device)
@@ -323,6 +336,8 @@ class Discriminator(nn.Module):
             airl_state = torch.tensor(states).to(device).float()
             airl_next_state = torch.tensor(next_states).to(device).float()
             airl_rewards = self.forward(airl_state, airl_next_state, config.gamma).item()
+            lower_bound = min(airl_rewards, lower_bound)
+            upper_bound = max(airl_rewards, upper_bound)
             if done:
                 airl_rewards = 0
                 next_states = env.reset()
@@ -334,9 +349,11 @@ class Discriminator(nn.Module):
 
             states = next_states.copy()
             states_tensor = torch.tensor(states).float().to(device)
-        self.upper_bound = max(estimated_returns)
-        self.lower_bound = min(estimated_returns)
-        return self.upper_bound, self.lower_bound
+
+        self.upper_bound = upper_bound
+        self.lower_bound = lower_bound
+        self.utopia_point = sum(estimated_returns)/len(estimated_returns)
+        return self.upper_bound, self.lower_bound, self.utopia_point
 
 
 def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):
