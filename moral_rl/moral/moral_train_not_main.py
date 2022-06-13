@@ -244,9 +244,16 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
             wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * mean_rew[i]})
             wandb.log({'rewards_mean ['+str(i)+']': rewards_vb[i]})
+            # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
+            # print('vectorized_rew_mean ['+str(i)+']'+ str(mean_rew[i]))
+            # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * mean_rew[i]))
+            # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
 
 
         if train_ready:
+
+            mean_traj(ppo, discriminator_list, config, eth_norm, steps=10000)
+            
             # Log Objectives
             objective_logs = np.array(objective_logs).sum(axis=0)
             for i in range(objective_logs.shape[1]):
@@ -279,3 +286,44 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     #vec_env.close()
     # torch.save(ppo.state_dict(), moral_filename)
     save_data(ppo, moral_filename)
+
+def mean_traj(agent, discriminators, config, eth_norm, steps=10000):
+    env = GymWrapper(config.env_id)
+    states = env.reset()
+    states_tensor = torch.tensor(states).float().to(device)
+
+    # Fetch Shapes
+    n_actions = env.action_space.n
+    obs_shape = env.observation_space.shape
+    state_shape = obs_shape[:-1]
+    in_channels = obs_shape[-1]
+
+    # Init returns
+    estimated_returns = [[] for i in range(len(discriminators))]
+    running_returns = np.zeros(len(discriminators))
+
+    for t in range(steps):
+        actions, log_probs = agent.act(states_tensor)
+        next_states, rewards, done, info = env.step(actions)
+
+        airl_state = torch.tensor(states).to(device).float()
+        airl_next_state = torch.tensor(next_states).to(device).float()
+
+
+        for j, discrim in enumerate(discriminators):
+            airl_rewards = discrim.forward(airl_state, airl_next_state, config.gamma, eth_norm).item()
+
+            if done:
+                airl_rewards = 0
+                next_states = env.reset()
+            running_returns[j] += airl_rewards
+
+            if done:
+                estimated_returns[j].append(running_returns[j])
+                running_returns[j] = 0
+
+        states = next_states.copy()
+        states_tensor = torch.tensor(states).float().to(device)
+
+    for j, discrim in enumerate(discriminators):
+        print("estimated_returns = "+str(j)+ " : "+str(estimated_returns[j]))

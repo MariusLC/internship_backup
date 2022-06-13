@@ -55,15 +55,15 @@ class PPO(nn.Module):
         # print(action_probabilities[0][0])
         if math.isnan(action_probabilities[0][0]):
             print("there is a nan value in result of forward in evaluate_trajectory")
-            print(trajectory_actions)
-            print(trajectory_actions.shape)
-            print(trajectory_states)
-            print(trajectory_states.shape)
+            # print(trajectory_actions)
+            # print(trajectory_actions.shape)
+            # print(trajectory_states)
+            # print(trajectory_states.shape)
             for state in tau['states']:
                 action_probabilities, critic_values = self.forward(torch.tensor(np.array(state)).float().to(device))
-                if math.isnan(action_probabilities[0][0]):
-                    print("this state gives a action_proba of nan : ")
-                    print(state)
+                # if math.isnan(action_probabilities[0][0]):
+                    # print("this state gives a action_proba of nan : ")
+                    # print(state)
 
         # print("len(action_probabilities) = ", action_probabilities.shape)
         dist = Categorical(action_probabilities)
@@ -199,6 +199,8 @@ class TrajectoryDataset:
     
 
     def normalize_v1(self, value):
+        print("self.returns_max = ", self.returns_max)
+        print("self.returns_min = ", self.returns_min)
         normalization_v1 = (value - self.returns_min)/(self.returns_max - self.returns_min)
         return normalization_v1
 
