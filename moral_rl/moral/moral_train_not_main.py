@@ -33,10 +33,10 @@ def normalize_v0(value, dataset):
 def normalize_v1(value, dataset):
     return dataset.normalize_v1(value)
 
-def normalize_v2(value):
+def normalize_v2(value, dataset):
     return dataset.normalize_v2(value)
 
-def normalize_v3(value):
+def normalize_v3(value, dataset):
     return dataset.normalize_v3(value)
 
 
@@ -201,7 +201,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
             # airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma).squeeze(1))
             # airl_rewards_list.append(discriminator_list[j].forward_v2(airl_state, airl_next_state, config.gamma).squeeze(1))
-            airl_rewards_list.append(discriminator_list[j].eth_norm(airl_state, airl_next_state, config.gamma).squeeze(1))
+            airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma, eth_norm).squeeze(1))
 
 
         for j in range(nb_experts):
@@ -214,7 +214,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         # vectorized_rewards = [ [normalize_delivery(r[0])] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
         # vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
         # noramlization
-        vectorized_rewards = [ [non_eth_norm(r[0])] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+        vectorized_rewards = [ [non_eth_norm(r[0], dataset)] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
 
 
 
@@ -230,8 +230,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
         # train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs)
-        train_ready = dataset.write_tuple_3(states, actions, scalarized_rewards, rewards, done, log_probs)
-
+        train_ready = dataset.write_tuple_3(states, actions, scalarized_rewards, np.array(rewards)[:,0], done, log_probs)
 
         # print("vectorized_rewards = ", vectorized_rewards)
         mean_rew = np.array(vectorized_rewards).mean(axis=0)

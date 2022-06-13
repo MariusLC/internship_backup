@@ -159,7 +159,27 @@ class Discriminator(nn.Module):
 
         return x
 
-    def forward(self, state, next_state, gamma, latent=None):
+    # def forward(self, state, next_state, gamma, latent=None):
+    #     reward = self.g(state, latent)
+    #     value_state = self.h(state, latent)
+    #     value_next_state = self.h(next_state, latent)
+
+    #     # f function in the Fu2018 paper : f = Q(s,a) - V(s) = (g(s)+gamma*h(s')) - h(s)
+    #     # advantage = how much an action is a good or bad decision in a certain state 
+    #     advantage = reward + gamma*value_next_state - value_state
+
+    #     # pourquoi diviser en fonction du point d'utopie si eval = true ?
+    #     # plus le point d'utopie est proche de 0, plus la valeur si dessous est grande ..
+    #     # (et donc plus l'action qui amène de state à  nexte_state est plébicitée)            
+    #     if self.eval:
+    #         # print(" advantage = ", advantage)
+    #         # print(" return advantage = ", advantage/np.abs(self.utopia_point))
+    #         return advantage/np.abs(self.utopia_point)
+    #         #return advantage
+    #     else:
+    #         return advantage
+
+    def forward(self, state, next_state, gamma, eth_norm = None, latent=None):
         reward = self.g(state, latent)
         value_state = self.h(state, latent)
         value_next_state = self.h(next_state, latent)
@@ -174,34 +194,40 @@ class Discriminator(nn.Module):
         if self.eval:
             # print(" advantage = ", advantage)
             # print(" return advantage = ", advantage/np.abs(self.utopia_point))
-            return advantage/np.abs(self.utopia_point)
-            #return advantage
+            if eth_norm == "v0":
+                return advantage/np.abs(self.utopia_point)
+            if eth_norm == "v1":
+                return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
+            if eth_norm == "v2":
+                return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.utopia_point)
+            if eth_norm == "v3":
+                return advantage
         else:
             return advantage
 
-    def forward_v1(self, state, next_state, gamma, latent=None):
-        reward = self.g(state, latent)
-        value_state = self.h(state, latent)
-        value_next_state = self.h(next_state, latent)
-        advantage = reward + gamma*value_next_state - value_state         
-        if self.eval:
-            # classic normalization
-            return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
-            # standardisation
-            # we have to calculate mean in predict utopia first.
-        else:
-            return advantage
+    # def forward_v1(self, state, next_state, gamma, latent=None):
+    #     reward = self.g(state, latent)
+    #     value_state = self.h(state, latent)
+    #     value_next_state = self.h(next_state, latent)
+    #     advantage = reward + gamma*value_next_state - value_state         
+    #     if self.eval:
+    #         # classic normalization
+    #         return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
+    #         # standardisation
+    #         # we have to calculate mean in predict utopia first.
+    #     else:
+    #         return advantage
 
-    def forward_v2(self, state, next_state, gamma, latent=None):
-        reward = self.g(state, latent)
-        value_state = self.h(state, latent)
-        value_next_state = self.h(next_state, latent)
-        advantage = reward + gamma*value_next_state - value_state         
-        if self.eval:
-            # classic normalization
-            return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/self.utopia_point
-        else:
-            return advantage
+    # def forward_v2(self, state, next_state, gamma, latent=None):
+    #     reward = self.g(state, latent)
+    #     value_state = self.h(state, latent)
+    #     value_next_state = self.h(next_state, latent)
+    #     advantage = reward + gamma*value_next_state - value_state         
+    #     if self.eval:
+    #         # classic normalization
+    #         return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/self.utopia_point
+    #     else:
+    #         return advantage
 
     def discriminate(self, state, next_state, gamma, action_probability, latent=None):
         if latent is not None:
@@ -329,6 +355,8 @@ class Discriminator(nn.Module):
         estimated_returns = []
         running_returns = 0
 
+        lower_bound = math.inf
+        upper_bound = -math.inf
         for t in range(steps):
             actions, log_probs = imitation_policy.act(states_tensor)
             next_states, rewards, done, info = env.step(actions)

@@ -37,13 +37,6 @@ if __name__ == '__main__':
     elif c["normalization_non_eth_sett"] == "v3": # division par la moyenne des rewards sur une trajectoire
         non_eth_norm = normalize_v3
 
-    if c["normalization_eth_sett"] == "v0": # division par la moyenne des rewards sur une trajectoire (comme dans MORAL de base)
-        eth_norm = Discriminator.forward
-    elif c["normalization_eth_sett"] == "v1": # normalisation classique sur les valeurs d'une action estimés empiriquement (rollout) : (value - min)/(max - min)
-        eth_norm = Discriminator.forward_v1
-    elif c["normalization_eth_sett"] == "v2": # normalisation + standardisation ((value - min)/(max - min))/mean
-        eth_norm = Discriminator.forward_v2
-
 
     gene_or_expe_filenames = []
     demos_filenames = []
@@ -55,4 +48,4 @@ if __name__ == '__main__':
         demos_filenames.append(path+c["demo_path"]+c["demo_ext"])
         discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
 
-    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, non_eth_norm, eth_norm, gene_or_expe_filenames, discriminators_filenames, moral_filename)
+    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, non_eth_norm, c["normalization_eth_sett"], gene_or_expe_filenames, discriminators_filenames, moral_filename)

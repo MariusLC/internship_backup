@@ -80,7 +80,7 @@ class TrajectoryDataset:
         self.trajectories = []
         # self.buffer = [{'states': [], 'actions': [], 'rewards': [], 'log_probs': [], 'latents': None, 'logs': []}
         #                for i in range(n_workers)]
-        self.buffer = [{'states': [], 'actions': [], 'rewards': [], 'advantages': [], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
+        self.buffer = [{'states': [], 'actions': [], 'rewards': [], 'advantages': [], 'returns':[], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
                        for i in range(n_workers)]
         self.returns_min = math.inf
         self.returns_max = -math.inf
@@ -149,6 +149,7 @@ class TrajectoryDataset:
             # self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
             self.buffer[i]['log_probs'].append(log_probs[i])
 
+            # print("returns[i] = ", returns[i])
             self.returns_min = min(self.returns_min, returns[i])
             self.returns_max = max(self.returns_max, returns[i])
             self.sum += returns[i]
@@ -216,7 +217,7 @@ class TrajectoryDataset:
 
         # mean_over_1_traj = self.sum / self.nb_act
         # normalization_v2 = normalization_v1/abs(mean)
-        
+
         return normalization_v3
 
         
