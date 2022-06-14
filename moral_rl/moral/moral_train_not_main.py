@@ -106,15 +106,19 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        upper_bound, lower_bound, mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config)
+        upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config)
         print("Upper_bound agent "+str(i)+": "+str(upper_bound))
         print("Lower_bound agent "+str(i)+": "+str(lower_bound))
         print("Mean agent "+str(i)+": "+str(mean))
+        print("Normalized Mean agent "+str(i)+": "+str(norm_mean))
         # utop_list.append(discriminator_list[i].estimate_utopia(generator_list[i], config))
         # print(f'Reward Normalization 0: {utop_list[i]}')
 
 
         discriminator_list[i].set_eval()
+
+    for i in range(nb_experts):
+        mean_traj(generator_list[i], discriminator_list, config, eth_norm, steps=10000)
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
@@ -236,9 +240,9 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         mean_rew = np.array(vectorized_rewards).mean(axis=0)
         returns_vb, rewards_vb = volume_buffer.get_data()
         rewards_vb = np.array(rewards_vb)
-        rewards_vb = rewards_vb.mean(axis=0)
-        rewards_vb = rewards_vb.mean(axis=0)
-        print(rewards_vb)
+        rewards_vb = rewards_vb.mean(axis=0) # sum over trajectories
+        rewards_vb = rewards_vb.mean(axis=0) # sum over workers ?
+        # print(rewards_vb)                  # we get the mean rewards over all actions in the buffer
         for i in range(len(mean_rew)):
             wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
             wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
@@ -252,7 +256,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
         if train_ready:
 
-            mean_traj(ppo, discriminator_list, config, eth_norm, steps=10000)
+            mean_traj(ppo, discriminator_list, config, eth_norm, steps=1000)
             
             # Log Objectives
             objective_logs = np.array(objective_logs).sum(axis=0)
@@ -299,31 +303,53 @@ def mean_traj(agent, discriminators, config, eth_norm, steps=10000):
     in_channels = obs_shape[-1]
 
     # Init returns
+    objective_returns = []
+    objective_running_returns = np.zeros(4)
+
     estimated_returns = [[] for i in range(len(discriminators))]
     running_returns = np.zeros(len(discriminators))
 
     for t in range(steps):
         actions, log_probs = agent.act(states_tensor)
         next_states, rewards, done, info = env.step(actions)
+        # print("rewards eaaefe = ", rewards)
 
         airl_state = torch.tensor(states).to(device).float()
         airl_next_state = torch.tensor(next_states).to(device).float()
-
+        # print(objective_running_returns)
+        # print(rewards)
+        objective_running_returns += np.array(rewards)
 
         for j, discrim in enumerate(discriminators):
             airl_rewards = discrim.forward(airl_state, airl_next_state, config.gamma, eth_norm).item()
+            # test_rewards = discrim.forward(airl_state, airl_next_state, config.gamma, "v3").item()
+
+            # print("airl_rewards = ", airl_rewards)
 
             if done:
                 airl_rewards = 0
                 next_states = env.reset()
             running_returns[j] += airl_rewards
+            
 
             if done:
+                # print("running_returns[j] = ",running_returns[j])
+                # print("estimated_returns[j] = ", estimated_returns[j])
                 estimated_returns[j].append(running_returns[j])
                 running_returns[j] = 0
+                
+        if done :
+            objective_returns.append(objective_running_returns)
+            objective_running_returns = np.zeros(4)
+            # print("end traj")
+            # print("estimated_returns = ", [e[-1] for e in estimated_returns])
+            # print("objective returns = ", objective_returns[-1])
 
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
 
-    for j, discrim in enumerate(discriminators):
-        print("estimated_returns = "+str(j)+ " : "+str(estimated_returns[j]))
+    ret_est = np.mean(np.array(estimated_returns), axis = 1)
+    ret_obj = np.mean(np.array(objective_returns), axis = 0)
+    print("estimated_returns = ", ret_est)
+    print("objective returns = ", ret_obj)
+    print("vectorized_rewards = ", np.concatenate((np.array([ret_obj[0]]),ret_est)))

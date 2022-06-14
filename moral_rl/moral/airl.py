@@ -199,7 +199,7 @@ class Discriminator(nn.Module):
             if eth_norm == "v1":
                 return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
             if eth_norm == "v2":
-                return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.utopia_point)
+                return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.normalized_utopia_point)
             if eth_norm == "v3":
                 return advantage
         else:
@@ -357,6 +357,8 @@ class Discriminator(nn.Module):
 
         lower_bound = math.inf
         upper_bound = -math.inf
+        traj_size = 1
+        traj_size_not_calculated = True
         for t in range(steps):
             actions, log_probs = imitation_policy.act(states_tensor)
             next_states, rewards, done, info = env.step(actions)
@@ -369,11 +371,16 @@ class Discriminator(nn.Module):
             if done:
                 airl_rewards = 0
                 next_states = env.reset()
+                if traj_size_not_calculated:
+                    traj_size = t
+                    traj_size_not_calculated = False
             running_returns += airl_rewards
 
             if done:
                 estimated_returns.append(running_returns)
                 running_returns = 0
+                # print("test equals 1_v1 = ", sum(estimated_returns))
+                # print("test equals 1 = ", (sum(estimated_returns) - len(estimated_returns)*min(estimated_returns))/(len(estimated_returns)*(max(estimated_returns) - min(estimated_returns))))
 
             states = next_states.copy()
             states_tensor = torch.tensor(states).float().to(device)
@@ -381,7 +388,13 @@ class Discriminator(nn.Module):
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
         self.utopia_point = sum(estimated_returns)/len(estimated_returns)
-        return self.upper_bound, self.lower_bound, self.utopia_point
+        # self.normalized_utopia_point = (self.utopia_point - self.lower_bound)/(self.upper_bound - self.lower_bound)
+        self.normalized_utopia_point = (self.utopia_point - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)
+        print("self.normalized_utopia_point = ", self.normalized_utopia_point)
+        print("test equals 1 = ", estimated_returns[0])
+        print("test equals 1 = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))
+        print("test equals 1 = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)/abs(self.normalized_utopia_point))
+        return self.upper_bound, self.lower_bound, self.utopia_point, self.normalized_utopia_point
 
 
 def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):
