@@ -110,6 +110,12 @@ class VolumeBuffer:
         # print("observed LOG : ", rewards)
         self.observed_logs.append(rewards)
 
+    def log_rewards_list(self, observed_logs_sum):
+        self.observed_logs_sum = observed_logs_sum
+
+    def log_statistics_list(self, objective_logs_sum):
+        self.objective_logs_sum = objective_logs_sum
+
     @staticmethod
     def volume_removal(w_posterior, delta):
         expected_volume_a = 0
@@ -124,6 +130,41 @@ class VolumeBuffer:
         # print("expected_volume_b : ", expected_volume_b)
         # print("len(w_posterior) = ", len(w_posterior)) # == batch size des rollout ?
         return min(expected_volume_a / len(w_posterior), expected_volume_b / len(w_posterior))
+
+
+    def sample_return_pair_v2(self):
+        # observed_logs_returns = np.array(self.observed_logs).sum(axis=0)
+        observed_logs_returns = self.observed_logs_sum
+        # print("observed_logs_returns = ", observed_logs_returns)
+        # print(len(observed_logs_returns))
+        rand_idx = np.random.choice(np.arange(len(observed_logs_returns)), 2, replace=False)
+
+        # new_returns_a = observed_logs_returns[rand_idx[0], 0:3]
+        # new_returns_b = observed_logs_returns[rand_idx[1], 0:3]
+        new_returns_a = observed_logs_returns[rand_idx[0]]
+        new_returns_b = observed_logs_returns[rand_idx[1]]
+
+        # Reset observed logs
+        self.observed_logs = []
+
+        # Also return ground truth logs for automatic preferences
+        if self.auto_pref:
+            # objective_logs_returns = np.array(self.objective_logs).sum(axis=0)
+            objective_logs_returns = self.objective_logs_sum
+
+            # logs_a = objective_logs_returns[rand_idx[0], 0:3]
+            # logs_b = objective_logs_returns[rand_idx[1], 0:3]
+            # print("objective_logs_returns = ", objective_logs_returns)
+            # print(len(objective_logs_returns))
+            logs_a = objective_logs_returns[rand_idx[0]][:-1]
+            logs_b = objective_logs_returns[rand_idx[1]][:-1]
+            # print(logs_a)
+
+            self.objective_logs = []
+            return np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
+        else:
+            return np.array(new_returns_a), np.array(new_returns_b)
+
 
     def sample_return_pair(self):
         # len(self.observed_logs) = 74 donc tous les états de 1 trajectoire, car on a demandé un batchsize de 12 pour 12 workers ?
