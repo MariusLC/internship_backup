@@ -251,7 +251,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         #     # print('vectorized_rew_mean ['+str(i)+']'+ str(mean_rew[i]))
         #     # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * mean_rew[i]))
         #     # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
-        wandb.log({'non_value': 0})
+        for i in range(nb_experts+1):
+            wandb.log({'non_value': 0})
 
 
         if train_ready:
