@@ -10,7 +10,7 @@ accéder au dépot depuis ma session :
 
 lancer une tâche :
 	
-	oarsub -l "/nodes=1/core=24,walltime=01:00:00" "python3 -m moral.moral_train"
+	oarsub -l "/nodes=1/core=24,walltime=100:00:00" "python3 -m moral.moral_train"
 	-> retourne le JOB_ID, ex : JOB_ID=982376
 
 

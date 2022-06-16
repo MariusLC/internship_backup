@@ -83,11 +83,11 @@ class TrajectoryDataset:
         #                for i in range(n_workers)]
         self.buffer = [{'states': [], 'actions': [], 'rewards': [], 'airl_rewards': [], 'returns':[], 'vectorized_rewards': [], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
                        for i in range(n_workers)]
-        self.returns_min = math.inf
-        self.returns_max = -math.inf
         self.sum = 0
         self.nb_act = 0
         self.utopia_point = None
+        self.returns_min_traj = math.inf
+        self.returns_max_traj = -math.inf
 
     def reset_buffer(self, i):
         # self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'log_probs': [], 'latents': None, 'logs': []}
@@ -98,8 +98,6 @@ class TrajectoryDataset:
         self.nb_act = 0
         self.sum = 0
         self.utopia_point = None
-        # self.returns_min = math.inf
-        # self.returns_max = -math.inf
 
     def write_tuple(self, states, actions, rewards, done, log_probs, logs=None, gamma=0.999):
         # Takes states of shape (n_workers, state_shape[0], state_shape[1])
@@ -120,35 +118,6 @@ class TrajectoryDataset:
 
         # print("nb traj = ",len(self.trajectories))
         # print("batch_size = ", self.batch_size)
-        if len(self.trajectories) >= self.batch_size:
-            return True
-        else:
-            return False
-
-    def write_tuple_3(self, states, actions, rewards, returns, done, log_probs, logs=None, gamma=0.999):
-        # Takes states of shape (n_workers, state_shape[0], state_shape[1])
-        for i in range(self.n_workers):
-            self.buffer[i]['states'].append(states[i])
-            self.buffer[i]['actions'].append(actions[i])
-            self.buffer[i]['rewards'].append(rewards[i])
-            self.buffer[i]['returns'].append(returns[i])
-            # self.buffer[i]['discounted_rewards'].append(rewards[i]*(gamma**len(self.buffer[i]['discounted_rewards'])))
-            self.buffer[i]['log_probs'].append(log_probs[i])
-
-            # print("returns[i] = ", returns[i])
-            self.returns_min = min(self.returns_min, returns[i])
-            self.returns_max = max(self.returns_max, returns[i])
-            self.sum += returns[i]
-            self.nb_act += 1
-
-            if logs is not None:
-                self.buffer[i]['logs'].append(logs[i])
-
-            if done[i]:
-                self.trajectories.append(self.buffer[i].copy())
-                # self.nb_act += len(self.buffer[i]['states'])
-                self.reset_buffer(i)
-
         if len(self.trajectories) >= self.batch_size:
             return True
         else:
@@ -179,8 +148,8 @@ class TrajectoryDataset:
                 returns_arr = np.array(self.trajectories[-1]['returns'])
                 # print("sum traj returns = ", returns_arr)
                 # print("sum traj returns = ", returns_arr.sum(axis=0))
-                self.returns_min = min(self.returns_min, returns_arr.sum(axis=0)[0])
-                self.returns_max = max(self.returns_max, returns_arr.sum(axis=0)[0])
+                self.returns_min_traj = min(self.returns_min_traj, returns_arr.sum(axis=0)[0])
+                self.returns_max_traj = max(self.returns_max_traj, returns_arr.sum(axis=0)[0])
 
         if len(self.trajectories) >= self.batch_size:
             return True
@@ -226,25 +195,17 @@ class TrajectoryDataset:
         return returns
     
 
-    def normalize_v1(self, value):
-        normalization_v1 = (value - self.returns_min)/(self.returns_max - self.returns_min)
+    def normalize_v1(self, value, traj_size):
+        normalization_v1 = (value - self.returns_min_traj/traj_size)/(self.returns_max_traj - self.returns_min_traj)
         return normalization_v1
 
     def normalize_v2(self, value):
-        normalization_v1 = self.normalization_v1(value)
-        utopia_point = self.sum / len(self.trajectories)
-        normalized_utopia_point = (utopia_point - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)
-        normalization_v2 = normalization_v1/abs(mean)
+        normalization_v2 = value/abs(self.utopia_point)
         return normalization_v2
-
-    def normalize_v3(self, value):
-        normalization_v3 = value/abs(self.utopia_point)
-        return normalization_v3
 
     def compute_scalarized_rewards(self, w_posterior_mean, non_eth_norm, wandb):
         self.compute_utopia()
         self.compute_normalization_non_eth(non_eth_norm)
-        
         # mean_scalarized_rewards = 0
         mean_vectorized_rewards = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
         for i in range(len(self.trajectories)):
@@ -264,19 +225,20 @@ class TrajectoryDataset:
             # print("r0 traj = ", np.array(self.trajectories[i]["returns"]).sum(axis=0)[0])
             self.log_wandb_1_traj(mean_vectorized_rewards_1_traj, wandb, w_posterior_mean)
             mean_vectorized_rewards += mean_vectorized_rewards_1_traj
-        # print("mean_vectorized_rewards = ", mean_vectorized_rewards/len(self.trajectories))
+        print("mean_vectorized_rewards = ", mean_vectorized_rewards/len(self.trajectories))
 
 
     def compute_normalization_non_eth(self, non_eth_norm):
-        # print("self.returns_max = ", self.returns_max)
-        # print("self.returns_min = ", self.returns_min)
+        print("self.returns_max_traj = ", self.returns_max_traj)
+        print("self.returns_min_traj = ", self.returns_min_traj)
         for i in range(len(self.trajectories)):
             for j in range(len(self.trajectories[i]["states"])):
+                traj_size = len(self.trajectories[i]["states"])
                 # self.trajectories[i][j]["returns"] = non_eth_norm(self.trajectories[i][j]["returns"])
                 # print(self.trajectories[i])
                 # print(self.trajectories[i]["returns"])
                 # print(self.trajectories[i]["returns"][j])
-                self.trajectories[i]["returns"][j] = self.normalize_v3(self.trajectories[i]["returns"][j])
+                self.trajectories[i]["returns"][j] = self.normalize_v1(self.trajectories[i]["returns"][j],traj_size)
                 # print("2 = ", self.trajectories[i]["returns"][j])
 
     def compute_utopia(self):
@@ -304,7 +266,7 @@ class TrajectoryDataset:
             # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
 
     def log_wandb_1_traj(self, vectorized_rewards, wandb, w_posterior_mean):
-        print("vectorized_rewards = ", vectorized_rewards)
+        # print("vectorized_rewards = ", vectorized_rewards)
         for i in range(len(vectorized_rewards)):
             wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
             wandb.log({'vectorized_rew_mean ['+str(i)+']': vectorized_rewards[i]})
