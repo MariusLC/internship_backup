@@ -196,11 +196,13 @@ class Discriminator(nn.Module):
             # print(" return advantage = ", advantage/np.abs(self.utopia_point))
             if eth_norm == "v0":
                 return advantage/np.abs(self.utopia_point)
-            if eth_norm == "v1":
+            elif eth_norm == "v1":
                 return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
-            if eth_norm == "v2":
+            elif eth_norm == "v2":
                 return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.normalized_utopia_point)
-            if eth_norm == "v3":
+            elif eth_norm == "v3":
+                return (advantage - self.rewards_min_traj/self.traj_size)/(self.rewards_max_traj - self.rewards_min_traj)
+            elif eth_norm == "v4":
                 return advantage
         else:
             return advantage
@@ -359,6 +361,8 @@ class Discriminator(nn.Module):
         upper_bound = -math.inf
         traj_size = 1
         traj_size_not_calculated = True
+        rewards_min_traj = math.inf
+        rewards_max_traj = -math.inf
         for t in range(steps):
             actions, log_probs = imitation_policy.act(states_tensor)
             next_states, rewards, done, info = env.step(actions)
@@ -379,12 +383,17 @@ class Discriminator(nn.Module):
             if done:
                 estimated_returns.append(running_returns)
                 running_returns = 0
+                rewards_min_traj = min(rewards_min_traj, running_returns)
+                rewards_max_traj = min(rewards_max_traj, running_returns)
                 # print("test equals 1_v1 = ", sum(estimated_returns))
                 # print("test equals 1 = ", (sum(estimated_returns) - len(estimated_returns)*min(estimated_returns))/(len(estimated_returns)*(max(estimated_returns) - min(estimated_returns))))
 
             states = next_states.copy()
             states_tensor = torch.tensor(states).float().to(device)
 
+        self.traj_size = traj_size
+        self.rewards_min_traj = rewards_min_traj
+        self.rewards_max_traj = rewards_max_traj
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
         self.utopia_point = sum(estimated_returns)/len(estimated_returns)
