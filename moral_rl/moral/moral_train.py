@@ -46,4 +46,4 @@ if __name__ == '__main__':
         demos_filenames.append(path+c["demo_path"]+c["demo_ext"])
         discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
 
-    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, non_eth_norm, c["normalization_eth_sett"], gene_or_expe_filenames, discriminators_filenames, moral_filename)
+    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, c["normalization_non_eth_sett"], c["normalization_eth_sett"], gene_or_expe_filenames, discriminators_filenames, moral_filename)

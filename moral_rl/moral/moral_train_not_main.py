@@ -69,7 +69,10 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'gamma': 0.999,
             'epsilon': 0.1,
             'ppo_epochs': 5,
-            'lambd': lambd},
+            'lambd': lambd,
+            'eth_norm': eth_norm,
+            'non_eth_norm': non_eth_norm
+            },
         reinit=True)
     config = wandb.config
     env_steps = int(config.env_steps/config.n_workers)
@@ -106,8 +109,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
-        # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=1000) # tests
+        # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
+        upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=1000) # tests
         print("Upper_bound agent "+str(i)+": "+str(upper_bound))
         print("Lower_bound agent "+str(i)+": "+str(lower_bound))
         print("Mean agent "+str(i)+": "+str(mean))
@@ -129,8 +132,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     checkpoint_logs = []
 
     # Active Learning
-    preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=10000, warmup=1000)
-    # preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=1000, warmup=100) # tests
+    # preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=10000, warmup=1000)
+    preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
     volume_buffer = VolumeBuffer()

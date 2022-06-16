@@ -199,14 +199,21 @@ class TrajectoryDataset:
         normalization_v1 = (value - self.returns_min_traj/traj_size)/(self.returns_max_traj - self.returns_min_traj)
         return normalization_v1
 
-    def normalize_v2(self, value):
+    def normalize_v2(self, value, traj_size):
         normalization_v2 = value/abs(self.utopia_point)
         return normalization_v2
 
     def compute_scalarized_rewards(self, w_posterior_mean, non_eth_norm, wandb):
-        self.compute_utopia()
-        self.compute_normalization_non_eth(non_eth_norm)
-        # mean_scalarized_rewards = 0
+        if non_eth_norm == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
+            non_eth_norm = None
+        else:
+            if non_eth_norm == "v1": # normalisation classique par rapport aux valeurs min et max all time sur une traj (value - min)/(max - min)
+                non_eth_norm = self.normalize_v1
+            elif non_eth_norm == "v2": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
+                non_eth_norm = self.normalize_v2
+            self.compute_utopia()
+            self.compute_normalization_non_eth(non_eth_norm)
+
         mean_vectorized_rewards = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
         for i in range(len(self.trajectories)):
             mean_vectorized_rewards_1_traj = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
@@ -238,7 +245,8 @@ class TrajectoryDataset:
                 # print(self.trajectories[i])
                 # print(self.trajectories[i]["returns"])
                 # print(self.trajectories[i]["returns"][j])
-                self.trajectories[i]["returns"][j] = self.normalize_v1(self.trajectories[i]["returns"][j],traj_size)
+                # self.trajectories[i]["returns"][j] = self.normalize_v1(self.trajectories[i]["returns"][j],traj_size)
+                self.trajectories[i]["returns"][j] = non_eth_norm(self.trajectories[i]["returns"][j],traj_size)
                 # print("2 = ", self.trajectories[i]["returns"][j])
 
     def compute_utopia(self):
