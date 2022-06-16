@@ -391,9 +391,9 @@ class Discriminator(nn.Module):
         # self.normalized_utopia_point = (self.utopia_point - self.lower_bound)/(self.upper_bound - self.lower_bound)
         self.normalized_utopia_point = (self.utopia_point - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)
         print("self.normalized_utopia_point = ", self.normalized_utopia_point)
-        print("test equals 1 = ", estimated_returns[0])
-        print("test equals 1 = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))
-        print("test equals 1 = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)/abs(self.normalized_utopia_point))
+        print("mean rew over 1 traj = ", estimated_returns[0])
+        print("normalized mean rew over 1 traj = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))
+        print("normalized mean rew over 1 traj with normalized utopia point = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)/abs(self.normalized_utopia_point))
         return self.upper_bound, self.lower_bound, self.utopia_point, self.normalized_utopia_point
 
 

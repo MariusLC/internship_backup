@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 import numpy as np
 import math
+import wandb
 
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -240,10 +241,14 @@ class TrajectoryDataset:
         normalization_v3 = value/abs(self.utopia_point)
         return normalization_v3
 
-    def compute_scalarized_rewards(self, w_posterior_mean, non_eth_norm):
+    def compute_scalarized_rewards(self, w_posterior_mean, non_eth_norm, wandb):
         self.compute_utopia()
         self.compute_normalization_non_eth(non_eth_norm)
+        
+        # mean_scalarized_rewards = 0
+        mean_vectorized_rewards = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
         for i in range(len(self.trajectories)):
+            mean_vectorized_rewards_1_traj = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
             for j in range(len(self.trajectories[i]["states"])):
                 # print("ret = ", self.trajectories[i]["returns"][j][0])
                 # print("rew_airl = ", self.trajectories[i]["airl_rewards"][j])
@@ -252,8 +257,15 @@ class TrajectoryDataset:
                 # print("w_posterior_mean = ", w_posterior_mean)
                 # print("self.trajectories[i] = ", self.trajectories[i]["vectorized_rewards"][j])
                 self.trajectories[i]["rewards"].append(np.dot(w_posterior_mean, self.trajectories[i]["vectorized_rewards"][j]))
+                # self.log_wandb(self.trajectories[i]["vectorized_rewards"][-1], self.trajectories[i]["airl_rewards"][j], wandb, w_posterior_mean)
+                mean_vectorized_rewards_1_traj += self.trajectories[i]["vectorized_rewards"][-1]
+                # mean_scalarized_rewards += self.trajectories[i]["rewards"][-1]
             # print("r0 traj = ", np.array(self.trajectories[i]["returns"])[:,0])
             # print("r0 traj = ", np.array(self.trajectories[i]["returns"]).sum(axis=0)[0])
+            self.log_wandb_1_traj(mean_vectorized_rewards_1_traj, wandb, w_posterior_mean)
+            mean_vectorized_rewards += mean_vectorized_rewards_1_traj
+        # print("mean_vectorized_rewards = ", mean_vectorized_rewards/len(self.trajectories))
+
 
     def compute_normalization_non_eth(self, non_eth_norm):
         # print("self.returns_max = ", self.returns_max)
@@ -265,12 +277,41 @@ class TrajectoryDataset:
                 # print(self.trajectories[i]["returns"])
                 # print(self.trajectories[i]["returns"][j])
                 self.trajectories[i]["returns"][j] = self.normalize_v3(self.trajectories[i]["returns"][j])
+                # print("2 = ", self.trajectories[i]["returns"][j])
 
     def compute_utopia(self):
-        print("self.sum = ", self.sum)
-        print("nb traj = ", len(self.trajectories))
+        # print("self.sum = ", self.sum)
+        # print("nb traj = ", len(self.trajectories))
         self.utopia_point = self.sum / len(self.trajectories)
-        print("utopia_point = ", self.utopia_point)
+        # print("utopia_point = ", self.utopia_point)
+
+    def log_wandb(self, vectorized_rewards, rewards, wandb, w_posterior_mean):
+        # print("vectorized_rewards 1 traj = ", vectorized_rewards)
+        # mean_rew = np.array(vectorized_rewards).mean(axis=0) # ?
+        # returns_vb, rewards_vb = volume_buffer.get_data()
+        # rewards_vb = np.array(rewards)
+        # rewards_vb = rewards_vb.mean(axis=0) # sum over trajectories
+        # rewards_vb = rewards_vb.mean(axis=0) # sum over workers ?
+        # print(rewards_vb)                  # we get the mean rewards over all actions in the buffer
+        for i in range(len(vectorized_rewards)):
+            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
+            wandb.log({'vectorized_rew_mean ['+str(i)+']': vectorized_rewards[i]})
+            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vectorized_rewards[i]})
+            # wandb.log({'rewards_mean ['+str(i)+']': rewards_vb[i]})
+            # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
+            # print('vectorized_rew_mean ['+str(i)+']'+ str(vectorized_rewards[i]))
+            # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * vectorized_rewards[i]))
+            # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
+
+    def log_wandb_1_traj(self, vectorized_rewards, wandb, w_posterior_mean):
+        print("vectorized_rewards = ", vectorized_rewards)
+        for i in range(len(vectorized_rewards)):
+            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
+            wandb.log({'vectorized_rew_mean ['+str(i)+']': vectorized_rewards[i]})
+            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vectorized_rewards[i]})
+            # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
+            # print('vectorized_rew_mean ['+str(i)+']'+ str(vectorized_rewards[i]))
+            # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * vectorized_rewards[i]))
 
 
         
