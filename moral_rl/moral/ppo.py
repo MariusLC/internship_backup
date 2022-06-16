@@ -178,6 +178,9 @@ class TrajectoryDataset:
 
         return np.array(objective_logs)
 
+
+        
+
     def log_vectorized_rew_sum(self):
         returns = [0 for i in range(len(self.trajectories))]
         for i, tau in enumerate(self.trajectories):

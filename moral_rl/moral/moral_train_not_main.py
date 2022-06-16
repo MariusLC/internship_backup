@@ -251,13 +251,14 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         #     # print('vectorized_rew_mean ['+str(i)+']'+ str(mean_rew[i]))
         #     # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * mean_rew[i]))
         #     # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
+        wandb.log({'non_value': 0})
 
 
         if train_ready:
 
             dataset.compute_scalarized_rewards(w_posterior_mean, non_eth_norm, wandb)
-            volume_buffer.log_rewards_list(dataset.log_vectorized_rew_sum())
-            volume_buffer.log_statistics_list(dataset.log_returns_sum())
+            volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
+            volume_buffer.log_statistics_sum(dataset.log_returns_sum())
 
             # mean_traj(ppo, discriminator_list, config, eth_norm, steps=1000)
             

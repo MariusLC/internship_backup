@@ -110,10 +110,10 @@ class VolumeBuffer:
         # print("observed LOG : ", rewards)
         self.observed_logs.append(rewards)
 
-    def log_rewards_list(self, observed_logs_sum):
+    def log_rewards_sum(self, observed_logs_sum):
         self.observed_logs_sum = observed_logs_sum
 
-    def log_statistics_list(self, objective_logs_sum):
+    def log_statistics_sum(self, objective_logs_sum):
         self.objective_logs_sum = objective_logs_sum
 
     @staticmethod

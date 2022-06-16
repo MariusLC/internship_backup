@@ -28,12 +28,12 @@ if __name__ == '__main__':
         # print("env_steps = ", env_steps)
         # print("query_freq = ", query_freq)
 
-    if c["normalization_non_eth_sett"] == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
-        non_eth_norm = normalize_v0
-    elif c["normalization_non_eth_sett"] == "v1": # normalisation classique par rapport aux valeurs min et max all time sur une traj (value - min)/(max - min)
-        non_eth_norm = normalize_v1
-    elif c["normalization_non_eth_sett"] == "v2": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
-        non_eth_norm = normalize_v2
+    # if c["normalization_non_eth_sett"] == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
+    #     non_eth_norm = normalize_v0
+    # elif c["normalization_non_eth_sett"] == "v1": # normalisation classique par rapport aux valeurs min et max all time sur une traj (value - min)/(max - min)
+    #     non_eth_norm = normalize_v1
+    # elif c["normalization_non_eth_sett"] == "v2": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
+    #     non_eth_norm = normalize_v2
 
 
     gene_or_expe_filenames = []
