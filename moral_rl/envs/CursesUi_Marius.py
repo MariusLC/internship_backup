@@ -29,7 +29,22 @@ class CursesUi_Marius(human_ui.CursesUi):
 
         self.last_obs = None
 
-    def fct(self, screen):
+    def update_display(self, screen, observations, console, paint_console):
+      # Update the game display, regardless of whether we've called the game's
+      # play() method.
+      elapsed = datetime.datetime.now() - self._start_time
+      self._display(screen, observations, self._total_return, elapsed)
+
+      # Update game console message buffer with new messages from the game.
+      self._update_game_console(
+          plab_logging.consume(self._game.the_plot), console, paint_console)
+
+      # Show the screen to the user.
+      curses.doupdate()
+
+
+    def fct(self, screen, console, paint_console):
+      # key action
       keycode = screen.getch()
       if keycode == curses.KEY_PPAGE:    # Page Up? Show the game console.
         paint_console = True
@@ -38,8 +53,9 @@ class CursesUi_Marius(human_ui.CursesUi):
       elif keycode in self._keycodes_to_actions:
         action = self._keycodes_to_actions[keycode]
         if action == "eval_discrim" :
-          observation = self.policy.eval_discrim(self._keycodes_to_actions, self.crop_and_repaint, env)
-          # self.crop_and_repaint(observation)
+          obs = copy.deepcopy(self.last_obs)
+          observation = self.policy.eval_discrim(self._keycodes_to_actions, self.crop_and_repaint_2, copy.deepcopy(self.last_obs), None, self.update_display, screen, console, paint_console)
+          observations = self.crop_and_repaint(obs)
         else:
           if action == None:
             observation, reward = self.policy.act()          
@@ -52,6 +68,10 @@ class CursesUi_Marius(human_ui.CursesUi):
             self._total_return = reward
           elif reward is not None:
             self._total_return += reward
+
+      # update display
+      self.update_display(screen, observations, console, paint_console)
+      
 
     def crop_and_repaint(self, observation):
           # Helper for game display: applies all croppers to the observation, then
@@ -67,6 +87,15 @@ class CursesUi_Marius(human_ui.CursesUi):
               return [copy.deepcopy(self._repainter(obs)) for obs in observations]
           else:
             return observations
+
+    def crop_and_repaint_2(self, observation):
+          # Helper for game display: applies all croppers to the observation, then
+          # repaints the cropped subwindows. Since the same repainter is used for
+          # all subwindows, and since repainters "own" what they return and are
+          # allowed to overwrite it, we copy repainted observations when we have
+          # multiple subwindows.
+          observations = [cropper.crop(observation) for cropper in self._croppers]
+          return copy.deepcopy(observations)
 
 
     def _init_curses_and_play(self, screen):
@@ -131,17 +160,5 @@ class CursesUi_Marius(human_ui.CursesUi):
 
           #####
           # FUNCTION TO EXECUTE
-          self.fct(screen)
+          self.fct(screen, console, paint_console)
           ##########
-
-          # Update the game display, regardless of whether we've called the game's
-          # play() method.
-          elapsed = datetime.datetime.now() - self._start_time
-          self._display(screen, observations, self._total_return, elapsed)
-
-          # Update game console message buffer with new messages from the game.
-          self._update_game_console(
-              plab_logging.consume(self._game.the_plot), console, paint_console)
-
-          # Show the screen to the user.
-          curses.doupdate()

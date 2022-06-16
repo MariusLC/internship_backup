@@ -170,8 +170,8 @@ class Action_evaluator_eval_discrim(Action_evaluator):
         super().__init__(discrim, env, filename)
 
 
-    def eval_discrim(self, _keycodes_to_actions, fct, last_obs, env):
-        plot = env.game.the_plot.copy()
+    def eval_discrim(self, _keycodes_to_actions, crop_and_repaint, last_obs, env, update_display, screen, console, paint_console):
+        plot = self.env.game.the_plot.copy()
         obs_list = []
         reward_list = []
         discount_list = []
@@ -179,7 +179,7 @@ class Action_evaluator_eval_discrim(Action_evaluator):
         discrim_eval_list = []
         action_list = []
         for action in list(_keycodes_to_actions.values())[:-1]:
-            obs, rewards, discount, next_state, done, info = env.step_demo(action)
+            obs, rewards, discount, next_state, done, info = self.env.step_demo(action)
             next_state_tensor = torch.tensor(next_state).to(device).float()
             discrim_eval_list.append(self.discrim.forward(self.state, next_state_tensor, GAMMA))
             obs_list.append(copy.copy(obs))
@@ -200,7 +200,10 @@ class Action_evaluator_eval_discrim(Action_evaluator):
             # env.game.the_plot['V_pos'] = plot['V_pos']
 
             # fct(last_obs)
-            env.reset_with_defined_board()
+            # self.env.reset_with_defined_board(self.env.game.the_plot)
+            # self.env.reset_with_defined_board(plot)
+            observations = crop_and_repaint(last_obs)
+            update_display(screen, observations, console, paint_console)
 
         printing_correctly_eval_discrim(self.filename, action_list, obs_list, reward_list, discrim_eval_list, None, None, discount_list, done_list)
         return last_obs
