@@ -140,6 +140,10 @@ if __name__ == '__main__':
 
 	# a = np.array([-2., -5., 3])
 	a = np.array([0., 0., 0., 1., 1.])
+	b = np.array([1,3,1])
+	print(b)
+	w_posterior_mean = b/np.linalg.norm(b)
+	print(w_posterior_mean)
 
 
 	# up
