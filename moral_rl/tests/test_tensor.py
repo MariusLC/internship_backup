@@ -5,16 +5,14 @@ import numpy as np
 # from envs.gym_wrapper import *
 
 # from tqdm import tqdm
-# import torch
-# import numpy as np
+import torch
 # import matplotlib.pyplot as plt
 # import wandb
 # import argparse
 # import yaml
 # import os
 
-# import numpy as np
-# import math
+import math
 # import scipy.stats as st
 
 # from moral.active_learning import *
@@ -22,7 +20,7 @@ import numpy as np
 
 # import math
 
-# from torch.distributions import *
+from torch.distributions import *
 
 
 if __name__ == '__main__':
@@ -50,8 +48,33 @@ if __name__ == '__main__':
 	# norm4_non_eth = rew_obj_non_eth / abs(m_non_eth)
 	# m_norm4_non_eth = np.mean(norm4_non_eth)
 
-	# eth = Normal(torch.tensor([-2.0]), torch.tensor([2.0]))
-	# rew_obj_eth = np.array([eth.sample() for i in range(nb_samples)])
+	traj_size = 73
+	nb_traj = 10
+	eth = Normal(torch.tensor([-2.0]), torch.tensor([2.0]))
+	rew_obj_eth = np.array([eth.sample() for i in range(traj_size*nb_traj)])
+	mean_per_traj = [np.sum(rew_obj_eth[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
+	up = sum(rew_obj_eth)/nb_traj
+	min_traj = min(mean_per_traj)
+	max_traj = max(mean_per_traj)
+	lower_bound = min(rew_obj_eth)
+	upper_bound = max(rew_obj_eth)
+	norm_up = (up - traj_size*lower_bound)/(upper_bound - lower_bound)
+	norm_v2 = (rew_obj_eth - lower_bound)/(upper_bound - lower_bound)/abs(norm_up)
+	norm_v3 = (rew_obj_eth - min_traj/traj_size)/(max_traj - min_traj)
+	m_norm_v2 = [np.sum(norm_v2[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
+	m_norm_v3 = [np.sum(norm_v3[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
+
+	print("min_traj = ", min_traj)
+	print("max_traj = ", max_traj)
+	print("lower_bound = ", lower_bound)
+	print("upper_bound = ", upper_bound)
+	print("up = ", up)
+	print("norm_up = ", norm_up)
+	print("m_norm_v2 = ", m_norm_v2)
+	print("m_norm_v3 = ", m_norm_v3)
+	print_val = [(rew_obj_eth[i], norm_v2[i], norm_v3[i]) for i in range(len(rew_obj_eth))]
+	print(print_val)
+
 	# m_eth = np.mean(rew_obj_eth)
 	# min_eth = min(rew_obj_eth)
 	# max_eth = max(rew_obj_eth)
@@ -78,6 +101,9 @@ if __name__ == '__main__':
 	# print("m_norm2_eth_test = ", m_norm2_eth_test)
 	# print("m_norm3_eth = ", m_norm3_eth)
 	# print("m_norm4_eth = ", m_norm4_eth)
+
+	# return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.normalized_utopia_point)
+ #    return (advantage - self.rewards_min_traj/self.traj_size)/(self.rewards_max_traj - self.rewards_min_traj)
 
 	# # print("\n\rew_obj_non_eth = ", rew_obj_non_eth)
 	# # print("norm1_non_eth = ", norm1_non_eth)
@@ -114,6 +140,8 @@ if __name__ == '__main__':
 
 	# a = np.array([-2., -5., 3])
 	a = np.array([0., 0., 0., 1., 1.])
+
+
 	# up
 	up_a = np.sum(a)
 	a_div_up = a/abs(up_a)

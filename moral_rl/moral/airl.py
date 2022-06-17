@@ -201,6 +201,10 @@ class Discriminator(nn.Module):
             elif eth_norm == "v2":
                 return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.normalized_utopia_point)
             elif eth_norm == "v3":
+            #     print("self.rewards_max_traj = ", self.rewards_max_traj)
+            #     print("self.rewards_min_traj = ", self.rewards_min_traj)
+            #     print("advantage = ", advantage)
+            #     print("v = ",(advantage - self.rewards_min_traj/self.traj_size)/(self.rewards_max_traj - self.rewards_min_traj))
                 return (advantage - self.rewards_min_traj/self.traj_size)/(self.rewards_max_traj - self.rewards_min_traj)
             elif eth_norm == "v4":
                 return advantage
@@ -382,9 +386,9 @@ class Discriminator(nn.Module):
 
             if done:
                 estimated_returns.append(running_returns)
-                running_returns = 0
                 rewards_min_traj = min(rewards_min_traj, running_returns)
-                rewards_max_traj = min(rewards_max_traj, running_returns)
+                rewards_max_traj = max(rewards_max_traj, running_returns)
+                running_returns = 0
                 # print("test equals 1_v1 = ", sum(estimated_returns))
                 # print("test equals 1 = ", (sum(estimated_returns) - len(estimated_returns)*min(estimated_returns))/(len(estimated_returns)*(max(estimated_returns) - min(estimated_returns))))
 
@@ -403,6 +407,9 @@ class Discriminator(nn.Module):
         print("mean rew over 1 traj = ", estimated_returns[0])
         print("normalized mean rew over 1 traj = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))
         print("normalized mean rew over 1 traj with normalized utopia point = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)/abs(self.normalized_utopia_point))
+        print("rewards_min_traj = ", rewards_min_traj)
+        print("rewards_max_traj = ", rewards_max_traj)
+        print("traj_size = ", traj_size)
         return self.upper_bound, self.lower_bound, self.utopia_point, self.normalized_utopia_point
 
 

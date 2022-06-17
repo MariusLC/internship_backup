@@ -111,10 +111,10 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
         upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=1000) # tests
-        print("Upper_bound agent "+str(i)+": "+str(upper_bound))
-        print("Lower_bound agent "+str(i)+": "+str(lower_bound))
-        print("Mean agent "+str(i)+": "+str(mean))
-        print("Normalized Mean agent "+str(i)+": "+str(norm_mean))
+        # print("Upper_bound agent "+str(i)+": "+str(upper_bound))
+        # print("Lower_bound agent "+str(i)+": "+str(lower_bound))
+        # print("Mean agent "+str(i)+": "+str(mean))
+        # print("Normalized Mean agent "+str(i)+": "+str(norm_mean))
         # utop_list.append(discriminator_list[i].estimate_utopia(generator_list[i], config))
         # print(f'Reward Normalization 0: {utop_list[i]}')
 
@@ -207,7 +207,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
         airl_rewards_list = []
         for j in range(nb_experts):
-
+            # print("expert n = ", j)
             # airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma).squeeze(1))
             # airl_rewards_list.append(discriminator_list[j].forward_v2(airl_state, airl_next_state, config.gamma).squeeze(1))
             airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma, eth_norm).squeeze(1))
