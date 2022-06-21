@@ -40,7 +40,7 @@ def normalize_v3(value, dataset):
     return dataset.normalize_v3(value)
 
 
-def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_eth_norm, eth_norm, generators_filenames, discriminators_filenames, moral_filename, rand_filename, non_eth_expert):
+def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_eth_norm, eth_norm, generators_filenames, discriminators_filenames, moral_filename, rand_filename, non_eth_expert_filename):
 
     nb_experts = len(generators_filenames)
 
@@ -102,7 +102,11 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     discriminator_list = []
     generator_list = []
     # utop_list = []
+
     rand_agent = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+    # non_eth_expert = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+    # non_eth_expert.load_state_dict(torch.load(non_eth_expert_filename, map_location=torch.device('cpu')))
+
     for i in range(nb_experts):
         discriminator_list.append(Discriminator(state_shape=state_shape, in_channels=in_channels).to(device))
         discriminator_list[i].load_state_dict(torch.load(discriminators_filenames[i], map_location=torch.device('cpu')))
@@ -110,8 +114,9 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
         nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
+        upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
+        
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=1000) # tests
         # print("Upper_bound agent "+str(i)+": "+str(upper_bound))
         # print("Lower_bound agent "+str(i)+": "+str(lower_bound))
@@ -128,7 +133,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
-    dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
+    # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Logging
     objective_logs = []

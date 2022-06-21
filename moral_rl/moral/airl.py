@@ -423,8 +423,8 @@ class Discriminator(nn.Module):
         print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (estimated_returns[0] - self.rewards_min_traj)/(self.rewards_max_traj - self.rewards_min_traj))
         print("norm v4 (no norm) = ", estimated_returns[0])
         print("norm v5 (traj values [0,1] bounded, with UP) = ", (estimated_returns[0] - self.rewards_min_traj)/(self.utopia_point - self.rewards_min_traj))
+        print("norm v6 (traj values [0,1] bounded, with UP and min with rand agent) = ", (estimated_returns[0] - self.rewards_min_traj_rand)/(self.utopia_point - self.rewards_min_traj_rand))
         
-
         return self.upper_bound, self.lower_bound, self.utopia_point, self.normalized_utopia_point
 
 

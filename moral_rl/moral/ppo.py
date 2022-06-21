@@ -5,6 +5,7 @@ from torch.distributions import Categorical
 import numpy as np
 import math
 import wandb
+from envs.gym_wrapper import *
 
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
