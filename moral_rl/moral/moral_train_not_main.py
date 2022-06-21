@@ -40,7 +40,7 @@ def normalize_v3(value, dataset):
     return dataset.normalize_v3(value)
 
 
-def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_eth_norm, eth_norm, generators_filenames, discriminators_filenames, moral_filename, rand_filename):
+def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_eth_norm, eth_norm, generators_filenames, discriminators_filenames, moral_filename, rand_filename, non_eth_expert):
 
     nb_experts = len(generators_filenames)
 
@@ -128,6 +128,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
+    dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Logging
     objective_logs = []

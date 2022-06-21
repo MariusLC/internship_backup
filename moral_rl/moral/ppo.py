@@ -89,6 +89,9 @@ class TrajectoryDataset:
         self.returns_min_traj = math.inf
         self.returns_max_traj = -math.inf
 
+        # calculated with an expert in the non ethical objective, previously learned during a ppo phase.
+        self.utopia_point_expert = None
+
     def reset_buffer(self, i):
         # self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'log_probs': [], 'latents': None, 'logs': []}
         self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'airl_rewards':[], 'returns':[], 'vectorized_rewards': [], 'log_probs': [], 'latents': None, 'logs': [], 'discounted_rewards':[]}
@@ -205,6 +208,49 @@ class TrajectoryDataset:
     def normalize_v2(self, value, traj_size):
         normalization_v2 = value/abs(self.utopia_point)
         return normalization_v2
+
+    def normalize_v3(self, value, traj_size):
+        normalization_v3 = value/abs(self.utopia_point_expert)
+        return normalization_v3
+
+    def estimate_utopia_point(self, expert_policy, config, steps=10000):
+        env = GymWrapper(config.env_id)
+        states = env.reset()
+        states_tensor = torch.tensor(states).float().to(device)
+
+        # Fetch Shapes
+        n_actions = env.action_space.n
+        obs_shape = env.observation_space.shape
+        state_shape = obs_shape[:-1]
+        in_channels = obs_shape[-1]
+
+        # Init returns
+        estimated_returns = []
+        running_returns = 0
+
+        for t in range(steps):
+            actions, log_probs = expert_policy.act(states_tensor)
+            next_states, rewards, done, info = env.step(actions)
+            curr_reward = rewards[0]
+
+            if done:
+                curr_reward = 0
+                next_states = env.reset()
+            running_returns += curr_reward
+
+            if done:
+                estimated_returns.append(running_returns)
+                running_returns = 0
+
+            states = next_states.copy()
+            states_tensor = torch.tensor(states).float().to(device)
+
+        # l'utopia point est simplement la moyenne des rewards estimés par le discriminateur des trajectoires finies sur n pas de temps,
+        # en se référant à l'imitation policy pour le choix des actions
+        self.utopia_point_expert = sum(estimated_returns)/len(estimated_returns)
+        # print(" self.utopia_point_expert = ", self.utopia_point_expert)
+
+        return self.utopia_point_expert
 
     def compute_scalarized_rewards(self, w_posterior_mean, non_eth_norm, wandb):
         if non_eth_norm == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)

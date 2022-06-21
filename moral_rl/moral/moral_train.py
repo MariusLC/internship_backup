@@ -41,10 +41,12 @@ if __name__ == '__main__':
     discriminators_filenames = []
     moral_filename = c["data_path"]+c["env_path"]+vanilla_path+c["moral_path"]+str(c["experts_weights"])+c["special_name_agent"]+c["model_ext"]
     rand_filename = c["data_path"]+c["env_path"]+vanilla_path+c["moral_path"]+c["rand"]+c["demo_path"]+c["demo_ext"]
+    non_eth_expert = c["data_path"]+c["env_path"]+vanilla_path+str(c["non_eth_experts_weights"])+"/"+c["expe_path"]+c["model_ext"]
     for i in range(c["nb_experts"]):
         path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
         gene_or_expe_filenames.append(path+gene_or_expert+c["model_ext"])
         demos_filenames.append(path+c["demo_path"]+c["demo_ext"])
         discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
 
-    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, c["normalization_non_eth_sett"], c["normalization_eth_sett"], gene_or_expe_filenames, discriminators_filenames, moral_filename, rand_filename)
+
+    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, c["normalization_non_eth_sett"], c["normalization_eth_sett"], gene_or_expe_filenames, discriminators_filenames, moral_filename, rand_filename, non_eth_expert)
