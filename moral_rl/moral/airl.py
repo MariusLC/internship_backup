@@ -92,6 +92,10 @@ class Discriminator(nn.Module):
         self.upper_bound = 0
         self.lower_bound = 0
 
+        # estimate nadir point for action and traj with rand agent
+        self.lower_bound_rand = None
+        self.rewards_min_traj_rand = None
+
         # Latent conditioning
         if latent_dim is not None:
             self.latent_dim = latent_dim
@@ -210,6 +214,8 @@ class Discriminator(nn.Module):
                 return advantage
             elif eth_norm == "v5":
                 return (advantage - self.rewards_min_traj/self.traj_size)/(self.utopia_point - self.rewards_min_traj)
+            elif eth_norm == "v6":
+                return (advantage - self.rewards_min_traj_rand/self.traj_size)/(self.utopia_point - self.rewards_min_traj_rand)
         else:
             return advantage
 
@@ -403,16 +409,67 @@ class Discriminator(nn.Module):
         self.upper_bound = upper_bound
         self.lower_bound = lower_bound
         self.utopia_point = sum(estimated_returns)/len(estimated_returns)
-        # self.normalized_utopia_point = (self.utopia_point - self.lower_bound)/(self.upper_bound - self.lower_bound)
         self.normalized_utopia_point = (self.utopia_point - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)
-        print("self.normalized_utopia_point = ", self.normalized_utopia_point)
-        print("mean rew over 1 traj = ", estimated_returns[0])
-        print("normalized mean rew over 1 traj = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))
-        print("normalized mean rew over 1 traj with normalized utopia point = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)/abs(self.normalized_utopia_point))
+
+
+        print("utopia_point = ", self.utopia_point)
+        print("normalized_utopia_point = ", self.normalized_utopia_point)
         print("rewards_min_traj = ", rewards_min_traj)
         print("rewards_max_traj = ", rewards_max_traj)
         print("traj_size = ", traj_size)
+        print("mean rew over 1 traj = ", estimated_returns[0])
+        print("norm v1 (actions values [0,1] bounded) = ", (estimated_returns[0] - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))
+        print("norm v2 (v1 / normed UP) = ", ((estimated_returns[0] - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.normalized_utopia_point))
+        print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (estimated_returns[0] - self.rewards_min_traj)/(self.rewards_max_traj - self.rewards_min_traj))
+        print("norm v4 (no norm) = ", estimated_returns[0])
+        print("norm v5 (traj values [0,1] bounded, with UP) = ", (estimated_returns[0] - self.rewards_min_traj)/(self.utopia_point - self.rewards_min_traj))
+        
+
         return self.upper_bound, self.lower_bound, self.utopia_point, self.normalized_utopia_point
+
+
+    def estimate_nadir_point(self, rand_agent, config, steps=10000):
+        env = GymWrapper(config.env_id)
+        states = env.reset()
+        states_tensor = torch.tensor(states).float().to(device)
+
+        # Fetch Shapes
+        n_actions = env.action_space.n
+        obs_shape = env.observation_space.shape
+        state_shape = obs_shape[:-1]
+        in_channels = obs_shape[-1]
+
+        # Init returns
+        running_returns = 0
+
+        lower_bound = math.inf
+        rewards_min_traj = math.inf
+        for t in range(steps):
+            actions, log_probs = rand_agent.act(states_tensor)
+            next_states, rewards, done, info = env.step(actions)
+
+            airl_state = torch.tensor(states).to(device).float()
+            airl_next_state = torch.tensor(next_states).to(device).float()
+            airl_rewards = self.forward(airl_state, airl_next_state, config.gamma).item()
+            lower_bound = min(airl_rewards, lower_bound)
+            if done:
+                airl_rewards = 0
+                next_states = env.reset()
+            running_returns += airl_rewards
+
+            if done:
+                rewards_min_traj = min(rewards_min_traj, running_returns)
+                running_returns = 0
+             
+            states = next_states.copy()
+            states_tensor = torch.tensor(states).float().to(device)
+
+        self.rewards_min_traj_rand = rewards_min_traj
+        self.lower_bound_rand = lower_bound
+
+        print("lower_bound rand = ", self.lower_bound_rand)
+        print("rewards_min_traj = ", self.rewards_min_traj_rand)
+        return self.lower_bound_rand, self.rewards_min_traj_rand
 
 
 def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):
