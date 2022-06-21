@@ -1,29 +1,0 @@
-wandb: Currently logged in as: mariuslc (mlc-team). Use `wandb login --relogin` to force relogin
-wandb: Tracking run with wandb version 0.12.16
-wandb: Run data is saved locally in /home/lechapelier/internship_backup/moral_rl/wandb/run-20220524_174352-3k2t9qq8
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run brisk-dragon-83
-wandb: ⭐️ View project at https://wandb.ai/mlc-team/PPO
-wandb: 🚀 View run at https://wandb.ai/mlc-team/PPO/runs/3k2t9qq8
-  0% 0/750000 [00:00<?, ?it/s]  0% 0/750000 [00:00<?, ?it/s]
-Traceback (most recent call last):
-  File "/usr/lib/python3.9/runpy.py", line 197, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/usr/lib/python3.9/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "/home/lechapelier/internship_backup/moral_rl/moral/ppo_train.py", line 22, in <module>
-    ppo_train_1_expert(c["env_rad"]+c["env"], c["env_steps"], c["experts_weights"][i], expert_filename)
-  File "/home/lechapelier/internship_backup/moral_rl/moral/ppo_train_not_main.py", line 82, in ppo_train_1_expert
-    torch.save(ppo.state_dict(), filename)
-  File "/home/lechapelier/.local/lib/python3.9/site-packages/torch/serialization.py", line 377, in save
-    with _open_file_like(f, 'wb') as opened_file:
-  File "/home/lechapelier/.local/lib/python3.9/site-packages/torch/serialization.py", line 231, in _open_file_like
-    return _open_file(name_or_buffer, mode)
-  File "/home/lechapelier/.local/lib/python3.9/site-packages/torch/serialization.py", line 212, in __init__
-    super(_open_file, self).__init__(open(name, mode))
-FileNotFoundError: [Errno 2] No such file or directory: 'generated_data/v1/[0, 1]/expert.pt'
-wandb: Waiting for W&B process to finish... (failed 1). Press Control-C to abort syncing.
-wandb: - 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: \ 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: | 0.001 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: / 0.001 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: - 0.004 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: \ 0.004 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: | 0.004 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: / 0.004 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: - 0.004 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: \ 0.004 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: | 0.004 MB of 0.004 MB uploaded (0.000 MB deduped)wandb: / 0.004 MB of 0.004 MB uploaded (0.000 MB deduped)wandb:                                                                                
-wandb: Synced brisk-dragon-83: https://wandb.ai/mlc-team/PPO/runs/3k2t9qq8
-wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
-wandb: Find logs at: ./wandb/run-20220524_174352-3k2t9qq8/logs

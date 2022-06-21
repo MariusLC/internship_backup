@@ -208,6 +208,8 @@ class Discriminator(nn.Module):
                 return (advantage - self.rewards_min_traj/self.traj_size)/(self.rewards_max_traj - self.rewards_min_traj)
             elif eth_norm == "v4":
                 return advantage
+            elif eth_norm == "v5":
+                return (advantage - self.rewards_min_traj/self.traj_size)/(self.utopia_point - self.rewards_min_traj)
         else:
             return advantage
 
