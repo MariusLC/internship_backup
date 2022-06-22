@@ -104,8 +104,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     # utop_list = []
 
     rand_agent = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
-    # non_eth_expert = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
-    # non_eth_expert.load_state_dict(torch.load(non_eth_expert_filename, map_location=torch.device('cpu')))
+    non_eth_expert = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+    non_eth_expert.load_state_dict(torch.load(non_eth_expert_filename, map_location=torch.device('cpu')))
 
     for i in range(nb_experts):
         discriminator_list.append(Discriminator(state_shape=state_shape, in_channels=in_channels).to(device))
@@ -133,7 +133,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
-    # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
+    dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Logging
     objective_logs = []

@@ -249,20 +249,22 @@ class TrajectoryDataset:
         # l'utopia point est simplement la moyenne des rewards estimés par le discriminateur des trajectoires finies sur n pas de temps,
         # en se référant à l'imitation policy pour le choix des actions
         self.utopia_point_expert = sum(estimated_returns)/len(estimated_returns)
-        # print(" self.utopia_point_expert = ", self.utopia_point_expert)
+        print("self.utopia_point_expert = ", self.utopia_point_expert)
 
         return self.utopia_point_expert
 
     def compute_scalarized_rewards(self, w_posterior_mean, non_eth_norm, wandb):
         if non_eth_norm == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
-            non_eth_norm = None
+            non_eth_norm_fct = None
         else:
             if non_eth_norm == "v1": # normalisation classique par rapport aux valeurs min et max all time sur une traj (value - min)/(max - min)
-                non_eth_norm = self.normalize_v1
+                non_eth_norm_fct = self.normalize_v1
             elif non_eth_norm == "v2": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
-                non_eth_norm = self.normalize_v2
+                non_eth_norm_fct = self.normalize_v2
+            elif non_eth_norm == "v3": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
+                non_eth_norm_fct = self.normalize_v3
             self.compute_utopia()
-            self.compute_normalization_non_eth(non_eth_norm)
+            self.compute_normalization_non_eth(non_eth_norm_fct)
 
         mean_vectorized_rewards = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
         for i in range(len(self.trajectories)):
@@ -286,8 +288,8 @@ class TrajectoryDataset:
 
 
     def compute_normalization_non_eth(self, non_eth_norm):
-        print("self.returns_max_traj = ", self.returns_max_traj)
-        print("self.returns_min_traj = ", self.returns_min_traj)
+        # print("self.returns_max_traj = ", self.returns_max_traj)
+        # print("self.returns_min_traj = ", self.returns_min_traj)
         for i in range(len(self.trajectories)):
             for j in range(len(self.trajectories[i]["states"])):
                 traj_size = len(self.trajectories[i]["states"])
