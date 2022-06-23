@@ -89,12 +89,12 @@ class Discriminator(nn.Module):
         self.in_channels = in_channels
         self.eval = False
         self.utopia_point = None
-        self.upper_bound = 0
-        self.lower_bound = 0
+        self.max_action_generator = None
+        self.min_action_generator = None
 
         # estimate nadir point for action and traj with rand agent
-        self.lower_bound_rand = None
-        self.rewards_min_traj_rand = None
+        self.min_action_random_agent = None
+        self.min_trajectory_random_agent = None
 
         # Latent conditioning
         if latent_dim is not None:
@@ -201,47 +201,23 @@ class Discriminator(nn.Module):
             if eth_norm == "v0":
                 return advantage/np.abs(self.utopia_point)
             elif eth_norm == "v1":
-                return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
+                return (advantage-self.min_action_generator)/(self.max_action_generator - self.min_action_generator)
             elif eth_norm == "v2":
-                return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.normalized_utopia_point)
+                return ((advantage-self.min_action_generator)/(self.max_action_generator - self.min_action_generator))/abs(self.normalized_utopia_point)
             elif eth_norm == "v3":
-            #     print("self.rewards_max_traj = ", self.rewards_max_traj)
-            #     print("self.rewards_min_traj = ", self.rewards_min_traj)
+            #     print("self.min_trajectory_generator = ", self.min_trajectory_generator)
+            #     print("self.max_trajectory_generator = ", self.max_trajectory_generator)
             #     print("advantage = ", advantage)
-            #     print("v = ",(advantage - self.rewards_min_traj/self.traj_size)/(self.rewards_max_traj - self.rewards_min_traj))
-                return (advantage - self.rewards_min_traj/self.traj_size)/(self.rewards_max_traj - self.rewards_min_traj)
+            #     print("v = ",(advantage - self.min_trajectory_generator/self.traj_size)/(self.max_trajectory_generator - self.min_trajectory_generator))
+                return (advantage - self.min_trajectory_generator/self.traj_size)/(self.max_trajectory_generator - self.min_trajectory_generator)
             elif eth_norm == "v4":
                 return advantage
             elif eth_norm == "v5":
-                return (advantage - self.rewards_min_traj/self.traj_size)/(self.utopia_point - self.rewards_min_traj)
+                return (advantage - self.min_trajectory_generator/self.traj_size)/(self.utopia_point - self.min_trajectory_generator)
             elif eth_norm == "v6":
-                return (advantage - self.rewards_min_traj_rand/self.traj_size)/(self.utopia_point - self.rewards_min_traj_rand)
+                return (advantage - self.min_trajectory_random_agent/self.traj_size)/(self.utopia_point - self.min_trajectory_random_agent)
         else:
             return advantage
-
-    # def forward_v1(self, state, next_state, gamma, latent=None):
-    #     reward = self.g(state, latent)
-    #     value_state = self.h(state, latent)
-    #     value_next_state = self.h(next_state, latent)
-    #     advantage = reward + gamma*value_next_state - value_state         
-    #     if self.eval:
-    #         # classic normalization
-    #         return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
-    #         # standardisation
-    #         # we have to calculate mean in predict utopia first.
-    #     else:
-    #         return advantage
-
-    # def forward_v2(self, state, next_state, gamma, latent=None):
-    #     reward = self.g(state, latent)
-    #     value_state = self.h(state, latent)
-    #     value_next_state = self.h(next_state, latent)
-    #     advantage = reward + gamma*value_next_state - value_state         
-    #     if self.eval:
-    #         # classic normalization
-    #         return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/self.utopia_point
-    #     else:
-    #         return advantage
 
     def discriminate(self, state, next_state, gamma, action_probability, latent=None):
         if latent is not None:
@@ -316,8 +292,8 @@ class Discriminator(nn.Module):
 
         return self.utopia_point
 
-    def estimate_utopia_v2(self, imitation_policy, config, steps=10000):
-        env = GymWrapper(config.env_id)
+    def estimate_utopia_all(self, imitation_policy, env_id, gamma, steps=10000):
+        env = GymWrapper(env_id)
         states = env.reset()
         states_tensor = torch.tensor(states).float().to(device)
 
@@ -331,59 +307,21 @@ class Discriminator(nn.Module):
         estimated_returns = []
         running_returns = 0
 
-        lower_bound = math.inf 
-        upper_bound = -math.inf
-        for t in range(steps):
-            actions, log_probs = imitation_policy.act(states_tensor)
-            next_states, rewards, done, info = env.step(actions)
-
-            airl_state = torch.tensor(states).to(device).float()
-            airl_next_state = torch.tensor(next_states).to(device).float()
-            airl_rewards = self.forward(airl_state, airl_next_state, config.gamma).item()
-            lower_bound = min(airl_rewards, lower_bound)
-            upper_bound = max(airl_rewards, upper_bound)
-
-            if done:
-                next_states = env.reset()
-
-            states = next_states.copy()
-            states_tensor = torch.tensor(states).float().to(device)
-
-        self.upper_bound = upper_bound
-        self.lower_bound = lower_bound
-
-        return self.upper_bound, self.lower_bound
-
-    def estimate_utopia_all(self, imitation_policy, config, steps=10000):
-        env = GymWrapper(config.env_id)
-        states = env.reset()
-        states_tensor = torch.tensor(states).float().to(device)
-
-        # Fetch Shapes
-        n_actions = env.action_space.n
-        obs_shape = env.observation_space.shape
-        state_shape = obs_shape[:-1]
-        in_channels = obs_shape[-1]
-
-        # Init returns
-        estimated_returns = []
-        running_returns = 0
-
-        lower_bound = math.inf
-        upper_bound = -math.inf
+        min_action_generator = math.inf
+        max_action_generator = -math.inf
         traj_size = 1
         traj_size_not_calculated = True
-        rewards_min_traj = math.inf
-        rewards_max_traj = -math.inf
+        min_trajectory_generator = math.inf
+        max_trajectory_generator = -math.inf
         for t in range(steps):
             actions, log_probs = imitation_policy.act(states_tensor)
             next_states, rewards, done, info = env.step(actions)
 
             airl_state = torch.tensor(states).to(device).float()
             airl_next_state = torch.tensor(next_states).to(device).float()
-            airl_rewards = self.forward(airl_state, airl_next_state, config.gamma).item()
-            lower_bound = min(airl_rewards, lower_bound)
-            upper_bound = max(airl_rewards, upper_bound)
+            airl_rewards = self.forward(airl_state, airl_next_state, gamma).item()
+            min_action_generator = min(airl_rewards, min_action_generator)
+            max_action_generator = max(airl_rewards, max_action_generator)
             if done:
                 airl_rewards = 0
                 next_states = env.reset()
@@ -394,8 +332,8 @@ class Discriminator(nn.Module):
 
             if done:
                 estimated_returns.append(running_returns)
-                rewards_min_traj = min(rewards_min_traj, running_returns)
-                rewards_max_traj = max(rewards_max_traj, running_returns)
+                min_trajectory_generator = min(min_trajectory_generator, running_returns)
+                max_trajectory_generator = max(max_trajectory_generator, running_returns)
                 running_returns = 0
                 # print("test equals 1_v1 = ", sum(estimated_returns))
                 # print("test equals 1 = ", (sum(estimated_returns) - len(estimated_returns)*min(estimated_returns))/(len(estimated_returns)*(max(estimated_returns) - min(estimated_returns))))
@@ -404,32 +342,47 @@ class Discriminator(nn.Module):
             states_tensor = torch.tensor(states).float().to(device)
 
         self.traj_size = traj_size
-        self.rewards_min_traj = rewards_min_traj
-        self.rewards_max_traj = rewards_max_traj
-        self.upper_bound = upper_bound
-        self.lower_bound = lower_bound
+        self.min_trajectory_generator = min_trajectory_generator
+        self.max_trajectory_generator = max_trajectory_generator
+        self.max_action_generator = max_action_generator
+        self.min_action_generator = min_action_generator
         self.utopia_point = sum(estimated_returns)/len(estimated_returns)
-        self.normalized_utopia_point = (self.utopia_point - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)
+        self.normalized_utopia_point = (self.utopia_point - traj_size*self.min_action_generator)/(self.max_action_generator - self.min_action_generator)
 
 
         print("utopia_point = ", self.utopia_point)
         print("normalized_utopia_point = ", self.normalized_utopia_point)
-        print("rewards_min_traj = ", rewards_min_traj)
-        print("rewards_max_traj = ", rewards_max_traj)
+        print("min_trajectory_generator = ", min_trajectory_generator)
+        print("max_trajectory_generator = ", max_trajectory_generator)
+        print("min_action_generator = ", min_action_generator)
+        print("max_action_generator = ", max_action_generator)
         print("traj_size = ", traj_size)
+
         print("mean rew over 1 traj = ", estimated_returns[0])
-        print("norm v1 (actions values [0,1] bounded) = ", (estimated_returns[0] - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))
-        print("norm v2 (v1 / normed UP) = ", ((estimated_returns[0] - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.normalized_utopia_point))
-        print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (estimated_returns[0] - self.rewards_min_traj)/(self.rewards_max_traj - self.rewards_min_traj))
+        print("norm v0 (div utopia_point) = ", estimated_returns[0]/abs(self.utopia_point))
+        print("norm v1 (actions values [0,1] bounded) = ", (estimated_returns[0] - traj_size*self.min_action_generator)/(self.max_action_generator - self.min_action_generator))
+        print("norm v2 (v1 / normed UP) = ", ((estimated_returns[0] - traj_size*self.min_action_generator)/(self.max_action_generator - self.min_action_generator))/abs(self.normalized_utopia_point))
+        print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (estimated_returns[0] - self.min_trajectory_generator)/(self.max_trajectory_generator - self.min_trajectory_generator))
         print("norm v4 (no norm) = ", estimated_returns[0])
-        print("norm v5 (traj values [0,1] bounded, with UP) = ", (estimated_returns[0] - self.rewards_min_traj)/(self.utopia_point - self.rewards_min_traj))
-        print("norm v6 (traj values [0,1] bounded, with UP and min with rand agent) = ", (estimated_returns[0] - self.rewards_min_traj_rand)/(self.utopia_point - self.rewards_min_traj_rand))
-        
-        return self.upper_bound, self.lower_bound, self.utopia_point, self.normalized_utopia_point
+        print("norm v5 (traj values [0,1] bounded, with UP) = ", (estimated_returns[0] - self.min_trajectory_generator)/(self.utopia_point - self.min_trajectory_generator))
+        if self.min_trajectory_random_agent != None :
+            print("norm v6 (traj values [0,1] bounded, with UP and min with rand agent) = ", (estimated_returns[0] - self.min_trajectory_random_agent)/(self.utopia_point - self.min_trajectory_random_agent))
+
+        v_act = (estimated_returns[0]/traj_size) + 1e-1
+        print("rew 1 act = ", v_act)
+        print("norm v0 (div utopia_point) = ", v_act/abs(self.utopia_point))
+        print("norm v1 (actions values [0,1] bounded) = ", (v_act - self.min_action_generator)/(self.max_action_generator - self.min_action_generator))
+        print("norm v2 (v1 / normed UP) = ", ((v_act - self.min_action_generator)/(self.max_action_generator - self.min_action_generator))/abs(self.normalized_utopia_point))
+        print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (v_act - self.min_trajectory_generator)/(self.max_trajectory_generator - self.min_trajectory_generator))
+        print("norm v4 (no norm) = ", v_act)
+        print("norm v5 (traj values [0,1] bounded, with UP) = ", (v_act - self.min_trajectory_generator)/(self.utopia_point - self.min_trajectory_generator))
+        if self.min_trajectory_random_agent != None :
+            print("norm v6 (traj values [0,1] bounded, with UP and min with rand agent) = ", (v_act - self.min_trajectory_random_agent)/(self.utopia_point - self.min_trajectory_random_agent))
 
 
-    def estimate_nadir_point(self, rand_agent, config, steps=10000):
-        env = GymWrapper(config.env_id)
+
+    def estimate_nadir_point(self, rand_agent, env_id, gamma, steps=10000):
+        env = GymWrapper(env_id)
         states = env.reset()
         states_tensor = torch.tensor(states).float().to(device)
 
@@ -442,34 +395,39 @@ class Discriminator(nn.Module):
         # Init returns
         running_returns = 0
 
-        lower_bound = math.inf
-        rewards_min_traj = math.inf
+        min_action_random_agent = math.inf
+        min_trajectory_random_agent = math.inf
         for t in range(steps):
             actions, log_probs = rand_agent.act(states_tensor)
             next_states, rewards, done, info = env.step(actions)
 
             airl_state = torch.tensor(states).to(device).float()
             airl_next_state = torch.tensor(next_states).to(device).float()
-            airl_rewards = self.forward(airl_state, airl_next_state, config.gamma).item()
-            lower_bound = min(airl_rewards, lower_bound)
+            airl_rewards = self.forward(airl_state, airl_next_state, gamma).item()
+            min_action_random_agent = min(airl_rewards, min_action_random_agent)
             if done:
                 airl_rewards = 0
                 next_states = env.reset()
             running_returns += airl_rewards
 
             if done:
-                rewards_min_traj = min(rewards_min_traj, running_returns)
+                min_trajectory_random_agent = min(min_trajectory_random_agent, running_returns)
                 running_returns = 0
              
             states = next_states.copy()
             states_tensor = torch.tensor(states).float().to(device)
 
-        self.rewards_min_traj_rand = rewards_min_traj
-        self.lower_bound_rand = lower_bound
+        self.min_trajectory_random_agent = min_trajectory_random_agent
+        self.min_action_random_agent = min_action_random_agent
 
-        print("lower_bound rand = ", self.lower_bound_rand)
-        print("rewards_min_traj = ", self.rewards_min_traj_rand)
-        return self.lower_bound_rand, self.rewards_min_traj_rand
+        print("min_action_random_agent = ", self.min_action_random_agent)
+        print("min_trajectory_random_agent = ", self.min_trajectory_random_agent)
+        return self.min_action_random_agent, self.min_trajectory_random_agent
+
+    def estimate_normalisation_points(self, eth_norm, rand_agent, imitation_policy, env_id, gamma, steps=10000):
+        if eth_norm == "v6":
+            self.estimate_nadir_point(rand_agent, env_id, gamma, steps)
+        self.estimate_utopia_all(imitation_policy, env_id, gamma, steps)
 
 
 def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):

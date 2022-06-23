@@ -214,8 +214,8 @@ class TrajectoryDataset:
         normalization_v3 = value/abs(self.utopia_point_expert)
         return normalization_v3
 
-    def estimate_utopia_point(self, expert_policy, config, steps=10000):
-        env = GymWrapper(config.env_id)
+    def estimate_utopia_point(self, expert_policy, env_id, steps=10000):
+        env = GymWrapper(env_id)
         states = env.reset()
         states_tensor = torch.tensor(states).float().to(device)
 
@@ -253,6 +253,11 @@ class TrajectoryDataset:
 
         return self.utopia_point_expert
 
+    def estimate_normalisation_points(self, non_eth_norm, expert_policy, env_id, steps=10000):
+        if non_eth_norm == "v3":
+            self.estimate_utopia_point(expert_policy, env_id, steps)
+
+
     def compute_scalarized_rewards(self, w_posterior_mean, non_eth_norm, wandb):
         if non_eth_norm == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
             non_eth_norm_fct = None
@@ -282,7 +287,8 @@ class TrajectoryDataset:
                 # mean_scalarized_rewards += self.trajectories[i]["rewards"][-1]
             # print("r0 traj = ", np.array(self.trajectories[i]["returns"])[:,0])
             # print("r0 traj = ", np.array(self.trajectories[i]["returns"]).sum(axis=0)[0])
-            self.log_wandb_1_traj(mean_vectorized_rewards_1_traj, wandb, w_posterior_mean)
+            if wandb != None :
+                self.log_wandb_1_traj(mean_vectorized_rewards_1_traj, wandb, w_posterior_mean)
             mean_vectorized_rewards += mean_vectorized_rewards_1_traj
         print("mean_vectorized_rewards = ", mean_vectorized_rewards/len(self.trajectories))
 

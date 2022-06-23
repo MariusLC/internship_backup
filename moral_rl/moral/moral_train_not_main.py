@@ -114,8 +114,9 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
-        upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
+        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
+        # nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
+        # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
         
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=1000) # tests
         # print("Upper_bound agent "+str(i)+": "+str(upper_bound))
@@ -133,7 +134,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
-    dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
+    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
+    # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Logging
     objective_logs = []
@@ -265,9 +267,13 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
         if train_ready:
 
+            # log objective rewards into volume_buffer before normalizing it
+            volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+
+            
             dataset.compute_scalarized_rewards(w_posterior_mean, non_eth_norm, wandb)
             volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
-            volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+            # volume_buffer.log_statistics_sum(dataset.log_returns_sum())
 
             # mean_traj(ppo, discriminator_list, config, eth_norm, steps=1000)
             
