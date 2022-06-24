@@ -11,13 +11,24 @@ class PreferenceLearner:
         self.accept_rates = None
         self.deltas = []
         self.prefs = []
+        self.returns = []
+        self.cpt_pior = 0
+        self.cpt_nb_steps = 0
+        self.cpt_new_acc = 0
+        self.cpt_prob_supp = 0
+
+    def log_returns(self, ret_a, ret_b):
+        self.returns.append([ret_a, ret_b])
 
     def log_preference(self, delta, pref):
         self.deltas.append(delta)
         self.prefs.append(pref)
 
     def w_prior(self, w):
+        self.cpt_nb_steps += 1
         if np.linalg.norm(w) <=1 and np.all(np.array(w) >= 0):
+            # print("PIOR, w = ", w)
+            self.cpt_pior += 1
             return (2**self.d)/(math.pi**(self.d/2)/math.gamma(self.d/2 + 1))
         else:
             return 0
@@ -31,11 +42,22 @@ class PreferenceLearner:
 
     @staticmethod
     def f_loglik(w, delta, pref):
+        # print("w = ", w)
+        # print("delta = ", delta)
+        # print("pref*np.dot(w, delta) = ", (pref*np.dot(w, delta)))
+        # print("np.exp(pref*np.dot(w, delta)) = ", np.exp(pref*np.dot(w, delta)))
+        # print("loglik = ", np.log(np.minimum(1, np.exp(pref*np.dot(w, delta)) + 1e-5)))
         return np.log(np.minimum(1, np.exp(pref*np.dot(w, delta)) + 1e-5))
 
     @staticmethod
     def vanilla_loglik(w, delta, pref):
         return np.log(1/(1+np.exp(-pref*np.dot(w, delta))))
+
+    @staticmethod
+    def basic_loglik(w, ret_a, ret_b):
+        e_a = np.exp(np.dot(w, ret_a))
+        e_b = np.exp(np.dot(w, ret_b))
+        return np.log(e_a/(e_a + e_b))
 
     @staticmethod
     def propose_w_prob(w1, w2):
@@ -46,6 +68,71 @@ class PreferenceLearner:
     def propose_w(w_curr):
         w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
         return w_new
+
+    def posterior_log_prob_test(self, deltas, prefs, w, returns):
+        f_logliks = []
+        for i in range(len(prefs)):
+            f_logliks.append(self.f_loglik(w, deltas[i], prefs[i]))
+            # print("w = ", w)
+            # print("ret_a = ", returns[i][0])
+            # print("ret_b = ", returns[i][1])
+            # print("deltas = ", deltas[i])
+            # print("prefs = ", prefs[i])
+            # print("loglik 2.0 delta = ", f_logliks[-1])
+            # print("loglik vanilla delta = ", self.vanilla_loglik(w, deltas[i], prefs[i]))
+            # print("loglik basic a>b = ", self.basic_loglik(w, returns[i][0], returns[i][1]))
+            # print("loglik basic b>a = ", self.basic_loglik(w, returns[i][1], returns[i][0]))
+        loglik = np.sum(f_logliks)
+        log_prior = np.log(self.w_prior(w) + 1e-5)
+        # print("sum loglik = ", loglik)
+        # print("prior = ", log_prior)
+
+        return loglik + log_prior
+
+
+    def posterior_log_prob_basic_log_lik(self, deltas, prefs, w, returns):
+        f_logliks = []
+        for i in range(len(prefs)):
+            if prefs[i] == 1 :
+                f_logliks.append(self.basic_loglik(w, returns[i][0], returns[i][1]))
+            else :
+                f_logliks.append(self.basic_loglik(w, returns[i][1], returns[i][0]))
+            # print("w = ", w)
+            # print("ret_a = ", returns[i][0])
+            # print("ret_b = ", returns[i][1])
+            # print("deltas = ", deltas[i])
+            # print("prefs = ", prefs[i])
+            # print("loglik 2.0 delta = ", f_logliks[-1])
+            # print("loglik vanilla delta = ", self.vanilla_loglik(w, deltas[i], prefs[i]))
+            # print("loglik basic a>b = ", self.basic_loglik(w, returns[i][0], returns[i][1]))
+            # print("loglik basic b>a = ", self.basic_loglik(w, returns[i][1], returns[i][0]))
+        loglik = np.sum(f_logliks)
+        log_prior = np.log(self.w_prior(w) + 1e-5)
+        # print("sum loglik = ", loglik)
+        # print("prior = ", log_prior)
+
+        return loglik + log_prior
+
+
+    def posterior_log_prob_test_prints(self, deltas, prefs, w, returns):
+        f_logliks = []
+        for i in range(len(prefs)):
+            f_logliks.append(self.f_loglik(w, deltas[i], prefs[i]))
+            # print("w = ", w)
+            # print("ret_a = ", returns[i][0])
+            # print("ret_b = ", returns[i][1])
+            # print("deltas = ", deltas[i])
+            # print("prefs = ", prefs[i])
+            # print("loglik 2.0 delta = ", f_logliks[-1])
+            # print("loglik vanilla delta = ", self.vanilla_loglik(w, deltas[i], prefs[i]))
+            # print("loglik basic a>b = ", self.basic_loglik(w, returns[i][0], returns[i][1]))
+            # print("loglik basic b>a = ", self.basic_loglik(w, returns[i][1], returns[i][0]))
+        loglik = np.sum(f_logliks)
+        log_prior = np.log(self.w_prior(w) + 1e-5)
+        print("sum loglik = ", loglik)
+        print("prior = ", log_prior)
+
+        return loglik + log_prior
 
     def posterior_log_prob(self, deltas, prefs, w):
         f_logliks = []
@@ -89,6 +176,63 @@ class PreferenceLearner:
 
         self.accept_rates = np.array(accept_rates)[self.warmup:]
 
+        return np.array(w_arr)[self.warmup:]
+
+    def mcmc_test(self, w_init='mode'):
+        if w_init == 'mode':
+            w_init = [0 for i in range(self.d)]
+
+        w_arr = []
+        w_curr = w_init
+        accept_rates = []
+        accept_cum = 0
+
+        # print("posterior_prob w_init = ", self.posterior_log_prob_test_prints(self.deltas, self.prefs, w_init, self.returns))
+
+        for i in range(1, self.warmup + self.n_iter + 1):
+            # print("w_curr = ", w_curr)
+            w_new = self.propose_w(w_curr)
+            # w_new = w_new / sum(abs(w_new))
+            # w_new = w_new / np.linalg.norm(w_new)
+
+            # prob_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
+            # prob_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
+            # prob_curr = self.posterior_log_prob_test(self.deltas, self.prefs, w_curr, self.returns)
+            # prob_new = self.posterior_log_prob_test(self.deltas, self.prefs, w_new, self.returns)
+
+            prob_curr = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_curr, self.returns)
+            prob_new = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_new, self.returns)
+
+
+            if prob_new > prob_curr:
+                self.cpt_prob_supp += 1
+                acceptance_ratio = 1
+            else:
+                qr_a = self.propose_w_prob(w_curr, w_new)
+                qr_b = self.propose_w_prob(w_new, w_curr)
+                qr = qr_a / qr_b
+                # print("qr_a = ", qr_a)
+                # print("qr_b = ", qr_b)
+                # print("qr = ", qr)
+                acceptance_ratio = np.exp(prob_new - prob_curr) * qr
+                # print("acceptance_ratio = ", acceptance_ratio)
+            acceptance_prob = min(1, acceptance_ratio)
+
+            if acceptance_prob > st.uniform(0, 1).rvs():
+                w_curr = w_new
+                accept_cum = accept_cum + 1
+                w_arr.append(w_new)
+                self.cpt_new_acc += 1
+            else:
+                w_arr.append(w_curr)
+
+            accept_rates.append(accept_cum / i)
+
+        self.accept_rates = np.array(accept_rates)[self.warmup:]
+        # print("self.cpt_pior = ",self.cpt_pior)
+        # print("self.cpt_nb_steps = ", self.cpt_nb_steps)
+        # print("self.cpt_prob_supp = ", self.cpt_prob_supp)
+        # print("self.cpt_new_acc = ", self.cpt_new_acc)
         return np.array(w_arr)[self.warmup:]
 
 

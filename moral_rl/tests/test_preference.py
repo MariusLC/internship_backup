@@ -46,7 +46,7 @@ def query_pair(ret_a, ret_b):
 		preference = -1
 	else:
 		preference = 1 if np.random.rand() < 0.5 else -1
-	return preference
+	return preference, kl_a, kl_b
 
 
 
@@ -79,8 +79,6 @@ if __name__ == '__main__':
 	gamma = 0.999
 	nb_experts = 2
 	batchsize_ppo = 2
-	w_posterior_mean = np.array([1,1,1])
-	w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
 
 	# Create Environment
 	env = GymWrapper(env_id)
@@ -95,7 +93,7 @@ if __name__ == '__main__':
 
 
 	# get an agent to act on the environment
-	agent_test_name = "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v5_v3.pt"
+	agent_test_name = "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v3_v1.pt"
 	agent_test = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions)
 	agent_test.load_state_dict(torch.load(agent_test_name, map_location=torch.device('cpu')))
 
@@ -115,6 +113,18 @@ if __name__ == '__main__':
 
 	dataset = TrajectoryDataset(batch_size=batchsize_ppo, n_workers=n_workers)
 	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
+
+
+
+	preference_learner = PreferenceLearner(d=DIMENSION, n_iter=10000, warmup=1000)
+
+	# w_posterior_mean = np.array([1,1,1])
+	# w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
+
+	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
+	w_posterior_mean = w_posterior.mean(axis=0)
+
+	HOF = []
 
 	for i in range(nb_queries): 
 
@@ -182,16 +192,36 @@ if __name__ == '__main__':
 		print("delta = ",delta)
 
 		# go query the preference expert
-		preference = query_pair(ret_a, ret_b)
+		preference, kl_a, kl_b = query_pair(ret_a[:-1], ret_b[:-1])
 		print(preference)
 
+		HOF.append((kl_a, ret_a, observed_rew_a))
+		HOF.append((kl_b, ret_b, observed_rew_b))
+
 		# Run MCMC on expert preferences
-		preference_learner = PreferenceLearner(d=DIMENSION, n_iter=10000, warmup=1000)
 		preference_learner.log_preference(delta, preference)
+		# preference_learner.log_returns(ret_a[:-1], ret_b[:-1])
+		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 		print("w_posterior_mean = ", w_posterior_mean)
-		w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
+		w_posterior = preference_learner.mcmc_test(w_posterior_mean)
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
+		if sum(w_posterior_mean) != 0: 
+
+			# making a 1 norm vector from w_posterior
+			w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+
+			# # normalize the vector 
+			# w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
+			
+			print(f'New Posterior Mean {w_posterior_mean}')
+		else :
+			print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
+
+	dtype = [("kl_a", float), ("ret_a", np.float64, (4,)), ("observed_rew_a", np.float64, (3,))]
+	HOF = np.array(HOF, dtype=dtype)
+	HOF_sorted = np.sort(HOF, order="kl_a")
+	print("HOF = ", HOF_sorted)

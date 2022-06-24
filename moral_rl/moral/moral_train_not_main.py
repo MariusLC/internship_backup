@@ -167,29 +167,6 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             preference = preference_giver.query_pair(ret_a, ret_b)
             print(f'obtained preference: {preference}')
 
-            # v2-Environment comparison
-            #ppl_saved_a = ret_a[1]
-            #goal_time_a = ret_a[0]
-            #ppl_saved_b = ret_b[1]
-            #goal_time_b = ret_b[0]
-            #if np.random.rand() < config.preference_noise:
-            #    rand_pref_param = np.random.rand()
-            #    if rand_pref_param > 0.5:
-            #        preference = 1
-            #    else:
-            #        preference = -1
-            #else:
-            #    if ppl_saved_a > ppl_saved_b:
-            #        preference = 1
-            #    elif ppl_saved_b > ppl_saved_a:
-            #        preference = -1
-            #    elif goal_time_a > goal_time_b:
-            #        preference = 1
-            #    elif goal_time_b > goal_time_a:
-            #        preference = -1
-            #    else:
-            #        preference = 1 if np.random.rand() < 0.5 else -1
-
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
             w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
@@ -197,8 +174,13 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             w_posterior_mean = w_posterior.mean(axis=0)
             print("w_posterior_mean = ", w_posterior_mean)
             if sum(w_posterior_mean) != 0: 
-                # making a 1 norm vector from w_posterior
-                w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+
+                # # making a 1 norm vector from w_posterior
+                # w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+
+                # normalize the vector 
+                w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
+                
                 print(f'New Posterior Mean {w_posterior_mean}')
             else :
                 print(f'Keep the current Posterior Mean {w_posterior_mean}')
