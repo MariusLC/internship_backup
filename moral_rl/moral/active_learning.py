@@ -237,7 +237,7 @@ class PreferenceLearner:
 
 
 class VolumeBuffer:
-    def __init__(self, auto_pref=True):
+    def __init__(self, dim_ratio, auto_pref=True):
         self.auto_pref = auto_pref
         self.best_volume = -np.inf
         self.best_delta = None
@@ -245,6 +245,7 @@ class VolumeBuffer:
         self.best_returns = None
         self.observed_logs = []
         self.objective_logs = []
+        self.dimension_ratio = dim_ratio
 
     def log_statistics(self, statistics):
         # print("objective LOG : ", statistics)
@@ -300,8 +301,11 @@ class VolumeBuffer:
             # logs_b = objective_logs_returns[rand_idx[1], 0:3]
             # print("objective_logs_returns = ", objective_logs_returns)
             # print(len(objective_logs_returns))
-            logs_a = objective_logs_returns[rand_idx[0]][:-1]
-            logs_b = objective_logs_returns[rand_idx[1]][:-1]
+            # logs_a = objective_logs_returns[rand_idx[0]][:-1]
+            # logs_b = objective_logs_returns[rand_idx[1]][:-1]
+            logs_a = objective_logs_returns[rand_idx[0]][:self.dimension_ratio]
+            logs_b = objective_logs_returns[rand_idx[1]][:self.dimension_ratio]
+            
             # print(logs_a)
 
             self.objective_logs = []

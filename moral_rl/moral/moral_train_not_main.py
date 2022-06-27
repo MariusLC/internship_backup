@@ -146,7 +146,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     # preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
-    volume_buffer = VolumeBuffer()
+    volume_buffer = VolumeBuffer(len(ratio))
     preference_giver = PreferenceGiverv3(ratio=config.ratio)
 
 
