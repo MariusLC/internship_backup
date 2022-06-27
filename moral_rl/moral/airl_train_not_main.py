@@ -86,8 +86,8 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
         airl_advantages = list(airl_advantages.detach().cpu().numpy() * [0 if i else 1 for i in done])
 
         # Save Trajectory
-        # train_ready = dataset.write_tuple(states, actions, airl_rewards, done, log_probs)
-        train_ready = dataset.write_tuple_2(states, actions, airl_rewards, airl_advantages, done, log_probs)
+        train_ready = dataset.write_tuple(states, actions, airl_rewards, done, log_probs)
+        # train_ready = dataset.write_tuple_2(states, actions, airl_rewards, airl_advantages, done, log_probs)
 
         if train_ready:
             # Log Objectives
@@ -135,8 +135,8 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
                        'Real Accuracy': real_acc})
             for ret in dataset.log_returns():
                 wandb.log({'Returns': ret})
-            for adv in dataset.log_advantages():
-                wandb.log({'Advantages': adv})
+            # for adv in dataset.log_advantages():
+            #     wandb.log({'Advantages': adv})
             dataset.reset_trajectories()
 
 
