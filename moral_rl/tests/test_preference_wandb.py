@@ -90,7 +90,14 @@ if __name__ == '__main__':
 		discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
 
 
-	nb_queries = 50
+	# Config
+	wandb.init(
+		project='Test_preferences',
+		config={
+			},
+		reinit=True)
+
+	nb_queries = 100
 	env_id = "randomized_v3"
 	n_workers = 1
 	gamma = 0.999
@@ -239,6 +246,9 @@ if __name__ == '__main__':
 			print(f'New Posterior Mean {w_posterior_mean}')
 		else :
 			print(f'Keep the current Posterior Mean {w_posterior_mean}')
+
+		for i in range(len(w_posterior_mean)):
+			wandb.log({'w_posterior_mean['+i+']': w_posterior_mean})
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
