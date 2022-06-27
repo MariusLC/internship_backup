@@ -138,6 +138,7 @@ if __name__ == '__main__':
 	for i in range(c["nb_experts"]):
 		path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
 
+		# expert_filename = c["data_path"]+c["env_path"]+vanilla_path+"moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v5_v3"+c["model_ext"]
 		expert_filename = path+c["expe_path"]+c["model_ext"]
 		rand_filename = c["data_path"]+c["env_path"]+vanilla_path+c["rand_path"]+c["expe_path"]+c["model_ext"]
 		discriminator_filename = path+c["disc_path"]+c["model_ext"]
