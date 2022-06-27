@@ -1,5 +1,5 @@
 #Paths
-generate_demos: False
+generate_demos: True
 vanilla: False
 gene_bool: False
 data_path: "generated_data/"
