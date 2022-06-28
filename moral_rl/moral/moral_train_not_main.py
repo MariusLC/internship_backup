@@ -238,9 +238,9 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
                 wandb.log({'Obj_' + str(i): ret}, step=t*config.n_workers)
 
             # Log total weighted sum
-            for i, ret in enumerate(dataset.log_returns()):
-                wandb.log({'Returns': ret}, step=t+i)
-            wandb.log({'Returns mean': np.sum(dataset.log_rewards())}, step=t*config.n_workers)
+            # for i, ret in enumerate(dataset.log_returns()):
+            #     wandb.log({'Returns': ret}, step=t+i)
+            wandb.log({'Returns mean': np.mean(dataset.log_rewards())}, step=t*config.n_workers)
 
 
             # Update Models

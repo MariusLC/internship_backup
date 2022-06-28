@@ -132,7 +132,7 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
                        'Real Accuracy': real_acc}, step=t*config.n_workers)
             for i, ret in enumerate(dataset.log_rewards()):
                 wandb.log({'Returns': ret}, step=(t//config.n_workers)*config.n_workers+i)
-            wandb.log({'Returns mean': np.sum(dataset.log_rewards())}, step=t*config.n_workers)
+            wandb.log({'Returns mean': np.mean(dataset.log_rewards())}, step=t*config.n_workers)
 
             dataset.reset_trajectories()
 
