@@ -18,8 +18,8 @@ if __name__ == '__main__':
     # parser.add_argument('--ratio', nargs='+', type=int)
     # args = parser.parse_args()
 
-    ratio = [1,3,1]
-    drlhp_filename = "generated_data/v3/drlhp/[1,3,1].pt"
+    ratio = [1,3,1,1]
+    drlhp_filename = "generated_data/v3/drlhp/[1,3,1,1].pt"
 
     # Config
     wandb.init(project='PbRL', config={
