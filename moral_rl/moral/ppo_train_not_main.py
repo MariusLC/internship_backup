@@ -75,7 +75,7 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
             for i, obj in enumerate(objective_logs):
                 wandb.log({'Obj_' + str(i): obj}, step=t*config.n_workers)
             for i, ret in enumerate(dataset.log_rewards()):
-                wandb.log({'Returns': ret}, step=(t//n_workers)*n_workers+i)
+                wandb.log({'Returns': ret}, step=(t//config.n_workers)*config.n_workers+i)
             wandb.log({'Returns mean': np.sum(dataset.log_rewards())}, step=t*config.n_workers)
             dataset.reset_trajectories()
 

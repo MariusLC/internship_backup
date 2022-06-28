@@ -145,8 +145,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
     # Log weight vector
     for i in range(len(w_posterior_mean)):
-        wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=t*config.n_workers)
-    
+        wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=0)
+
     volume_buffer = VolumeBuffer(len(ratio))
     preference_giver = PreferenceGiverv3(ratio=config.ratio)
 
@@ -175,10 +175,6 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             w_posterior_mean = w_posterior.mean(axis=0)
             print("w_posterior_mean = ", w_posterior_mean)
 
-            # Log weight vector
-            for i in range(len(w_posterior_mean)):
-                wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=t*config.n_workers)
-
             if sum(w_posterior_mean) != 0: 
 
                 # # making a 1 norm vector from w_posterior
@@ -190,6 +186,10 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
                 print(f'New Posterior Mean {w_posterior_mean}')
             else :
                 print(f'Keep the current Posterior Mean {w_posterior_mean}')
+
+            # Log weight vector
+            for i in range(len(w_posterior_mean)):
+                wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=t*config.n_workers)
 
             volume_buffer.reset()
 
