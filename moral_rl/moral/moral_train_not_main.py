@@ -229,8 +229,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             # Log Objectives
             obj_ret = np.array(volume_buffer.objective_logs_sum)
             obj_ret_logs = np.mean(obj_ret, axis=0)
-            for i, obj in enumerate(objective_logs):
-                wandb.log({'Obj_' + str(i): obj}, step=t*config.n_workers)
+            for i, ret in enumerate(obj_ret_logs):
+                wandb.log({'Obj_' + str(i): ret}, step=t*config.n_workers)
 
             # Log total weighted sum
             for i, ret in enumerate(dataset.log_returns()):
