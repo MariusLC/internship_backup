@@ -18,6 +18,7 @@ if __name__ == '__main__':
     # args = parser.parse_args()
 
     ratio = [1,3,1]
+    drlhp_filename = "generated_data/v3/drlhp/[1,3,1].pt"
 
     # Config
     wandb.init(project='PbRL', config={
@@ -123,3 +124,6 @@ if __name__ == '__main__':
         # Prepare state input for next time step
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
+        save_data(ppo, drlhp_filename)
+
+    save_data(ppo, drlhp_filename)
