@@ -34,7 +34,7 @@ normalization_eth_sett: "v6"
 normalization_non_eth_sett: "v3"
 
 # pref
-posterior_mode: "moral"
+posterior_mode: "basic"
 prop_w_mode: "normalized_linalg"
 n_workers: 1
 gamma: 0.999
@@ -47,5 +47,5 @@ agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131
 # Peschl Values #
 #######
 env_steps: 8000000
-n_queries: 50
+n_queries: 200
 #### query_freq: 153 846 # env_steps_moral/(n_queries+2)

@@ -81,6 +81,14 @@ class PreferenceLearner:
         w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
         w_new = w_new / np.linalg.norm(w_new)
         return w_new
+
+    @staticmethod
+    def propose_w_normalized_linalg_positive(w_curr):
+        w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
+        w_new = abs(w_new)
+        w_new = w_new / np.linalg.norm(w_new)
+        return w_new
+        
         
 
     def posterior_log_prob_vanilla(self, deltas, prefs, w):
@@ -197,6 +205,8 @@ class PreferenceLearner:
                 w_new = self.propose_w(w_curr)
             elif prop_w_mode == "normalized_linalg":
                 w_new = self.propose_w_normalized_linalg(w_curr)
+            elif prop_w_mode == "normalized_linalg_positive":
+                w_new = self.propose_w_normalized_linalg_positive(w_curr)
             elif prop_w_mode == "normalized":
                 w_new = self.propose_w_normalized(w_curr)
             
