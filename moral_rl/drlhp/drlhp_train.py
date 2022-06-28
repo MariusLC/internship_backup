@@ -12,15 +12,17 @@ import argparse
 
 if __name__ == '__main__':
 
-    # Fetch ratio args
-    parser = argparse.ArgumentParser(description='Preference Ratio.')
-    parser.add_argument('--ratio', nargs='+', type=int)
-    args = parser.parse_args()
+    # # Fetch ratio args
+    # parser = argparse.ArgumentParser(description='Preference Ratio.')
+    # parser.add_argument('--ratio', nargs='+', type=int)
+    # args = parser.parse_args()
+
+    ratio = [1,3,1]
 
     # Config
     wandb.init(project='PbRL', config={
         'env_id': 'randomized_v3',
-        'ratio': args.ratio,
+        'ratio': ratio,
         'env_steps': 12e6,
         'batchsize_ppo': 12,
         'batchsize_preference': 12,
