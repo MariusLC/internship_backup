@@ -2,7 +2,6 @@
 real_params: True
 vanilla: False
 data_path: "generated_data/"
-env_path: "v3/"
 vanilla_path: "Peschl/"
 expe_path: "expert"
 demo_path: "demonstrations"
@@ -12,7 +11,7 @@ moral_path: "moral_agents/"
 model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
-special_name_agent: "1111_norm_v6_v3_testing_modifs"
+special_name_agent: "1111_norm_v6_v3"
 
 # new stuff about normalization
 rand: "rand/"
@@ -34,6 +33,15 @@ geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate
 normalization_eth_sett: "v6"
 normalization_non_eth_sett: "v3"
 
+# pref
+posterior_mode: "moral"
+prop_w_mode: "normalized_linalg"
+n_workers: 1
+gamma: 0.999
+batchsize_ppo: 2
+dimension_pref: 3
+agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
+
 
 #######
 # Peschl Values #
@@ -41,19 +49,3 @@ normalization_non_eth_sett: "v3"
 env_steps: 8000000
 n_queries: 50
 #### query_freq: 153 846 # env_steps_moral/(n_queries+2)
-
-
-#######
-# Test Values #
-#######
-# env_steps: 100
-# n_queries: 2
-query_freq: 99
-
-#######
-# Test Queries Values #
-#######
-# env_steps: 10000
-# n_queries: 2
-# query_freq: 500
-

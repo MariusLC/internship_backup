@@ -69,11 +69,15 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
         if train_ready:
             update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg)
             # update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
+            # Log Objectives
             objective_logs = dataset.log_objectives()
-            for i in range(objective_logs.shape[1]):
-                wandb.log({'Obj_' + str(i): objective_logs[:, i].mean()})
-            for ret in dataset.log_returns():
-                wandb.log({'Returns': ret})
+            objective_logs = np.mean(objective_logs, axis=0)
+            for i, obj in enumerate(objective_logs):
+                wandb.log({'Obj_' + str(i): obj}, step=t*config.n_workers)
+
+            for i, ret in enumerate(dataset.log_returns()):
+                wandb.log({'Returns': ret}, step=t+i)
+            wandb.log({'Returns mean': np.sum(dataset.log_returns())}, step=t*config.n_workers)
             dataset.reset_trajectories()
 
         # Prepare state input for next time step

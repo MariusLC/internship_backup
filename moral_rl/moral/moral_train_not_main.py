@@ -137,10 +137,6 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
-    # Logging
-    objective_logs = []
-    checkpoint_logs = []
-
     # Active Learning
     preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=10000, warmup=1000)
     # preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=1000, warmup=100) # tests
@@ -173,6 +169,11 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             print("w_posterior = ", w_posterior)
             w_posterior_mean = w_posterior.mean(axis=0)
             print("w_posterior_mean = ", w_posterior_mean)
+
+            # Log weight vector
+            for i in range(len(w_posterior_mean)):
+                wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=t*config.n_workers)
+
             if sum(w_posterior_mean) != 0: 
 
                 # # making a 1 norm vector from w_posterior
@@ -190,7 +191,6 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         # Environment interaction
         actions, log_probs = ppo.act(states_tensor)
         next_states, rewards, done, info = vec_env.step(actions)
-        objective_logs.append(rewards)
 
         # Fetch AIRL rewards
         airl_state = torch.tensor(states).to(device).float()
@@ -211,68 +211,38 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
         train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
 
-        # vectorized_rewards = [ [non_eth_norm(r[0], dataset)] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
-
-        # scalarized_rewards = [np.dot(w_posterior_mean, r[0:nb_experts+1]) for r in vectorized_rewards]
-
-
-        # # Logging obtained rewards for active learning
-        # volume_buffer.log_rewards(vectorized_rewards)
-        # # Logging true objectives for automatic preferences
-        # volume_buffer.log_statistics(rewards)
-        # # Add experience to PPO dataset
-
-
-        # train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs)
-        # train_ready = dataset.write_tuple_3(states, actions, scalarized_rewards, np.array(rewards)[:,0], done, log_probs)
-        # train_ready = dataset.write_tuple_norm(states, actions, scalarized_rewards, rewards, airl_rewards_list, done, log_probs)
-
-        # print("vectorized_rewards = ", vectorized_rewards)
-        # mean_rew = np.array(vectorized_rewards).mean(axis=0)
-        # returns_vb, rewards_vb = volume_buffer.get_data()
-        # rewards_vb = np.array(rewards_vb)
-        # rewards_vb = rewards_vb.mean(axis=0) # sum over trajectories
-        # rewards_vb = rewards_vb.mean(axis=0) # sum over workers ?
-        # # print(rewards_vb)                  # we get the mean rewards over all actions in the buffer
-        # for i in range(len(mean_rew)):
-        #     wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
-        #     wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
-        #     wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * mean_rew[i]})
-        #     wandb.log({'rewards_mean ['+str(i)+']': rewards_vb[i]})
-        #     # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
-        #     # print('vectorized_rew_mean ['+str(i)+']'+ str(mean_rew[i]))
-        #     # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * mean_rew[i]))
-        #     # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
-        for i in range(nb_experts+1):
-            wandb.log({'non_value': 0})
-
 
         if train_ready:
 
             # log objective rewards into volume_buffer before normalizing it
             volume_buffer.log_statistics_sum(dataset.log_returns_sum())
-
-            
-            dataset.compute_scalarized_rewards(w_posterior_mean, non_eth_norm, wandb)
+            mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, non_eth_norm, wandb)
             volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
-            # volume_buffer.log_statistics_sum(dataset.log_returns_sum())
 
             # mean_traj(ppo, discriminator_list, config, eth_norm, steps=1000)
+
+            # Log mean vectorized rewards
+            for i, vec in enumerate(mean_vectorized_rewards):
+                wandb.log({'vectorized_rew_mean ['+str(i)+']': vec}, step=t*config.n_workers)
+                wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vec}, step=t*config.n_workers)
             
             # Log Objectives
-            objective_logs = np.array(objective_logs).sum(axis=0)
-            for i in range(objective_logs.shape[1]):
-                wandb.log({'Obj_' + str(i): objective_logs[:, i].mean()})
-            objective_logs = []
+            obj_ret = np.array(volume_buffer.objective_logs_sum)
+            obj_ret_logs = np.mean(obj_ret, axis=0)
+            for i, obj in enumerate(objective_logs):
+                wandb.log({'Obj_' + str(i): obj}, step=t*config.n_workers)
+
+            # Log total weighted sum
+            for i, ret in enumerate(dataset.log_returns()):
+                wandb.log({'Returns': ret}, step=t+i)
+            wandb.log({'Returns mean': np.sum(dataset.log_rewards())}, step=t*config.n_workers)
+
 
             # Update Models
             update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg)
             #update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
-            for rew in dataset.log_rewards():
-                wandb.log({'Returns': rew})
 
             # Sample two random trajectories & compare expected volume removal with best pair
-            # print("compare_delta")
             if volume_buffer.auto_pref:
                 # new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair()
                 new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
@@ -290,9 +260,9 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         states_tensor = torch.tensor(states).float().to(device)
         save_data(ppo, moral_filename)
 
-    #vec_env.close()
-    # torch.save(ppo.state_dict(), moral_filename)
     save_data(ppo, moral_filename)
+
+
 
 def mean_traj(agent, discriminators, config, eth_norm, steps=10000):
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=1)

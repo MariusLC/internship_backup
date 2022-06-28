@@ -287,10 +287,13 @@ class TrajectoryDataset:
                 # mean_scalarized_rewards += self.trajectories[i]["rewards"][-1]
             # print("r0 traj = ", np.array(self.trajectories[i]["returns"])[:,0])
             # print("r0 traj = ", np.array(self.trajectories[i]["returns"]).sum(axis=0)[0])
-            if wandb != None :
-                self.log_wandb_1_traj(mean_vectorized_rewards_1_traj, wandb, w_posterior_mean)
+            # if wandb != None :
+            #     self.log_wandb_1_traj(mean_vectorized_rewards_1_traj, wandb, w_posterior_mean)
             mean_vectorized_rewards += mean_vectorized_rewards_1_traj
-        print("mean_vectorized_rewards = ", mean_vectorized_rewards/len(self.trajectories))
+        mean_vectorized_rewards = mean_vectorized_rewards/len(self.trajectories)
+        print("mean_vectorized_rewards = ", mean_vectorized_rewards)
+
+        return mean_vectorized_rewards
 
 
     def compute_normalization_non_eth(self, non_eth_norm):
@@ -313,33 +316,33 @@ class TrajectoryDataset:
         self.utopia_point = self.sum / len(self.trajectories)
         # print("utopia_point = ", self.utopia_point)
 
-    def log_wandb(self, vectorized_rewards, rewards, wandb, w_posterior_mean):
-        # print("vectorized_rewards 1 traj = ", vectorized_rewards)
-        # mean_rew = np.array(vectorized_rewards).mean(axis=0) # ?
-        # returns_vb, rewards_vb = volume_buffer.get_data()
-        # rewards_vb = np.array(rewards)
-        # rewards_vb = rewards_vb.mean(axis=0) # sum over trajectories
-        # rewards_vb = rewards_vb.mean(axis=0) # sum over workers ?
-        # print(rewards_vb)                  # we get the mean rewards over all actions in the buffer
-        for i in range(len(vectorized_rewards)):
-            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
-            wandb.log({'vectorized_rew_mean ['+str(i)+']': vectorized_rewards[i]})
-            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vectorized_rewards[i]})
-            # wandb.log({'rewards_mean ['+str(i)+']': rewards_vb[i]})
-            # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
-            # print('vectorized_rew_mean ['+str(i)+']'+ str(vectorized_rewards[i]))
-            # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * vectorized_rewards[i]))
-            # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
+    # def log_wandb(self, vectorized_rewards, rewards, wandb, w_posterior_mean):
+    #     # print("vectorized_rewards 1 traj = ", vectorized_rewards)
+    #     # mean_rew = np.array(vectorized_rewards).mean(axis=0) # ?
+    #     # returns_vb, rewards_vb = volume_buffer.get_data()
+    #     # rewards_vb = np.array(rewards)
+    #     # rewards_vb = rewards_vb.mean(axis=0) # sum over trajectories
+    #     # rewards_vb = rewards_vb.mean(axis=0) # sum over workers ?
+    #     # print(rewards_vb)                  # we get the mean rewards over all actions in the buffer
+    #     for i in range(len(vectorized_rewards)):
+    #         wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
+    #         wandb.log({'vectorized_rew_mean ['+str(i)+']': vectorized_rewards[i]})
+    #         wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vectorized_rewards[i]})
+    #         # wandb.log({'rewards_mean ['+str(i)+']': rewards_vb[i]})
+    #         # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
+    #         # print('vectorized_rew_mean ['+str(i)+']'+ str(vectorized_rewards[i]))
+    #         # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * vectorized_rewards[i]))
+    #         # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
 
-    def log_wandb_1_traj(self, vectorized_rewards, wandb, w_posterior_mean):
-        # print("vectorized_rewards = ", vectorized_rewards)
-        for i in range(len(vectorized_rewards)):
-            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
-            wandb.log({'vectorized_rew_mean ['+str(i)+']': vectorized_rewards[i]})
-            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vectorized_rewards[i]})
-            # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
-            # print('vectorized_rew_mean ['+str(i)+']'+ str(vectorized_rewards[i]))
-            # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * vectorized_rewards[i]))
+    # def log_wandb_1_traj(self, vectorized_rewards, wandb, w_posterior_mean):
+    #     # print("vectorized_rewards = ", vectorized_rewards)
+    #     for i in range(len(vectorized_rewards)):
+    #         wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
+    #         wandb.log({'vectorized_rew_mean ['+str(i)+']': vectorized_rewards[i]})
+    #         wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vectorized_rewards[i]})
+    #         # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
+    #         # print('vectorized_rew_mean ['+str(i)+']'+ str(vectorized_rewards[i]))
+    #         # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * vectorized_rewards[i]))
 
 
         
@@ -449,8 +452,8 @@ def update_policy_v3(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_
 
         # print("overall_loss = ", overall_loss)
         # print("overall_loss_2 = ", overall_loss_2)
-        wandb.log({'overall_loss': overall_loss})
-        wandb.log({'overall_loss_2': overall_loss_2})
+        # wandb.log({'overall_loss': overall_loss})
+        # wandb.log({'overall_loss_2': overall_loss_2})
 
         optimizer.zero_grad()
         overall_loss_2.backward()

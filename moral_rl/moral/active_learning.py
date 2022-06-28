@@ -69,24 +69,26 @@ class PreferenceLearner:
         w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
         return w_new
 
-    def posterior_log_prob_test(self, deltas, prefs, w, returns):
+
+    @staticmethod
+    def propose_w_normalized(w_curr):
+        w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
+        w_new = w_new / np.sum(w_new)
+        return w_new
+
+    @staticmethod
+    def propose_w_normalized_linalg(w_curr):
+        w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
+        w_new = w_new / np.linalg.norm(w_new)
+        return w_new
+        
+
+    def posterior_log_prob_vanilla(self, deltas, prefs, w):
         f_logliks = []
         for i in range(len(prefs)):
-            f_logliks.append(self.f_loglik(w, deltas[i], prefs[i]))
-            # print("w = ", w)
-            # print("ret_a = ", returns[i][0])
-            # print("ret_b = ", returns[i][1])
-            # print("deltas = ", deltas[i])
-            # print("prefs = ", prefs[i])
-            # print("loglik 2.0 delta = ", f_logliks[-1])
-            # print("loglik vanilla delta = ", self.vanilla_loglik(w, deltas[i], prefs[i]))
-            # print("loglik basic a>b = ", self.basic_loglik(w, returns[i][0], returns[i][1]))
-            # print("loglik basic b>a = ", self.basic_loglik(w, returns[i][1], returns[i][0]))
+                f_logliks.append(self.vanilla_loglik(w, deltas[i], prefs[i]))
         loglik = np.sum(f_logliks)
         log_prior = np.log(self.w_prior(w) + 1e-5)
-        # print("sum loglik = ", loglik)
-        # print("prior = ", log_prior)
-
         return loglik + log_prior
 
 
@@ -114,7 +116,7 @@ class PreferenceLearner:
         return loglik + log_prior
 
 
-    def posterior_log_prob_test_prints(self, deltas, prefs, w, returns):
+    def posterior_log_prob_print(self, deltas, prefs, w, returns):
         f_logliks = []
         for i in range(len(prefs)):
             f_logliks.append(self.f_loglik(w, deltas[i], prefs[i]))
@@ -178,7 +180,7 @@ class PreferenceLearner:
 
         return np.array(w_arr)[self.warmup:]
 
-    def mcmc_test(self, w_init='mode'):
+    def mcmc_test(self, w_init='mode', posterior_mode="moral", prop_w_mode="moral"):
         if w_init == 'mode':
             w_init = [0 for i in range(self.d)]
 
@@ -191,17 +193,31 @@ class PreferenceLearner:
 
         for i in range(1, self.warmup + self.n_iter + 1):
             # print("w_curr = ", w_curr)
-            w_new = self.propose_w(w_curr)
+            if prop_w_mode == "moral":
+                w_new = self.propose_w(w_curr)
+            elif prop_w_mode == "normalized_linalg":
+                w_new = self.propose_w_normalized_linalg(w_curr)
+            elif prop_w_mode == "normalized":
+                w_new = self.propose_w_normalized(w_curr)
+            
+            # w_new = self.propose_w(w_curr)
             # w_new = w_new / sum(abs(w_new))
             # w_new = w_new / np.linalg.norm(w_new)
 
-            # prob_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
-            # prob_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
-            # prob_curr = self.posterior_log_prob_test(self.deltas, self.prefs, w_curr, self.returns)
-            # prob_new = self.posterior_log_prob_test(self.deltas, self.prefs, w_new, self.returns)
+            if posterior_mode == "moral":
+                prob_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
+                prob_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
+            elif posterior_mode == "basic" : 
+                prob_curr = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_curr, self.returns)
+                prob_new = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_new, self.returns)
+            elif posterior_mode == "print" : 
+                prob_curr = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns)
+                prob_new = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns)
+            elif posterior_mode == "vanilla" : 
+                prob_curr = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
+                prob_new = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
 
-            prob_curr = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_curr, self.returns)
-            prob_new = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_new, self.returns)
+                
 
 
             if prob_new > prob_curr:
