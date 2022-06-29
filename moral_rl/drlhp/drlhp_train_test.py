@@ -74,6 +74,8 @@ if __name__ == '__main__':
         preference_rewards = preference_model.forward(preference_state, actions).squeeze(1)
         preference_rewards = list(preference_rewards.detach().cpu().numpy())
 
+        # Normalization of the preference_rewards ? Dans Christiano 2017, ils normalisent à une moyenne 0 et une std constante.
+
         train_ready = dataset.write_tuple(states, actions, preference_rewards, done, log_probs, rewards)
 
         if train_ready:

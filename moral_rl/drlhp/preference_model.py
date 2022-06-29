@@ -103,6 +103,10 @@ class PreferenceModelMLP(nn.Module):
         trajectory_actions = torch.tensor(tau['actions']).to(device)
         predicted_rewards = self.forward(trajectory_states, trajectory_actions)
 
+        print("predicted_rewards = ", predicted_rewards)
+        print("sum = ", predicted_rewards.sum(dim=0))
+        print("squeeze = ", predicted_rewards.sum(dim=0).squeeze(0))
+
         return predicted_rewards.sum(dim=0).squeeze(0)
 
     def compare_trajectory(self, tau_1, tau_2):
@@ -125,7 +129,8 @@ def update_preference_model(preference_model, preference_buffer, preference_opti
     overall_loss = torch.tensor(0.).to(device)
     for i in range(batch_size):
 
-        # Sample random preference
+        # Sample random preference 
+        # Pourquoi prendre des preferences random ? Dans l'article ils prennent simplement tout le batch...
         rand_idx = np.random.randint(len(preference_buffer.storage))
         rand_tau_1, rand_tau_2, rand_mu = preference_buffer.storage[rand_idx]
 
@@ -134,7 +139,10 @@ def update_preference_model(preference_model, preference_buffer, preference_opti
         inferior_log_prob = preference_model.compare_trajectory(rand_tau_2, rand_tau_1)
         overall_loss -= (rand_mu[0]*superior_log_prob + rand_mu[1]*inferior_log_prob)
 
+    # On fait la moyenne ? Tester sans diviser par batch_size ?
     overall_loss = overall_loss/batch_size
+
+
     preference_optimizer.zero_grad()
     overall_loss.backward()
     preference_optimizer.step()
