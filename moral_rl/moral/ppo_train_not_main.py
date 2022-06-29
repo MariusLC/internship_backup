@@ -34,7 +34,7 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
         'batchsize_ppo': 12,
         'n_workers': 12,
         'lr_ppo': 3e-4,
-        'entropy_reg': 0.25,
+        'entropy_reg': 0.05,
         'lambd': lambd,
         'gamma': 0.999,
         'epsilon': 0.1,

@@ -17,6 +17,6 @@ if __name__ == '__main__':
         vanilla_path = c["vanilla_path"]
 
     for i in range(c["nb_experts"]):
-        expert_filename = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"+c["expe_path"]+c["model_ext"]
+        expert_filename = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"+c["expe_path"]+c["special_name"]+c["model_ext"]
         # print(expert_filename)
         ppo_train_1_expert(c["env_rad"]+c["env"], c["env_steps"], c["experts_weights"][i], expert_filename)
