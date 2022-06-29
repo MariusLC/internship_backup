@@ -34,27 +34,27 @@ class SumGiverv3:
 
 class SumProportionalGiverv3:
 
-    def query_pair(self, ret_a, ret_b):
-        rew_a = ret_a.sum()
-        rew_b = ret_b.sum()
-        total = rew_a + rew_b
+	def query_pair(self, ret_a, ret_b):
+		rew_a = ret_a.sum()
+		rew_b = ret_b.sum()
+		total = rew_a + rew_b
 
-        return [rew_a/total, rew_b/total]
+		return [rew_a/total, rew_b/total]
 
 class EthicalSumGiverv3:
 
-    def query_pair(self, ret_a, ret_b):
-        rew_eth_a = ret_a[1:].sum()
-        rew_eth_b = ret_b[1:].sum()
+	def query_pair(self, ret_a, ret_b):
+		rew_eth_a = ret_a[1:].sum()
+		rew_eth_b = ret_b[1:].sum()
 
-        if rew_eth_a > rew_eth_b:
+		if rew_eth_a > rew_eth_b:
 			return [1, 0]
 		elif rew_eth_b > rew_eth_a:
 			return [0, 1]
 		else:
 			if ret_a[0] > ret_b[0]:
 				return [1, 0]
-			elif:
+			elif ret_b[0] > ret_a[0]:
 				return [0, 1]
 			else :
 				return [0.5, 0.5]
