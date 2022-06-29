@@ -32,7 +32,7 @@ class SumGiverv3:
 		else:
 			return [0.5, 0.5]
 
-class SumGiverv3:
+class SumProportionalGiverv3:
 
     def query_pair(self, ret_a, ret_b):
         rew_a = ret_a.sum()
