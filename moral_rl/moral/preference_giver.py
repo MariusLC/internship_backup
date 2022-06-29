@@ -19,6 +19,35 @@ class TargetGiverv3:
             return [0.5, 0.5]
 
 
+class SumGiverv3:
+    def __init__(self):
+
+    def query_pair(self, ret_a, ret_b):
+        rew_a = ret_a.sum()
+        rew_b = ret_b.sum()
+
+        if rew_a < rew_b:
+            return [1, 0]
+        elif rew_b < rew_a:
+            return [0, 1]
+        else:
+            return [0.5, 0.5]
+
+class SumGiverv3:
+    def __init__(self):
+
+    def query_pair(self, ret_a, ret_b):
+        rew_a = ret_a.sum()
+        rew_b = ret_b.sum()
+
+        if rew_a < rew_b:
+            return [1, 0]
+        elif rew_b < rew_a:
+            return [0, 1]
+        else:
+            return [0.5, 0.5]
+
+
 class PreferenceGiverv3:
     def __init__(self, ratio, pbrl=False):
         self.ratio = ratio

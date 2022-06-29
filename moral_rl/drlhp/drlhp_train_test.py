@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # args = parser.parse_args()
 
     ratio = [1,3,1,1]
-    drlhp_filename = "generated_data/v3/drlhp/[1,3,1,1].pt"
+    drlhp_filename = "generated_data/v3/drlhp/test_sum_giver.pt"
 
     # Config
     wandb.init(project='PbRL', config={
@@ -65,7 +65,8 @@ if __name__ == '__main__':
     # preference_buffer = pickle.load(open('../saved_models/preference_buffer_v2.pk', 'rb'))
     preference_buffer = PreferenceBuffer()
     preference_optimizer = torch.optim.Adam(preference_model.parameters(), lr=config.lr_reward)
-    preference_giver = TargetGiverv3(target=config.ratio)
+    # preference_giver = TargetGiverv3(target=config.ratio)
+    preference_giver = SumGiverv3()
 
     for t in tqdm(range(int(config.env_steps / config.n_workers))):
         actions, log_probs = ppo.act(states_tensor)
