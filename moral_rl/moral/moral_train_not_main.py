@@ -150,7 +150,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=0)
 
     volume_buffer = VolumeBuffer(len(ratio))
-    preference_giver = PreferenceGiverv3(ratio=config.ratio)
+    # preference_giver = PreferenceGiverv3(ratio=config.ratio)
+    preference_giver = ParetoDominationPreferenceGiverv3(ratio=config.ratio)
 
 
     for t in tqdm(range(env_steps)):

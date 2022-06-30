@@ -345,6 +345,90 @@ class PreferenceGiverv3:
 			return preference
 
 
+class ParetoDominationPreferenceGiverv3:
+	def __init__(self, ratio, pbrl=False):
+		self.ratio = ratio
+		self.d = len(ratio)
+		self.ratio_normalized = []
+		self.pbrl = pbrl
+
+		ratio_sum = sum(ratio)
+
+		for elem in ratio:
+			self.ratio_normalized.append(elem/ratio_sum)
+
+	def query_pair(self, ret_a, ret_b):
+		# CHECK PARETO DOMINATION
+		if self.pbrl:
+			if check_pareto_dom(ret_a, ret_b):
+				return [1, 0]
+			elif check_pareto_dom(ret_b, ret_a):
+				return [0, 1]
+		else :
+			if check_pareto_dom(ret_a, ret_b):
+				return 1
+			elif check_pareto_dom(ret_b, ret_a):
+				return -1
+		# print("query_pair = "+str(ret_a)+" , "+str(ret_b))
+
+		# IF NO PARETO DOMINATION, USE KL DIV TO TARGET
+		if self.pbrl:
+			ret_a_copy = ret_a.copy()[:-1]
+			ret_b_copy = ret_b.copy()[:-1]
+		else:
+			ret_a_copy = ret_a.copy()
+			ret_b_copy = ret_b.copy()
+
+		ret_a_normalized = []
+		ret_b_normalized = []
+
+		for i in range(self.d):
+			# To avoid numerical instabilities in KL
+			ret_a_copy[i] += 1e-5
+			ret_b_copy[i] += 1e-5
+
+		ret_a_sum = sum(ret_a_copy)
+		ret_b_sum = sum(ret_b_copy)
+
+		for i in range(self.d):
+			ret_a_normalized.append(ret_a_copy[i]/ret_a_sum)
+			ret_b_normalized.append(ret_b_copy[i]/ret_b_sum)
+
+		# scipy.stats.entropy(pk, qk=None, base=None, axis=0) = S = sum(pk * log(pk / qk), axis=axis)
+		# print("ret_a_normalized = ", ret_a_normalized)
+		# print("ret_b_normalized = ", ret_b_normalized)
+		# print("self.ratio_normalized = ", self.ratio_normalized)
+		kl_a = st.entropy(ret_a_normalized, self.ratio_normalized)
+		kl_b = st.entropy(ret_b_normalized, self.ratio_normalized)
+		# print("kl_a = ", kl_a)
+		# print("kl_b = ", kl_b)
+
+		if self.pbrl:
+			print(kl_a)
+			print(kl_b)
+
+			if ret_a[-1] < ret_b[-1]:
+				return [0, 1]
+			elif ret_a[-1] > ret_b[-1]:
+				return [1, 0]
+			else:
+				if np.isclose(kl_a, kl_b, rtol=1e-5):
+					preference = [0.5, 0.5]
+				elif kl_a < kl_b:
+					preference = [1, 0]
+				else:
+					preference = [0, 1]
+				return preference
+		else:
+			if kl_a < kl_b:
+				preference = 1
+			elif kl_b < kl_a:
+				preference = -1
+			else:
+				preference = 1 if np.random.rand() < 0.5 else -1
+			return preference
+
+
 class MaliciousPreferenceGiverv3:
 	def __init__(self, bad_idx):
 		self.bad_idx = bad_idx
