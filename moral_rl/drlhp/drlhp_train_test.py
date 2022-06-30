@@ -19,8 +19,8 @@ if __name__ == '__main__':
     # args = parser.parse_args()
 
     ratio = [1,3,1,1]
-    drlhp_filename = "generated_data/v3/drlhp/test_sum_giver_entropy_025.pt"
-    # drlhp_filename = "generated_data/v3/drlhp/test_ethical_pareto_giver.pt"
+    # drlhp_filename = "generated_data/v3/drlhp/test_sum_giver_entropy_025.pt"
+    drlhp_filename = "generated_data/v3/drlhp/test_ethical_pareto_giver.pt"
     eps_eth = 1 # the threshold for ethical demonstrations comparison
     eps = 1     # the threshold for primary goal demonstrations comparisons
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
         'n_workers': 12,
         'lr_ppo': 3e-4,
         'lr_reward': 3e-5,
-        'entropy_reg': 0.25,
+        'entropy_reg': 1,
         'gamma': 0.999,
         'epsilon': 0.1,
         'ppo_epochs': 5
@@ -72,9 +72,9 @@ if __name__ == '__main__':
     preference_buffer = PreferenceBuffer()
     preference_optimizer = torch.optim.Adam(preference_model.parameters(), lr=config.lr_reward)
     # preference_giver = TargetGiverv3(target=config.ratio)
-    preference_giver = SumGiverv3()
+    # preference_giver = SumGiverv3()
     # preference_giver = ParetoSoftmaxGiverv3()
-    # preference_giver = EthicalParetoGiverv3()
+    preference_giver = EthicalParetoGiverv3()
     
 
     for t in tqdm(range(int(config.env_steps / config.n_workers))):
