@@ -3,6 +3,11 @@ import math
 import scipy.stats as st
 
 
+def check_pareto_dom(ret_a, ret_b):
+	pareto_dom_a = ret_a >= ret_b
+	return pareto_dom_a.all() and not pareto_dom_b.all()
+
+
 class TargetGiverv3:
 	def __init__(self, target):
 		self.target = np.array(target)
@@ -20,7 +25,6 @@ class TargetGiverv3:
 
 
 class SumGiverv3:
-
 	def query_pair(self, ret_a, ret_b):
 		rew_a = ret_a.sum()
 		rew_b = ret_b.sum()
@@ -33,23 +37,158 @@ class SumGiverv3:
 			return [0.5, 0.5]
 
 class SumProportionalGiverv3:
-
 	def query_pair(self, ret_a, ret_b):
-		rew_a = ret_a.sum()
-		rew_b = ret_b.sum()
-		total = rew_a + rew_b
+		if check_pareto_dom(ret_a, ret_b):
+			return [1, 0]
+		elif check_pareto_dom(ret_b, ret_a):
+			return [0, 1]
+		else:
+			rew_a = ret_a.sum()
+			rew_b = ret_b.sum()
+			total = rew_a + rew_b
 
-		return [rew_a/total, rew_b/total]
+			return [rew_a/total, rew_b/total]
 
 class EthicalSumGiverv3:
+	def query_pair(self, ret_a, ret_b):
+		if check_pareto_dom(ret_a, ret_b):
+			return [1, 0]
+		elif check_pareto_dom(ret_b, ret_a):
+			return [0, 1]
+		else :
+			rew_eth_a = ret_a[1:].sum()
+			rew_eth_b = ret_b[1:].sum()
+
+			if rew_eth_a > rew_eth_b:
+				return [1, 0]
+			elif rew_eth_b > rew_eth_a:
+				return [0, 1]
+			else:
+				if ret_a[0] > ret_b[0]:
+					return [1, 0]
+				elif ret_b[0] > ret_a[0]:
+					return [0, 1]
+				else :
+					return [0.5, 0.5]
+
+class EthicalSumThresholdGiverv3:
+	def __init__(self, eps_eth, eps):
+		self.eps_eth = eps_eth
+		self.eps = eps
 
 	def query_pair(self, ret_a, ret_b):
-		rew_eth_a = ret_a[1:].sum()
-		rew_eth_b = ret_b[1:].sum()
-
-		if rew_eth_a > rew_eth_b:
+		if check_pareto_dom(ret_a, ret_b):
 			return [1, 0]
-		elif rew_eth_b > rew_eth_a:
+		elif check_pareto_dom(ret_b, ret_a):
+			return [0, 1]
+		else :
+			rew_eth_a = ret_a[1:].sum()
+			rew_eth_b = ret_b[1:].sum()
+
+			if rew_eth_a + self.eps_eth >= rew_eth_b :
+				return [1, 0]
+			elif rew_eth_b + self.eps_eth >= rew_eth_a:
+				return [0, 1]
+			else:
+				if ret_a[0] + self.eps >= ret_b[0]:
+					return [1, 0]
+				elif ret_b[0] + self.eps >= ret_a[0]:
+					return [0, 1]
+				else :
+					return [0.5, 0.5]
+
+class ParetoGiverv3:
+	def query_pair(self, ret_a, ret_b):
+		if check_pareto_dom(ret_a, ret_b):
+			return [1, 0]
+		elif check_pareto_dom(ret_b, ret_a):
+			return [0, 1]
+		else:
+			return [0.5, 0.5]
+
+class ParetoSoftmaxGiverv3:
+	def query_pair(self, ret_a, ret_b):
+		if check_pareto_dom(ret_a, ret_b):
+			return [1, 0]
+		elif check_pareto_dom(ret_b, ret_a):
+			return [0, 1]
+		else:
+			delta_a = ret_a - ret_b
+			delta_b = ret_b - ret_a
+			delta_norm_a = delta_a/abs(delta_a).sum()
+			delta_norm_b = delta_b/abs(delta_b).sum()
+			e_a = np.array(np.concatenate( ([delta_norm_a[0]], np.exp(delta_norm_a[1:]))))
+			e_b = np.array(np.concatenate( ([delta_norm_b[0]], np.exp(delta_norm_b[1:]))))
+			sum_e_d_a = e_a.sum()
+			sum_e_d_b = e_b.sum()
+			log_s_a = np.log(sum_e_d_a)
+			log_s_b = np.log(sum_e_d_b)
+			print("delta_a = ",delta_a)
+			print("delta_b = ",delta_b)
+			print("delta_norm_a = ",delta_norm_a)
+			print("delta_norm_b = ",delta_norm_b)
+			print("e_a = ",e_a)
+			print("e_b = ",e_b)
+			print("sum_e_d_a = ",sum_e_d_a)
+			print("sum_e_d_b = ",sum_e_d_b)
+			print("log_s_a = ",log_s_a)
+			print("log_s_b = ",log_s_b)
+
+			# delta_a = ret_a - ret_b
+			# delta_b = ret_b - ret_a
+			# delta_norm_a = delta_a/abs(delta_a).sum()
+			# delta_norm_b = delta_b/abs(delta_b).sum()
+			# e_a = np.array(np.concatenate( ([delta_norm_a[0]], np.exp(delta_a[1:]))))
+			# e_b = np.array(np.concatenate( ([delta_norm_b[0]], np.exp(delta_b[1:]))))
+			# sum_e_d_a = e_a.sum()
+			# sum_e_d_b = e_b.sum()
+			# log_s_a = np.log(sum_e_d_a)
+			# log_s_b = np.log(sum_e_d_b)
+			# print("delta_a = ",delta_a)
+			# print("delta_b = ",delta_b)
+			# print("delta_norm_a = ",delta_norm_a)
+			# print("delta_norm_b = ",delta_norm_b)
+			# print("e_a = ",e_a)
+			# print("e_b = ",e_b)
+			# print("sum_e_d_a = ",sum_e_d_a)
+			# print("sum_e_d_b = ",sum_e_d_b)
+			# print("log_s_a = ",log_s_a)
+			# print("log_s_b = ",log_s_b)
+
+			# delta_a = ret_a - ret_b
+			# delta_b = ret_b - ret_a
+			# delta_norm_a = delta_a/abs(delta_a).sum()
+			# delta_norm_b = delta_b/abs(delta_b).sum()
+			# e_a = np.exp(delta_norm_a)
+			# e_b = np.exp(delta_norm_b)
+			# sum_e_d_a = e_a.sum()
+			# sum_e_d_b = e_b.sum()
+			# log_s_a = np.log(sum_e_d_a)
+			# log_s_b = np.log(sum_e_d_b)
+			# print("delta_a = ",delta_a)
+			# print("delta_b = ",delta_b)
+			# print("delta_norm_a = ",delta_norm_a)
+			# print("delta_norm_b = ",delta_norm_b)
+			# print("e_a = ",e_a)
+			# print("e_b = ",e_b)
+			# print("sum_e_d_a = ",sum_e_d_a)
+			# print("sum_e_d_b = ",sum_e_d_b)
+			# print("log_s_a = ",log_s_a)
+			# print("log_s_b = ",log_s_b)
+			
+
+			if log_s_a > log_s_b:
+				return [1, 0]
+			elif log_s_b > log_s_a:
+				return [0, 1]
+			else :
+				return [0.5, 0.5]
+
+class EthicalParetoGiverv3:
+	def query_pair(self, ret_a, ret_b):
+		if check_pareto_dom(ret_a[1:], ret_b[1:]):
+			return [1, 0]
+		elif check_pareto_dom(ret_b[1:], ret_a[1:]):
 			return [0, 1]
 		else:
 			if ret_a[0] > ret_b[0]:
@@ -58,6 +197,79 @@ class EthicalSumGiverv3:
 				return [0, 1]
 			else :
 				return [0.5, 0.5]
+
+class EthicalParetoTestGiverv3:
+	def query_pair(self, ret_a, ret_b):
+		if check_pareto_dom(ret_a, ret_b):
+			return [1, 0]
+		elif check_pareto_dom(ret_b, ret_a):
+			return [0, 1]
+		else:
+			delta_a = ret_a - ret_b
+			delta_b = ret_b - ret_a
+			e_a = np.array(np.concatenate( ([delta_a[0]], np.exp(delta_a[1:]))))
+			e_b = np.array(np.concatenate( ([delta_b[0]], np.exp(delta_b[1:]))))
+			# exp_d_a = np.exp(delta_a)
+			# exp_d_b = np.exp(delta_b)
+			soft_a = e_a/(e_a+e_b + 1e-10)
+			soft_b = e_b/(e_b+e_a + 1e-10)
+			sum_e_d_a = soft_a.sum()
+			sum_e_d_b = soft_b.sum()
+			log_s_a = np.log(sum_e_d_a)
+			log_s_b = np.log(sum_e_d_b)
+
+			print("delta_a = ",delta_a)
+			print("delta_b = ",delta_b)
+			print("e_a = ",e_a)
+			print("e_b = ",e_b)
+			print("soft_a = ",soft_a)
+			print("soft_b = ",soft_b)
+			print("sum_e_d_a = ",sum_e_d_a)
+			print("sum_e_d_b = ",sum_e_d_b)
+			print("log_s_a = ",log_s_a)
+			print("log_s_b = ",log_s_b)
+
+			if log_s_a > log_s_b:
+				return [1, 0]
+			elif log_s_b > log_s_a:
+				return [0, 1]
+			else :
+				return [0.5, 0.5]
+
+class EthicalParetoThresholdGiverv3:
+	def __init__(self, eps_eth=1, eps=1):
+		self.eps_eth = eps_eth
+		self.eps = eps
+
+	def query_pair(self, ret_a, ret_b):
+		pareto_dom_a = []
+		for i, ret in enumerate(ret_a[1:]):
+			pareto_dom_a.append(ret + self.eps_eth >= ret_b[1+i])
+		pareto_dom_a = np.array(pareto_dom_a)
+
+		pareto_dom_b = []
+		for i, ret in enumerate(ret_b[1:]):
+			pareto_dom_b.append(ret + self.eps_eth >= ret_a[1+i])
+		pareto_dom_b = np.array(pareto_dom_b)
+
+		print("ret_a = ", ret_a)
+		print("ret_b = ", ret_b)
+		print("pareto_dom_a = ", pareto_dom_a)
+		print("pareto_dom_b = ", pareto_dom_b)
+
+		if pareto_dom_a.all() and not pareto_dom_b.all():
+			return [1, 0]
+		elif pareto_dom_b.all() and not pareto_dom_a.all():
+			return [0, 1]
+		else:
+			print("else")
+			if ret_a[0] > ret_b[0] + self.eps:
+				return [1, 0]
+			elif ret_b[0] > ret_a[0] + self.eps:
+				return [0, 1]
+			else :
+				return [0.5, 0.5]
+
 
 
 class PreferenceGiverv3:

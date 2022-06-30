@@ -22,6 +22,8 @@ import math
 
 from torch.distributions import *
 
+from moral.preference_giver import *
+
 
 if __name__ == '__main__':
 
@@ -48,32 +50,32 @@ if __name__ == '__main__':
 	# norm4_non_eth = rew_obj_non_eth / abs(m_non_eth)
 	# m_norm4_non_eth = np.mean(norm4_non_eth)
 
-	traj_size = 73
-	nb_traj = 10
-	eth = Normal(torch.tensor([-2.0]), torch.tensor([2.0]))
-	rew_obj_eth = np.array([eth.sample() for i in range(traj_size*nb_traj)])
-	mean_per_traj = [np.sum(rew_obj_eth[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
-	up = sum(rew_obj_eth)/nb_traj
-	min_traj = min(mean_per_traj)
-	max_traj = max(mean_per_traj)
-	lower_bound = min(rew_obj_eth)
-	upper_bound = max(rew_obj_eth)
-	norm_up = (up - traj_size*lower_bound)/(upper_bound - lower_bound)
-	norm_v2 = (rew_obj_eth - lower_bound)/(upper_bound - lower_bound)/abs(norm_up)
-	norm_v3 = (rew_obj_eth - min_traj/traj_size)/(max_traj - min_traj)
-	m_norm_v2 = [np.sum(norm_v2[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
-	m_norm_v3 = [np.sum(norm_v3[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
+	# traj_size = 73
+	# nb_traj = 10
+	# eth = Normal(torch.tensor([-2.0]), torch.tensor([2.0]))
+	# rew_obj_eth = np.array([eth.sample() for i in range(traj_size*nb_traj)])
+	# mean_per_traj = [np.sum(rew_obj_eth[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
+	# up = sum(rew_obj_eth)/nb_traj
+	# min_traj = min(mean_per_traj)
+	# max_traj = max(mean_per_traj)
+	# lower_bound = min(rew_obj_eth)
+	# upper_bound = max(rew_obj_eth)
+	# norm_up = (up - traj_size*lower_bound)/(upper_bound - lower_bound)
+	# norm_v2 = (rew_obj_eth - lower_bound)/(upper_bound - lower_bound)/abs(norm_up)
+	# norm_v3 = (rew_obj_eth - min_traj/traj_size)/(max_traj - min_traj)
+	# m_norm_v2 = [np.sum(norm_v2[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
+	# m_norm_v3 = [np.sum(norm_v3[a*traj_size:(a+1)*traj_size]) for a in range(nb_traj)]
 
-	print("min_traj = ", min_traj)
-	print("max_traj = ", max_traj)
-	print("lower_bound = ", lower_bound)
-	print("upper_bound = ", upper_bound)
-	print("up = ", up)
-	print("norm_up = ", norm_up)
-	print("m_norm_v2 = ", m_norm_v2)
-	print("m_norm_v3 = ", m_norm_v3)
-	print_val = [(rew_obj_eth[i], norm_v2[i], norm_v3[i]) for i in range(len(rew_obj_eth))]
-	print(print_val)
+	# print("min_traj = ", min_traj)
+	# print("max_traj = ", max_traj)
+	# print("lower_bound = ", lower_bound)
+	# print("upper_bound = ", upper_bound)
+	# print("up = ", up)
+	# print("norm_up = ", norm_up)
+	# print("m_norm_v2 = ", m_norm_v2)
+	# print("m_norm_v3 = ", m_norm_v3)
+	# print_val = [(rew_obj_eth[i], norm_v2[i], norm_v3[i]) for i in range(len(rew_obj_eth))]
+	# print(print_val)
 
 	# m_eth = np.mean(rew_obj_eth)
 	# min_eth = min(rew_obj_eth)
@@ -140,11 +142,11 @@ if __name__ == '__main__':
 
 	# a = np.array([-2., -5., 3])
 	# a = np.array([0., 0., 0., 1., 1.])
-	b = np.array([1,3,1])
-	print(b)
-	w_posterior_mean = b/np.linalg.norm(b)
-	print(w_posterior_mean)
-	print(np.linalg.norm(w_posterior_mean))
+	# b = np.array([1,3,1])
+	# print(b)
+	# w_posterior_mean = b/np.linalg.norm(b)
+	# print(w_posterior_mean)
+	# print(np.linalg.norm(w_posterior_mean))
 
 
 	# up
@@ -183,3 +185,35 @@ if __name__ == '__main__':
 	# print("up_a_norm = ", up_a_norm)
 	# print("norm_a_div_up_a_norm = ", norm_a_div_up_a_norm)
 	# print("m_norm_a_div_up_a_norm = ", m_norm_a_div_up_a_norm)
+	
+	preference_giver = ParetoSoftmaxGiverv3()
+	# preference_giver = EthicalParetoTestGiverv3()
+	
+
+	# Cas 1 : B est fort que pour la tâche primaire, alors que B est moins bon mais respecte beaucoup plus l'ethique.
+	# solution voulue -> on choisit B
+	logs_tau_a = np.array([10, 0, 1, -3])
+	logs_tau_b = np.array([3, 2, 1, 0])
+	print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
+	auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
+	print("auto_preference = ", auto_preference)
+	print("on veut pref = ", str([0, 1]))
+
+	# Cas 2 : équilibré, A est plus performant que B sur un obj éthique mais B l'est plus sur 2 obj, avec une diff plus faible
+	# solution voulue -> on choisit B ??
+	logs_tau_a = np.array([3, 2, 1, -1])
+	logs_tau_b = np.array([3, 0, 2, 0])
+	print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
+	auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
+	print("auto_preference = ", auto_preference)
+	print("on veut pref = ", str([0, 1]))
+
+	# Cas 3 : A est un peu moins performant que B sur les obj éthiques mais BEACOUP plus performant sur la tâche primaire.
+	# solution voulue -> on choisit A ?? 
+	# Ou alors on veut que l'éthique prime toujours et ne faire que des compromis entre objectifs l'éthiques, et dans ce cas il faut choisir B.
+	logs_tau_a = np.array([10, 0, 1, -1])
+	logs_tau_b = np.array([0, 1, 1, 0])
+	print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
+	auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
+	print("auto_preference = ", auto_preference)
+	print("on veut pref = ", str([1, 0]))

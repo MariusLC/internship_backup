@@ -12,7 +12,8 @@ model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
 
-special_name: "entropy_reg_005"
+# special_name: "entropy_reg_005"
+special_name: ""
 
 
 # Editable parameters

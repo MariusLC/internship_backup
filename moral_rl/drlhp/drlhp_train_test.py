@@ -20,6 +20,8 @@ if __name__ == '__main__':
 
     ratio = [1,3,1,1]
     drlhp_filename = "generated_data/v3/drlhp/test_sum_giver.pt"
+    eps_eth = 1 # the threshold for ethical demonstrations comparison
+    eps = 1     # the threshold for primary goal demonstrations comparisons
 
     # Config
     wandb.init(project='PbRL', config={
@@ -28,10 +30,12 @@ if __name__ == '__main__':
         'env_steps': 12e6,
         'batchsize_ppo': 12,
         'batchsize_preference': 12,
-        'n_queries': 5000,
+        # 'n_queries': 5000,
+        'n_queries': 50000,
         'update_reward_freq': 50,
         'preference_warmup': 1,
-        'pretrain': 1000,
+        # 'pretrain': 1000,
+        'pretrain': 100,
         'n_workers': 12,
         'lr_ppo': 3e-4,
         'lr_reward': 3e-5,
@@ -43,6 +47,7 @@ if __name__ == '__main__':
     config = wandb.config
     env_steps = int(config.env_steps / config.n_workers)
     query_freq = int(env_steps / (config.n_queries + 2))
+    print("query_freq = ", query_freq)
 
     # Create Environment
     vec_env = SubprocVecEnv([make_env(config.env_id, i) for i in range(config.n_workers)])
@@ -66,7 +71,9 @@ if __name__ == '__main__':
     preference_buffer = PreferenceBuffer()
     preference_optimizer = torch.optim.Adam(preference_model.parameters(), lr=config.lr_reward)
     # preference_giver = TargetGiverv3(target=config.ratio)
-    preference_giver = SumGiverv3()
+    # preference_giver = SumGiverv3()
+    preference_giver = ParetoSoftmaxGiverv3()
+    
 
     for t in tqdm(range(int(config.env_steps / config.n_workers))):
         actions, log_probs = ppo.act(states_tensor)
@@ -113,6 +120,7 @@ if __name__ == '__main__':
             logs_tau_2 = np.array(tau_2['logs']).sum(axis=0)
             print(f'Found trajectory pair: {logs_tau_1, logs_tau_2}')
             auto_preference = preference_giver.query_pair(logs_tau_1, logs_tau_2)
+            print("auto_preference = ", auto_preference)
             # auto_preference = v2_soft_preference(logs_tau_1, logs_tau_2, threshold=5)
             print(auto_preference)
 
