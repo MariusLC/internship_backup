@@ -5,6 +5,7 @@ import scipy.stats as st
 
 def check_pareto_dom(ret_a, ret_b):
 	pareto_dom_a = ret_a >= ret_b
+	pareto_dom_b = ret_b >= ret_a
 	return pareto_dom_a.all() and not pareto_dom_b.all()
 
 

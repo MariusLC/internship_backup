@@ -366,12 +366,18 @@ def update_policy(ppo, dataset, optimizer, gamma, epsilon, n_epochs, entropy_reg
                 # Compute rewards-to-go and advantage estimates
                 reward_togo = r + gamma * reward_togo
                 returns.insert(0, reward_togo)
+            # print("reward_togo = ",reward_togo)
             action_log_probabilities, critic_values, action_entropy = ppo.evaluate_trajectory(tau)
             advantages = torch.tensor(np.array(returns)).to(device) - critic_values.detach().to(device)
             likelihood_ratios = torch.exp(action_log_probabilities - torch.tensor(np.array(tau['log_probs'])).detach().to(device))
             clipped_losses = -torch.min(likelihood_ratios * advantages, g_clip(epsilon, advantages))
+            # print("clipped_losses_mean = ", torch.mean(clipped_losses) )
+            # print("entropy_reg = ", entropy_reg)
+            # print("action_entropy = ", action_entropy)
             batch_loss += torch.mean(clipped_losses) - entropy_reg * action_entropy
             value_loss += torch.mean((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2)
+            # print("batch_loss = ", torch.mean(clipped_losses) - entropy_reg * action_entropy)
+            # print("value_loss = ", torch.mean((torch.tensor(np.array(returns)).to(device) - critic_values) ** 2))
         overall_loss = (batch_loss + value_loss) / dataset.batch_size
         optimizer.zero_grad()
         overall_loss.backward()

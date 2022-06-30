@@ -115,6 +115,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
         args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
+        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
         # nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
         
@@ -135,6 +136,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
     dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
+    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Active Learning
