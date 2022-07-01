@@ -214,6 +214,10 @@ class TrajectoryDataset:
         normalization_v3 = value/abs(self.utopia_point_expert)
         return normalization_v3
 
+    def normalize_v4(self, value, traj_size):
+        normalization_v4 = value/abs(self.utopia_point_expert)
+        return normalization_v4
+
     def estimate_utopia_point(self, expert_policy, env_id, steps=10000):
         env = GymWrapper(env_id)
         states = env.reset()
@@ -268,6 +272,8 @@ class TrajectoryDataset:
                 non_eth_norm_fct = self.normalize_v2
             elif non_eth_norm == "v3": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
                 non_eth_norm_fct = self.normalize_v3
+            elif non_eth_norm == "v4": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
+                non_eth_norm_fct = self.normalize_v4
             self.compute_utopia()
             self.compute_normalization_non_eth(non_eth_norm_fct)
 
