@@ -12,7 +12,7 @@ moral_path: "moral_agents/"
 model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
-special_name_agent: "131_norm_v6_v3_pareto_dom"
+special_name_agent: "1111_norm_v6_v3"
 
 # new stuff about normalization
 rand: "rand/"
@@ -22,14 +22,14 @@ non_eth_experts_weights: [1,0,0,0]
 # Editable parameters
 env: "v3"
 env_rad: "randomized_"
-nb_experts: 2
+nb_experts: 3
 # experts_weights: [[0,1]]
-experts_weights: [[0,1,0,1],[0,0,1,1]]
-# experts_weights: [[0,1,0,1],[0,0,1,0],[0,0,1,1]]
+# experts_weights: [[0,1,0,1],[0,0,1,1]]
+experts_weights: [[0,1,0,0],[0,0,1,0],[0,0,1,1]]
 # experts_weights: [[0,1,1,1]]
 # ratio: [1, 1]
-ratio: [1, 3, 1]
-# ratio: [1, 1, 1, 1]
+# ratio: [1, 3, 1]
+ratio: [1, 1, 1, 1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 normalization_eth_sett: "v6"
 normalization_non_eth_sett: "v3"
