@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from envs.gym_wrapper import *
+import math
 
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -88,6 +89,8 @@ class Discriminator(nn.Module):
         self.in_channels = in_channels
         self.eval = False
         self.utopia_point = None
+        self.upper_bound = 0
+        self.lower_bound = 0
 
         # Latent conditioning
         if latent_dim is not None:
@@ -156,7 +159,27 @@ class Discriminator(nn.Module):
 
         return x
 
-    def forward(self, state, next_state, gamma, latent=None):
+    # def forward(self, state, next_state, gamma, latent=None):
+    #     reward = self.g(state, latent)
+    #     value_state = self.h(state, latent)
+    #     value_next_state = self.h(next_state, latent)
+
+    #     # f function in the Fu2018 paper : f = Q(s,a) - V(s) = (g(s)+gamma*h(s')) - h(s)
+    #     # advantage = how much an action is a good or bad decision in a certain state 
+    #     advantage = reward + gamma*value_next_state - value_state
+
+    #     # pourquoi diviser en fonction du point d'utopie si eval = true ?
+    #     # plus le point d'utopie est proche de 0, plus la valeur si dessous est grande ..
+    #     # (et donc plus l'action qui amène de state à  nexte_state est plébicitée)            
+    #     if self.eval:
+    #         # print(" advantage = ", advantage)
+    #         # print(" return advantage = ", advantage/np.abs(self.utopia_point))
+    #         return advantage/np.abs(self.utopia_point)
+    #         #return advantage
+    #     else:
+    #         return advantage
+
+    def forward(self, state, next_state, gamma, eth_norm = None, latent=None):
         reward = self.g(state, latent)
         value_state = self.h(state, latent)
         value_next_state = self.h(next_state, latent)
@@ -171,10 +194,40 @@ class Discriminator(nn.Module):
         if self.eval:
             # print(" advantage = ", advantage)
             # print(" return advantage = ", advantage/np.abs(self.utopia_point))
-            return advantage/np.abs(self.utopia_point)
-            #return advantage
+            if eth_norm == "v0":
+                return advantage/np.abs(self.utopia_point)
+            if eth_norm == "v1":
+                return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
+            if eth_norm == "v2":
+                return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/abs(self.normalized_utopia_point)
+            if eth_norm == "v3":
+                return advantage
         else:
             return advantage
+
+    # def forward_v1(self, state, next_state, gamma, latent=None):
+    #     reward = self.g(state, latent)
+    #     value_state = self.h(state, latent)
+    #     value_next_state = self.h(next_state, latent)
+    #     advantage = reward + gamma*value_next_state - value_state         
+    #     if self.eval:
+    #         # classic normalization
+    #         return (advantage-self.lower_bound)/(self.upper_bound - self.lower_bound)
+    #         # standardisation
+    #         # we have to calculate mean in predict utopia first.
+    #     else:
+    #         return advantage
+
+    # def forward_v2(self, state, next_state, gamma, latent=None):
+    #     reward = self.g(state, latent)
+    #     value_state = self.h(state, latent)
+    #     value_next_state = self.h(next_state, latent)
+    #     advantage = reward + gamma*value_next_state - value_state         
+    #     if self.eval:
+    #         # classic normalization
+    #         return ((advantage-self.lower_bound)/(self.upper_bound - self.lower_bound))/self.utopia_point
+    #     else:
+    #         return advantage
 
     def discriminate(self, state, next_state, gamma, action_probability, latent=None):
         if latent is not None:
@@ -248,6 +301,100 @@ class Discriminator(nn.Module):
         # print(" self.utopia_point = ", self.utopia_point)
 
         return self.utopia_point
+
+    def estimate_utopia_v2(self, imitation_policy, config, steps=10000):
+        env = GymWrapper(config.env_id)
+        states = env.reset()
+        states_tensor = torch.tensor(states).float().to(device)
+
+        # Fetch Shapes
+        n_actions = env.action_space.n
+        obs_shape = env.observation_space.shape
+        state_shape = obs_shape[:-1]
+        in_channels = obs_shape[-1]
+
+        # Init returns
+        estimated_returns = []
+        running_returns = 0
+
+        lower_bound = math.inf 
+        upper_bound = -math.inf
+        for t in range(steps):
+            actions, log_probs = imitation_policy.act(states_tensor)
+            next_states, rewards, done, info = env.step(actions)
+
+            airl_state = torch.tensor(states).to(device).float()
+            airl_next_state = torch.tensor(next_states).to(device).float()
+            airl_rewards = self.forward(airl_state, airl_next_state, config.gamma).item()
+            lower_bound = min(airl_rewards, lower_bound)
+            upper_bound = max(airl_rewards, upper_bound)
+
+            if done:
+                next_states = env.reset()
+
+            states = next_states.copy()
+            states_tensor = torch.tensor(states).float().to(device)
+
+        self.upper_bound = upper_bound
+        self.lower_bound = lower_bound
+
+        return self.upper_bound, self.lower_bound
+
+    def estimate_utopia_all(self, imitation_policy, config, steps=10000):
+        env = GymWrapper(config.env_id)
+        states = env.reset()
+        states_tensor = torch.tensor(states).float().to(device)
+
+        # Fetch Shapes
+        n_actions = env.action_space.n
+        obs_shape = env.observation_space.shape
+        state_shape = obs_shape[:-1]
+        in_channels = obs_shape[-1]
+
+        # Init returns
+        estimated_returns = []
+        running_returns = 0
+
+        lower_bound = math.inf
+        upper_bound = -math.inf
+        traj_size = 1
+        traj_size_not_calculated = True
+        for t in range(steps):
+            actions, log_probs = imitation_policy.act(states_tensor)
+            next_states, rewards, done, info = env.step(actions)
+
+            airl_state = torch.tensor(states).to(device).float()
+            airl_next_state = torch.tensor(next_states).to(device).float()
+            airl_rewards = self.forward(airl_state, airl_next_state, config.gamma).item()
+            lower_bound = min(airl_rewards, lower_bound)
+            upper_bound = max(airl_rewards, upper_bound)
+            if done:
+                airl_rewards = 0
+                next_states = env.reset()
+                if traj_size_not_calculated:
+                    traj_size = t
+                    traj_size_not_calculated = False
+            running_returns += airl_rewards
+
+            if done:
+                estimated_returns.append(running_returns)
+                running_returns = 0
+                # print("test equals 1_v1 = ", sum(estimated_returns))
+                # print("test equals 1 = ", (sum(estimated_returns) - len(estimated_returns)*min(estimated_returns))/(len(estimated_returns)*(max(estimated_returns) - min(estimated_returns))))
+
+            states = next_states.copy()
+            states_tensor = torch.tensor(states).float().to(device)
+
+        self.upper_bound = upper_bound
+        self.lower_bound = lower_bound
+        self.utopia_point = sum(estimated_returns)/len(estimated_returns)
+        # self.normalized_utopia_point = (self.utopia_point - self.lower_bound)/(self.upper_bound - self.lower_bound)
+        self.normalized_utopia_point = (self.utopia_point - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)
+        print("self.normalized_utopia_point = ", self.normalized_utopia_point)
+        print("test equals 1 = ", estimated_returns[0])
+        print("test equals 1 = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound))
+        print("test equals 1 = ", ((estimated_returns[0]) - traj_size*self.lower_bound)/(self.upper_bound - self.lower_bound)/abs(self.normalized_utopia_point))
+        return self.upper_bound, self.lower_bound, self.utopia_point, self.normalized_utopia_point
 
 
 def training_sampler(expert_trajectories, policy_trajectories, ppo, batch_size, latent_posterior=None):

@@ -19,7 +19,28 @@ import os
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, generators_filenames, discriminators_filenames, moral_filename):
+DELIVERY_UPPER_BOUND = 12
+DELIVERY_LOWER_BOUND = 0
+
+def normalize_delivery(rew_delivery):
+    print(rew_delivery)
+    print((rew_delivery - DELIVERY_LOWER_BOUND)/(DELIVERY_UPPER_BOUND - DELIVERY_LOWER_BOUND))
+    return (rew_delivery - DELIVERY_LOWER_BOUND)/(DELIVERY_UPPER_BOUND - DELIVERY_LOWER_BOUND)
+
+def normalize_v0(value, dataset):
+    return value
+
+def normalize_v1(value, dataset):
+    return dataset.normalize_v1(value)
+
+def normalize_v2(value, dataset):
+    return dataset.normalize_v2(value)
+
+def normalize_v3(value, dataset):
+    return dataset.normalize_v3(value)
+
+
+def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_eth_norm, eth_norm, generators_filenames, discriminators_filenames, moral_filename):
 
     nb_experts = len(generators_filenames)
 
@@ -77,15 +98,27 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
     # Expert i
     discriminator_list = []
     generator_list = []
-    utop_list = []
+    # utop_list = []
     for i in range(nb_experts):
         discriminator_list.append(Discriminator(state_shape=state_shape, in_channels=in_channels).to(device))
         discriminator_list[i].load_state_dict(torch.load(discriminators_filenames[i], map_location=torch.device('cpu')))
         generator_list.append(PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device))
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
-        utop_list.append(discriminator_list[i].estimate_utopia(generator_list[i], config))
-        print(f'Reward Normalization 0: {utop_list[i]}')
+
+
+        upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config)
+        print("Upper_bound agent "+str(i)+": "+str(upper_bound))
+        print("Lower_bound agent "+str(i)+": "+str(lower_bound))
+        print("Mean agent "+str(i)+": "+str(mean))
+        print("Normalized Mean agent "+str(i)+": "+str(norm_mean))
+        # utop_list.append(discriminator_list[i].estimate_utopia(generator_list[i], config))
+        # print(f'Reward Normalization 0: {utop_list[i]}')
+
+
         discriminator_list[i].set_eval()
+
+    for i in range(nb_experts):
+        mean_traj(generator_list[i], discriminator_list, config, eth_norm, steps=10000)
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
@@ -144,13 +177,16 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
 
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
-            w_posterior = preference_learner.mcmc_vanilla()
+            w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
             print("w_posterior = ", w_posterior)
             w_posterior_mean = w_posterior.mean(axis=0)
             print("w_posterior_mean = ", w_posterior_mean)
-            # making a 1 norm vector from w_posterior
-            w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
-            print(f'Posterior Mean {w_posterior_mean}')
+            if sum(w_posterior_mean) != 0: 
+                # making a 1 norm vector from w_posterior
+                w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+                print(f'New Posterior Mean {w_posterior_mean}')
+            else :
+                print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
             volume_buffer.reset()
 
@@ -165,22 +201,29 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
 
         airl_rewards_list = []
         for j in range(nb_experts):
-            airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma).squeeze(1))
+
+
+            # airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma).squeeze(1))
+            # airl_rewards_list.append(discriminator_list[j].forward_v2(airl_state, airl_next_state, config.gamma).squeeze(1))
+            airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, config.gamma, eth_norm).squeeze(1))
+
+
         for j in range(nb_experts):
             airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
 
         # print("rewards = ", rewards)
-        vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+
+
+        # Normalization to bound delviery values between 0 and 1. To change because we use env ground truth values
+        # vectorized_rewards = [ [normalize_delivery(r[0])] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+        # vectorized_rewards = [ [r[0]] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+        # noramlization
+        vectorized_rewards = [ [non_eth_norm(r[0], dataset)] + [airl_rewards_list[j][i] for j in range(nb_experts)] for i, r in enumerate(rewards)]
+
+
+
         # print("vectorized_rewards = ", vectorized_rewards)
         scalarized_rewards = [np.dot(w_posterior_mean, r[0:nb_experts+1]) for r in vectorized_rewards]
-        
-        # print("vectorized_rewards = ", vectorized_rewards)
-        mean_rew = np.array(vectorized_rewards).mean(axis=0)
-        print("mean_rew = ", mean_rew)
-        for i in range(len(mean_rew)):
-            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
-            wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
-            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * mean_rew[i]})
 
 
         # Logging obtained rewards for active learning
@@ -188,10 +231,33 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
         # Logging true objectives for automatic preferences
         volume_buffer.log_statistics(rewards)
         # Add experience to PPO dataset
-        train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs)
-        # print("train_ready = ",train_ready)
+
+
+        # train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs)
+        train_ready = dataset.write_tuple_3(states, actions, scalarized_rewards, np.array(rewards)[:,0], done, log_probs)
+
+        # print("vectorized_rewards = ", vectorized_rewards)
+        mean_rew = np.array(vectorized_rewards).mean(axis=0)
+        returns_vb, rewards_vb = volume_buffer.get_data()
+        rewards_vb = np.array(rewards_vb)
+        rewards_vb = rewards_vb.mean(axis=0) # sum over trajectories
+        rewards_vb = rewards_vb.mean(axis=0) # sum over workers ?
+        # print(rewards_vb)                  # we get the mean rewards over all actions in the buffer
+        for i in range(len(mean_rew)):
+            wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]})
+            wandb.log({'vectorized_rew_mean ['+str(i)+']': mean_rew[i]})
+            wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * mean_rew[i]})
+            wandb.log({'rewards_mean ['+str(i)+']': rewards_vb[i]})
+            # print('w_posterior_mean ['+str(i)+']'+ str(w_posterior_mean[i]))
+            # print('vectorized_rew_mean ['+str(i)+']'+ str(mean_rew[i]))
+            # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * mean_rew[i]))
+            # print('rewards_mean ['+str(i)+']'+ str(rewards_vb[i]))
+
 
         if train_ready:
+
+            mean_traj(ppo, discriminator_list, config, eth_norm, steps=1000)
+            
             # Log Objectives
             objective_logs = np.array(objective_logs).sum(axis=0)
             for i in range(objective_logs.shape[1]):
@@ -201,8 +267,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
             # Update Models
             update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg)
             #update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
-            for ret in dataset.log_returns():
-                wandb.log({'Returns': ret})
+            for rew in dataset.log_rewards():
+                wandb.log({'Returns': rew})
 
             # Sample two random trajectories & compare expected volume removal with best pair
             # print("compare_delta")
@@ -224,3 +290,66 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, genera
     #vec_env.close()
     # torch.save(ppo.state_dict(), moral_filename)
     save_data(ppo, moral_filename)
+
+def mean_traj(agent, discriminators, config, eth_norm, steps=10000):
+    env = GymWrapper(config.env_id)
+    states = env.reset()
+    states_tensor = torch.tensor(states).float().to(device)
+
+    # Fetch Shapes
+    n_actions = env.action_space.n
+    obs_shape = env.observation_space.shape
+    state_shape = obs_shape[:-1]
+    in_channels = obs_shape[-1]
+
+    # Init returns
+    objective_returns = []
+    objective_running_returns = np.zeros(4)
+
+    estimated_returns = [[] for i in range(len(discriminators))]
+    running_returns = np.zeros(len(discriminators))
+
+    for t in range(steps):
+        actions, log_probs = agent.act(states_tensor)
+        next_states, rewards, done, info = env.step(actions)
+        # print("rewards eaaefe = ", rewards)
+
+        airl_state = torch.tensor(states).to(device).float()
+        airl_next_state = torch.tensor(next_states).to(device).float()
+        # print(objective_running_returns)
+        # print(rewards)
+        objective_running_returns += np.array(rewards)
+
+        for j, discrim in enumerate(discriminators):
+            airl_rewards = discrim.forward(airl_state, airl_next_state, config.gamma, eth_norm).item()
+            # test_rewards = discrim.forward(airl_state, airl_next_state, config.gamma, "v3").item()
+
+            # print("airl_rewards = ", airl_rewards)
+
+            if done:
+                airl_rewards = 0
+                next_states = env.reset()
+            running_returns[j] += airl_rewards
+            
+
+            if done:
+                # print("running_returns[j] = ",running_returns[j])
+                # print("estimated_returns[j] = ", estimated_returns[j])
+                estimated_returns[j].append(running_returns[j])
+                running_returns[j] = 0
+                
+        if done :
+            objective_returns.append(objective_running_returns)
+            objective_running_returns = np.zeros(4)
+            # print("end traj")
+            # print("estimated_returns = ", [e[-1] for e in estimated_returns])
+            # print("objective returns = ", objective_returns[-1])
+
+        states = next_states.copy()
+        states_tensor = torch.tensor(states).float().to(device)
+
+    ret_est = np.mean(np.array(estimated_returns), axis = 1)
+    ret_obj = np.mean(np.array(objective_returns), axis = 0)
+    print("estimated_returns = ", ret_est)
+    print("objective returns = ", ret_obj)
+    print("vectorized_rewards = ", np.concatenate((np.array([ret_obj[0]]),ret_est)))
