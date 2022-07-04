@@ -15,6 +15,7 @@ import argparse
 import yaml
 import os
 
+from madmc.incremental_elicitation_not_main import *
 
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -96,8 +97,6 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     ppo = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
     optimizer = torch.optim.Adam(ppo.parameters(), lr=config.lr_ppo)
 
-
-
     # Expert i
     discriminator_list = []
     generator_list = []
@@ -114,8 +113,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
-        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
+        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
+        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
         # nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
         
@@ -135,13 +134,13 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
-    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
-    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
+    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
+    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Active Learning
-    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
-    # preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=1000, warmup=100) # tests
+    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
+    preference_learner = PreferenceLearner(d=len(config.ratio), n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
 
@@ -153,9 +152,13 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     preference_giver = PreferenceGiverv3(ratio=config.ratio)
     # preference_giver = ParetoDominationPreferenceGiverv3(ratio=config.ratio)
 
+    ####
+    #MADMC stuff
+    set_constraints = []
+    ############
+
 
     for t in tqdm(range(env_steps)):
-        # print("T = ",t)
         # print("query_freq = ", query_freq)
 
         # Query User
@@ -168,15 +171,25 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             ret_a, ret_b = volume_buffer.best_returns
             print(f'Found trajectory pair: {(ret_a, ret_b)}')
             print(f'Corresponding best delta: {best_delta}')
+            rew_a, rew_b = volume_buffer.best_observed_returns
+            print("Best Query MORAL = "+ str(rew_a) + " ,   " + str(rew_b))
             preference = preference_giver.query_pair(ret_a, ret_b)
             print(f'obtained preference: {preference}')
+
+            ### MADMC stuff
+            rew_a, rew_b = volume_buffer.best_observed_returns
+            if preference == 1 :
+                set_constraints.append((rew_a, rew_b))
+            else :
+                set_constraints.append((rew_b, rew_a))
+            #####
 
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
             w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
-            print("w_posterior = ", w_posterior)
+            # print("w_posterior = ", w_posterior)
             w_posterior_mean = w_posterior.mean(axis=0)
-            print("w_posterior_mean = ", w_posterior_mean)
+            # print("w_posterior_mean = ", w_posterior_mean)
 
             if sum(w_posterior_mean) != 0: 
 
@@ -222,12 +235,20 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
         if train_ready:
 
+            # print("train_ready")
+
             # log objective rewards into volume_buffer before normalizing it
-            volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+            obj_ret = dataset.log_returns_sum()
+            volume_buffer.log_statistics_sum(obj_ret)
             mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, non_eth_norm, wandb)
             volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
 
             # mean_traj(ppo, discriminator_list, config, eth_norm, steps=1000)
+
+            ### MADMC stuff
+            exec_elicit(ratio, obj_ret, dataset.log_vectorized_rew_sum(), set_constraints)
+            #####
+
 
             # Log mean vectorized rewards
             for i, vec in enumerate(mean_vectorized_rewards):

@@ -1,5 +1,5 @@
 #Paths
-real_params: True
+real_params: False
 vanilla: False
 data_path: "generated_data/"
 env_path: "v3/"
@@ -12,7 +12,7 @@ moral_path: "moral_agents/"
 model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
-special_name_agent: "131_norm_v6_v4_div2"
+special_name_agent: "test_madmc"
 
 # new stuff about normalization
 rand: "rand/"
@@ -34,7 +34,7 @@ ratio: [1, 3, 1]
 # ratio: [1, 1, 1, 1, 1, 1, 1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 normalization_eth_sett: "v6"
-normalization_non_eth_sett: "v4"
+normalization_non_eth_sett: "v3"
 
 
 #######
@@ -50,12 +50,12 @@ n_queries: 50
 #######
 # env_steps: 100
 # n_queries: 2
-query_freq: 99
+# query_freq: 99
 
-#######
+######
 # Test Queries Values #
-#######
-# env_steps: 10000
-# n_queries: 2
-# query_freq: 500
+######
+env_steps: 10000
+n_queries: 2
+query_freq: 150 # 75*2, so it should be 12*2 = 24 trajectories
 

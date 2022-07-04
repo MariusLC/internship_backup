@@ -9,6 +9,8 @@ from utils.load_config import *
 from moral.airl import *
 from moral.active_learning import *
 
+from madmc.incremental_elicitation_not_main import *
+
 
 def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORMALIZED):
 	print("query_pair = "+str(ret_a)+" , "+str(ret_b))
@@ -137,6 +139,11 @@ if __name__ == '__main__':
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
 
+	####
+	#MADMC stuff
+	set_constraints = []
+	############
+
 	for i in range(c["n_queries"]): 
 
 		# objective_returns = []
@@ -234,8 +241,20 @@ if __name__ == '__main__':
 		else :
 			print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
+		### MADMC stuff
+		if preference == 1 :
+			set_constraints.append((observed_rew_a, observed_rew_b))
+		else :
+			set_constraints.append((observed_rew_b, observed_rew_a))
+		#####
+
+		### MADMC stuff
+		exec_x, exec_fwx, MMR, weights_sol_x = exec_elicit(RATIO_NORMALIZED, objective_returns, observed_rewards, set_constraints)
+		#####
+
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
+			wandb.log({'madmc_w['+str(j)+"]": weights_sol_x[j]}, step=i)
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
