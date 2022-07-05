@@ -215,7 +215,7 @@ class TrajectoryDataset:
         return normalization_v3
 
     def normalize_v4(self, value, traj_size): # On tente de réduire l'impact de l'objectif non éthique
-        normalization_v4 = value/(3*abs(self.utopia_point_expert))
+        normalization_v4 = value/(2*abs(self.utopia_point_expert))
         return normalization_v4
 
     def estimate_utopia_point(self, expert_policy, env_id, steps=10000):
