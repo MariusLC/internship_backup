@@ -20,8 +20,8 @@ if __name__ == '__main__':
     moral_agent_filename = "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_norm_v6_v4_div2.pt"
 
     # Pretrained preference model estimating expert preferences
-    preference_model_filename = "generated_data/v3/pref_model/1000q_ParetoDom.pt"
-    # preference_model_filename = "generated_data/v3/pref_model/5000q_50b_200e_1>0>2>3.pt"
+    # preference_model_filename = "generated_data/v3/pref_model/1000q_ParetoDom.pt"
+    preference_model_filename = "generated_data/v3/pref_model/5000q_50b_200e_1>0>2>3.pt"
 
     # Config
     wandb.init(project='AFTER_MORAL', config={
@@ -41,7 +41,10 @@ if __name__ == '__main__':
         'gamma': 0.999,
         'epsilon': 0.1,
         'ppo_epochs': 5,
-        "env_dim": 4
+        "env_dim": 4,
+        'after_moral_filename' : after_moral_filename,
+        'moral_agent_filename' : moral_agent_filename,
+        'preference_model_filename' : preference_model_filename,
     })
     config = wandb.config
     env_steps = int(config.env_steps / config.n_workers)
