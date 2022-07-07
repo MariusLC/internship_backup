@@ -117,12 +117,97 @@ class PreferenceModelMLP(nn.Module):
 
         return returns_1 - torch.log(torch.exp(returns_1) + torch.exp(returns_2) + 1e-6)
 
+
 class PreferenceBuffer:
     def __init__(self):
         self.storage = []
 
     def add_preference(self, tau_1, tau_2, mu):
         self.storage.append((tau_1, tau_2, mu))
+
+
+def update_preference_model(preference_model, preference_buffer, preference_optimizer, batch_size):
+    overall_loss = torch.tensor(0.).to(device)
+    for i in range(batch_size):
+
+        # Sample random preference 
+        # Pourquoi prendre des preferences random ? Dans l'article ils prennent simplement tout le batch...
+        rand_idx = np.random.randint(len(preference_buffer.storage))
+        rand_tau_1, rand_tau_2, rand_mu = preference_buffer.storage[rand_idx]
+
+        # Add to Loss
+        superior_log_prob = preference_model.compare_trajectory(rand_tau_1, rand_tau_2)
+        inferior_log_prob = preference_model.compare_trajectory(rand_tau_2, rand_tau_1)
+        overall_loss -= (rand_mu[0]*superior_log_prob + rand_mu[1]*inferior_log_prob)
+
+    # On fait la moyenne ? Tester sans diviser par batch_size ?
+    overall_loss = overall_loss/batch_size
+
+
+    preference_optimizer.zero_grad()
+    overall_loss.backward()
+    preference_optimizer.step()
+
+    return overall_loss.item()
+
+
+
+##### TEST new NN sur les retours d'actions
+
+class PreferenceModelTEST(nn.Module):
+    def __init__(self, dimension):
+        super(PreferenceModelTEST, self).__init__()
+
+        # General Parameters
+        self.dimension = dimension
+
+        # Layers
+        self.reward_l1 = nn.Linear(dimension, 512)
+        self.reward_l2 = nn.Linear(512, 1024)
+        self.reward_l3 = nn.Linear(1024, 512)
+        self.reward_out = nn.Linear(512, 1)
+
+        # self.reward_l1 = nn.Linear(dimension, 1024)
+        # self.reward_l2 = nn.Linear(1024, 2056)
+        # self.reward_l3 = nn.Linear(2056, 1024)
+        # self.reward_out = nn.Linear(1024, 1)
+
+        # Dropout
+        #self.dropout = nn.Dropout(p=0)
+
+        # Activation
+        self.relu = nn.LeakyReLU(0.01)
+
+
+    def forward(self, ret):
+        x = self.relu(self.reward_l1(ret))
+        x = self.relu(self.reward_l2(x))
+        #x = self.dropout(x)
+        x = self.relu(self.reward_l3(x))
+        #x = self.dropout(x)
+        x = self.reward_out(x)
+        return x
+
+    def evaluate_action(self, ret):
+        ret = torch.tensor(ret).float().to(device)
+        predicted_rewards = self.forward(ret)
+        return predicted_rewards.squeeze(0)
+
+    def compare_trajectory(self, ret_1, ret_2):
+        # Returns log P(tau_1 > tau_2) using the Bradley-Terry model
+
+        returns_1 = self.evaluate_action(ret_1)
+        returns_2 = self.evaluate_action(ret_2)
+
+        return returns_1 - torch.log(torch.exp(returns_1) + torch.exp(returns_2) + 1e-6)
+
+
+class PreferenceBufferTest:
+    def __init__(self):
+        self.storage = []
+
+    def add_preference(self, ret_1, ret_2, mu):
+        self.storage.append((ret_1, ret_2, mu))
 
 
 def update_preference_model(preference_model, preference_buffer, preference_optimizer, batch_size):

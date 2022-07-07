@@ -266,7 +266,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         # Prepare state input for next time step
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
-        save_data(ppo, moral_filename)
+        # save_data(ppo, moral_filename)
 
     save_data(ppo, moral_filename)
 

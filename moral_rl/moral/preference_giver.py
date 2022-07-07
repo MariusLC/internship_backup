@@ -199,6 +199,43 @@ class EthicalParetoGiverv3:
 			else :
 				return [0.5, 0.5]
 
+class EthicalParetoGiverv3_1023:
+	def query_pair(self, ret_a, ret_b):
+		if ret_a[1] > ret_b[1]:
+			return [1, 0]
+		elif ret_b[1] > ret_a[1]:
+			return [0, 1]
+		else :
+			if ret_a[0] > ret_b[0]:
+				return [1, 0]
+			elif ret_b[0] > ret_a[0]:
+				return [0, 1]
+			else :
+				if ret_a[2] > ret_b[2]:
+					return [1, 0]
+				elif ret_b[2] > ret_a[2]:
+					return [0, 1]
+				else :
+					if ret_a[3] > ret_b[3]:
+						return [1, 0]
+					elif ret_b[3] > ret_a[3]:
+						return [0, 1]
+					else :
+						return [0.5, 0.5]
+
+
+		if check_pareto_dom(ret_a[1:], ret_b[1:]):
+			return [1, 0]
+		elif check_pareto_dom(ret_b[1:], ret_a[1:]):
+			return [0, 1]
+		else:
+			if ret_a[0] > ret_b[0]:
+				return [1, 0]
+			elif ret_b[0] > ret_a[0]:
+				return [0, 1]
+			else :
+				return [0.5, 0.5]
+
 class EthicalParetoTestGiverv3:
 	def query_pair(self, ret_a, ret_b):
 		if check_pareto_dom(ret_a, ret_b):
