@@ -92,6 +92,7 @@ class TrajectoryDataset:
 
         # calculated with an expert in the non ethical objective, previously learned during a ppo phase.
         self.utopia_point_expert = None
+        self.utopia_point_expert_max_1_traj = None
 
     def reset_buffer(self, i):
         # self.buffer[i] = {'states': [], 'actions': [], 'rewards': [], 'log_probs': [], 'latents': None, 'logs': []}
@@ -218,6 +219,10 @@ class TrajectoryDataset:
         normalization_v4 = value/(2*abs(self.utopia_point_expert))
         return normalization_v4
 
+    def normalize_v5(self, value, traj_size): # On tente de réduire l'impact de l'objectif non éthique
+        normalization_v5 = value/(abs(self.utopia_point_expert_max_1_traj))
+        return normalization_v5
+
     def estimate_utopia_point(self, expert_policy, env_id, steps=10000):
         env = GymWrapper(env_id)
         states = env.reset()
@@ -253,7 +258,9 @@ class TrajectoryDataset:
         # l'utopia point est simplement la moyenne des rewards estimés par le discriminateur des trajectoires finies sur n pas de temps,
         # en se référant à l'imitation policy pour le choix des actions
         self.utopia_point_expert = sum(estimated_returns)/len(estimated_returns)
+        self.utopia_point_expert_max_1_traj = max(estimated_returns)
         print("self.utopia_point_expert = ", self.utopia_point_expert)
+        print("self.utopia_point_expert_max_1_traj = ", self.utopia_point_expert_max_1_traj)
 
         return self.utopia_point_expert
 
@@ -272,10 +279,12 @@ class TrajectoryDataset:
                 non_eth_norm_fct = self.normalize_v1
             elif non_eth_norm == "v2": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
                 non_eth_norm_fct = self.normalize_v2
-            elif non_eth_norm == "v3": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
+            elif non_eth_norm == "v3": # division par la moyenne des rewards sur une trajectoire d'un agent expert de la tâche
                 non_eth_norm_fct = self.normalize_v3
-            elif non_eth_norm == "v4": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
+            elif non_eth_norm == "v4": # même chose que v3 mais avec un facteur pour réduire la valeur
                 non_eth_norm_fct = self.normalize_v4
+            elif non_eth_norm == "v5": # division par le reward de la meilleure trajectoire parmi toutes celles d'un expert de la tâche
+                non_eth_norm_fct = self.normalize_v5
             self.compute_utopia()
             self.compute_normalization_non_eth(non_eth_norm_fct)
 
