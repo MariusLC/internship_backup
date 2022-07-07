@@ -269,6 +269,8 @@ class TrajectoryDataset:
             self.estimate_utopia_point(expert_policy, env_id, steps)
         if non_eth_norm == "v4":
             self.estimate_utopia_point(expert_policy, env_id, steps)
+        if non_eth_norm == "v5":
+            self.estimate_utopia_point(expert_policy, env_id, steps)
 
 
     def compute_scalarized_rewards(self, w_posterior_mean, non_eth_norm, wandb):
