@@ -13,7 +13,7 @@ from utils.save_data import *
 
 if __name__ == '__main__':
 
-    after_moral_filename = "generated_data/v3/after_moral/from_scratch_actionOrder1023.pt"
+    after_moral_filename = "generated_data/v3/after_moral/all_combi_actionOrder1023.pt"
 
     # Pretrained MORAL agent that we want to teach action differences
     # moral_agent_filename = "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3.pt"
