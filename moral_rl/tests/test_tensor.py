@@ -23,7 +23,7 @@ import math
 from torch.distributions import *
 
 from moral.preference_giver import *
-
+import itertools
 
 if __name__ == '__main__':
 
@@ -186,34 +186,47 @@ if __name__ == '__main__':
 	# print("norm_a_div_up_a_norm = ", norm_a_div_up_a_norm)
 	# print("m_norm_a_div_up_a_norm = ", m_norm_a_div_up_a_norm)
 	
-	preference_giver = ParetoSoftmaxGiverv3()
-	# preference_giver = EthicalParetoTestGiverv3()
+	# preference_giver = ParetoSoftmaxGiverv3()
+	# # preference_giver = EthicalParetoTestGiverv3()
 	
 
-	# Cas 1 : B est fort que pour la tâche primaire, alors que B est moins bon mais respecte beaucoup plus l'ethique.
-	# solution voulue -> on choisit B
-	logs_tau_a = np.array([10, 0, 1, -3])
-	logs_tau_b = np.array([3, 2, 1, 0])
-	print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
-	auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
-	print("auto_preference = ", auto_preference)
-	print("on veut pref = ", str([0, 1]))
+	# # Cas 1 : B est fort que pour la tâche primaire, alors que B est moins bon mais respecte beaucoup plus l'ethique.
+	# # solution voulue -> on choisit B
+	# logs_tau_a = np.array([10, 0, 1, -3])
+	# logs_tau_b = np.array([3, 2, 1, 0])
+	# print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
+	# auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
+	# print("auto_preference = ", auto_preference)
+	# print("on veut pref = ", str([0, 1]))
 
-	# Cas 2 : équilibré, A est plus performant que B sur un obj éthique mais B l'est plus sur 2 obj, avec une diff plus faible
-	# solution voulue -> on choisit B ??
-	logs_tau_a = np.array([3, 2, 1, -1])
-	logs_tau_b = np.array([3, 0, 2, 0])
-	print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
-	auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
-	print("auto_preference = ", auto_preference)
-	print("on veut pref = ", str([0, 1]))
+	# # Cas 2 : équilibré, A est plus performant que B sur un obj éthique mais B l'est plus sur 2 obj, avec une diff plus faible
+	# # solution voulue -> on choisit B ??
+	# logs_tau_a = np.array([3, 2, 1, -1])
+	# logs_tau_b = np.array([3, 0, 2, 0])
+	# print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
+	# auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
+	# print("auto_preference = ", auto_preference)
+	# print("on veut pref = ", str([0, 1]))
 
-	# Cas 3 : A est un peu moins performant que B sur les obj éthiques mais BEACOUP plus performant sur la tâche primaire.
-	# solution voulue -> on choisit A ?? 
-	# Ou alors on veut que l'éthique prime toujours et ne faire que des compromis entre objectifs l'éthiques, et dans ce cas il faut choisir B.
-	logs_tau_a = np.array([10, 0, 1, -1])
-	logs_tau_b = np.array([0, 1, 1, 0])
-	print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
-	auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
-	print("auto_preference = ", auto_preference)
-	print("on veut pref = ", str([1, 0]))
+	# # Cas 3 : A est un peu moins performant que B sur les obj éthiques mais BEACOUP plus performant sur la tâche primaire.
+	# # solution voulue -> on choisit A ?? 
+	# # Ou alors on veut que l'éthique prime toujours et ne faire que des compromis entre objectifs l'éthiques, et dans ce cas il faut choisir B.
+	# logs_tau_a = np.array([10, 0, 1, -1])
+	# logs_tau_b = np.array([0, 1, 1, 0])
+	# print(f'Found trajectory pair: {logs_tau_a, logs_tau_b}')
+	# auto_preference = preference_giver.query_pair(logs_tau_a, logs_tau_b)
+	# print("auto_preference = ", auto_preference)
+	# print("on veut pref = ", str([1, 0]))
+
+	all_combi = [[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,-1]]
+	all_combi = [np.array(c) for c in all_combi]
+	a = itertools.product(all_combi, repeat=2)
+	# a = itertools.combinations(all_combi, r=2)
+	b = list(a)
+	c = np.array(b)
+
+
+	print(a)
+	print("\n\n",b)
+	print("\n\n",c)
+	print(len(b))

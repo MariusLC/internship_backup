@@ -10,15 +10,14 @@ import pickle
 import argparse
 from utils.save_data import *
 
-
-from itertools import product
+import itertools
 import random
 
 
 if __name__ == '__main__':
 
     # preference_model_filename = "generated_data/v3/pref_model/1000q_ParetoDom.pt"
-    preference_model_filename = "generated_data/v3/pref_model/5000q_50b_200e_1>0>2>3.pt"
+    preference_model_filename = "generated_data/v3/pref_model/ALLCOMBI_50b_200e_1>0>2>3.pt"
 
     # Environnement ethical dimension
     env_dim = 4
@@ -44,9 +43,10 @@ if __name__ == '__main__':
 
     # all_combi = fct(env_dim)
     # all_combi = np.array(product(range(2), repeat=env_dim))
-    # all_combi = product(range(2), repeat=env_dim)
+    # all_combi = itertools.product(range(2), repeat=env_dim)
     all_combi = [[0,0,0,0], [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,-1]]
     all_combi = [np.array(c) for c in all_combi]
+    list_tuple_combi = list(itertools.product(all_combi, repeat=2))
 
     # Create Environment
     vec_env = SubprocVecEnv([make_env(config.env_id, i) for i in range(12)])
@@ -59,16 +59,20 @@ if __name__ == '__main__':
     state_shape = obs_shape[:-1]
     in_channels = obs_shape[-1]
 
-    for i in range(config.n_queries):
-        # ids = random_comparison(all_combi)
-        ret_a, ret_b = random.sample(all_combi, 2)
-        # print("ret_a = ", ret_a)
-        # print("ret_b = ", ret_b)
+    # for i in range(config.n_queries):
+    #     # ids = random_comparison(all_combi)
+    #     ret_a, ret_b = random.sample(all_combi, 2)
+    #     # print("ret_a = ", ret_a)
+    #     # print("ret_b = ", ret_b)
 
-        auto_preference = preference_giver.query_pair(ret_a, ret_b)
-        # print(auto_preference)
+    #     auto_preference = preference_giver.query_pair(ret_a, ret_b)
+    #     # print(auto_preference)
 
-        preference_buffer.add_preference(ret_a, ret_b, auto_preference)
+    #     preference_buffer.add_preference(ret_a, ret_b, auto_preference)
+
+    for i, combi in enumerate(list_tuple_combi):
+        auto_preference = preference_giver.query_pair(combi[0], combi[1])
+        preference_buffer.add_preference(combi[0], combi[1], auto_preference)
 
     for i in range(config.n_epochs):
         preference_loss = update_preference_model(preference_model, preference_buffer, preference_optimizer,

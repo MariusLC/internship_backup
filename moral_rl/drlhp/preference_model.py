@@ -208,28 +208,3 @@ class PreferenceBufferTest:
 
     def add_preference(self, ret_1, ret_2, mu):
         self.storage.append((ret_1, ret_2, mu))
-
-
-def update_preference_model(preference_model, preference_buffer, preference_optimizer, batch_size):
-    overall_loss = torch.tensor(0.).to(device)
-    for i in range(batch_size):
-
-        # Sample random preference 
-        # Pourquoi prendre des preferences random ? Dans l'article ils prennent simplement tout le batch...
-        rand_idx = np.random.randint(len(preference_buffer.storage))
-        rand_tau_1, rand_tau_2, rand_mu = preference_buffer.storage[rand_idx]
-
-        # Add to Loss
-        superior_log_prob = preference_model.compare_trajectory(rand_tau_1, rand_tau_2)
-        inferior_log_prob = preference_model.compare_trajectory(rand_tau_2, rand_tau_1)
-        overall_loss -= (rand_mu[0]*superior_log_prob + rand_mu[1]*inferior_log_prob)
-
-    # On fait la moyenne ? Tester sans diviser par batch_size ?
-    overall_loss = overall_loss/batch_size
-
-
-    preference_optimizer.zero_grad()
-    overall_loss.backward()
-    preference_optimizer.step()
-
-    return overall_loss.item()
