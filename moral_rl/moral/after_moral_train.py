@@ -13,7 +13,7 @@ from utils.save_data import *
 
 if __name__ == '__main__':
 
-    after_moral_filename = "generated_data/v3/after_moral/v6_v4_131_actionOrder1023.pt"
+    after_moral_filename = "generated_data/v3/after_moral/from_scratch_actionOrder1023.pt"
 
     # Pretrained MORAL agent that we want to teach action differences
     # moral_agent_filename = "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3.pt"
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     # Initialize Models
     ppo = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
-    ppo.load_state_dict(torch.load(moral_agent_filename, map_location=torch.device('cpu')))
+    # ppo.load_state_dict(torch.load(moral_agent_filename, map_location=torch.device('cpu')))
 
     optimizer = torch.optim.Adam(ppo.parameters(), lr=config.lr_ppo)
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
