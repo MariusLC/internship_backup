@@ -21,7 +21,8 @@ if __name__ == '__main__':
 
     # Pretrained preference model estimating expert preferences
     # preference_model_filename = "generated_data/v3/pref_model/1000q_ParetoDom.pt"
-    preference_model_filename = "generated_data/v3/pref_model/5000q_50b_200e_1>0>2>3.pt"
+    # preference_model_filename = "generated_data/v3/pref_model/5000q_50b_200e_1>0>2>3.pt"
+    preference_model_filename = "generated_data/v3/pref_model/ALLCOMBI_50b_200e_1>0>2>3.pt"
 
     # Config
     wandb.init(project='AFTER_MORAL', config={
