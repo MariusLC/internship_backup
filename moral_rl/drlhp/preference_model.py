@@ -193,6 +193,11 @@ class PreferenceModelTEST(nn.Module):
         predicted_rewards = self.forward(ret)
         return predicted_rewards.squeeze(0)
 
+    def evaluate_action_detach(self, ret):
+        ret = torch.tensor(ret).float().to(device)
+        predicted_rewards = self.forward(ret)
+        return predicted_rewards.squeeze(0).item()
+
     def compare_trajectory(self, ret_1, ret_2):
         # Returns log P(tau_1 > tau_2) using the Bradley-Terry model
 

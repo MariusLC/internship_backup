@@ -223,18 +223,18 @@ class EthicalParetoGiverv3_1023:
 					else :
 						return [0.5, 0.5]
 
+class EthicalParetoGiverv3_ObjectiveOrder:
+	def __init__(self, order):
+		self.order = order
 
-		if check_pareto_dom(ret_a[1:], ret_b[1:]):
-			return [1, 0]
-		elif check_pareto_dom(ret_b[1:], ret_a[1:]):
-			return [0, 1]
-		else:
-			if ret_a[0] > ret_b[0]:
+	def query_pair(self, ret_a, ret_b):
+		for i in self.order:
+			if ret_a[i] > ret_b[i]:
 				return [1, 0]
-			elif ret_b[0] > ret_a[0]:
+			elif ret_b[i] > ret_a[i]:
 				return [0, 1]
-			else :
-				return [0.5, 0.5]
+		return [0.5, 0.5]
+
 
 class EthicalParetoTestGiverv3:
 	def query_pair(self, ret_a, ret_b):
