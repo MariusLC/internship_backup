@@ -40,6 +40,7 @@ copier des fichiers :
 
 du pc au cluster :
 	cp -r ~/Documents/backup/moral_rl/generated_data/v1/rand/ generated_data/v1/
+	cp -r ~/Documents/backup/moral_rl/generated_data/v3/pref_model/ generated_data/v3/
 
 du cluster au pc :
 	cp -r generated_data/v1/rand/ ~/Documents/backup/moral_rl/generated_data/v1/

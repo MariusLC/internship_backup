@@ -13,7 +13,7 @@ from utils.save_data import *
 
 if __name__ == '__main__':
 
-    after_moral_filename = "generated_data/v3/after_moral/from_scratch_TRAJ_all_combi_actionOrder3102.pt"
+    after_moral_filename = "generated_data/v3/after_moral/from_scratch_all_combi_actionOrder1023.pt"
 
     # Pretrained MORAL agent that we want to teach action differences
     # moral_agent_filename = "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3.pt"
@@ -22,8 +22,9 @@ if __name__ == '__main__':
 
     # Pretrained preference model estimating expert preferences
     # preference_model_filename = "generated_data/v3/pref_model/1000q_ParetoDom.pt"
-    # preference_model_filename = "generated_data/v3/pref_model/ALLCOMBI_50b_200e_[1, 0, 2, 3].pt"
-    preference_model_filename = "generated_data/v3/pref_model/trajectories/ALLCOMBI_100q_5b_2000e_[3, 1, 0, 2].pt"
+    preference_model_filename = "generated_data/v3/pref_model/ALLCOMBI_5b_2000e_[1, 0, 2, 3].pt"
+    # preference_model_filename = "generated_data/v3/pref_model/trajectories/ALLCOMBI_100q_5b_2000e_[3, 1, 0, 2].pt"
+
 
     # Config
     wandb.init(project='AFTER_MORAL', config={
