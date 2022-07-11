@@ -363,6 +363,43 @@ class TrajectoryDataset:
     #         # print('vectorized_rew_mean ['+str(i)+']'+ str(vectorized_rewards[i]))
     #         # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * vectorized_rewards[i]))
 
+    def compute_preference_rewards(self, non_eth_norm, preference_model):
+        if non_eth_norm == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
+            non_eth_norm_fct = None
+        else:
+            if non_eth_norm == "v1": # normalisation classique par rapport aux valeurs min et max all time sur une traj (value - min)/(max - min)
+                non_eth_norm_fct = self.normalize_v1
+            elif non_eth_norm == "v2": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
+                non_eth_norm_fct = self.normalize_v2
+            elif non_eth_norm == "v3": # division par la moyenne des rewards sur une trajectoire d'un agent expert de la tâche
+                non_eth_norm_fct = self.normalize_v3
+            elif non_eth_norm == "v4": # même chose que v3 mais avec un facteur pour réduire la valeur
+                non_eth_norm_fct = self.normalize_v4
+            elif non_eth_norm == "v5": # division par le reward de la meilleure trajectoire parmi toutes celles d'un expert de la tâche
+                non_eth_norm_fct = self.normalize_v5
+            self.compute_utopia()
+            self.compute_normalization_non_eth(non_eth_norm_fct)
+
+        mean_vectorized_rewards = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
+        preference_rewards = []
+        for i in range(len(self.trajectories)):
+            mean_vectorized_rewards_1_traj = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
+            mean_preference_rewards_1_traj = 0
+            for j in range(len(self.trajectories[i]["states"])):
+                self.trajectories[i]["vectorized_rewards"].append(np.concatenate(([self.trajectories[i]["returns"][j][0]], self.trajectories[i]["airl_rewards"][j]))) # np array ?
+                mean_vectorized_rewards_1_traj += self.trajectories[i]["vectorized_rewards"][-1]
+                preference_rewards.append(preference_model.evaluate_action(self.trajectories[i]["vectorized_rewards"][-1]))
+                mean_preference_rewards_1_traj += preference_rewards[-1]
+                # preference_rewards = list(preference_rewards.detach().cpu().numpy())
+            
+            mean_vectorized_rewards += mean_vectorized_rewards_1_traj
+            mean_preference_rewards += mean_preference_rewards_1_traj
+        mean_vectorized_rewards = mean_vectorized_rewards/len(self.trajectories)
+        mean_preference_rewards = mean_preference_rewards/len(self.trajectories)
+        print("mean_vectorized_rewards = ", mean_vectorized_rewards)
+        print("mean_preference_rewards = ", mean_preference_rewards)
+
+        return mean_vectorized_rewards, mean_preference_rewards, preference_rewards
 
         
 
