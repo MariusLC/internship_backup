@@ -363,7 +363,7 @@ class TrajectoryDataset:
     #         # print('vectorized_rew_mean ['+str(i)+']'+ str(vectorized_rewards[i]))
     #         # print('weighted_rew_mean ['+str(i)+']'+ str(w_posterior_mean[i] * vectorized_rewards[i]))
 
-    def compute_preference_rewards(self, non_eth_norm, preference_model):
+    def compute_only_vectorized_rewards(self, non_eth_norm):
         if non_eth_norm == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
             non_eth_norm_fct = None
         else:
@@ -381,25 +381,17 @@ class TrajectoryDataset:
             self.compute_normalization_non_eth(non_eth_norm_fct)
 
         mean_vectorized_rewards = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
-        preference_rewards = []
         for i in range(len(self.trajectories)):
             mean_vectorized_rewards_1_traj = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
-            mean_preference_rewards_1_traj = 0
             for j in range(len(self.trajectories[i]["states"])):
                 self.trajectories[i]["vectorized_rewards"].append(np.concatenate(([self.trajectories[i]["returns"][j][0]], self.trajectories[i]["airl_rewards"][j]))) # np array ?
                 mean_vectorized_rewards_1_traj += self.trajectories[i]["vectorized_rewards"][-1]
-                preference_rewards.append(preference_model.evaluate_action(self.trajectories[i]["vectorized_rewards"][-1]))
-                mean_preference_rewards_1_traj += preference_rewards[-1]
-                # preference_rewards = list(preference_rewards.detach().cpu().numpy())
             
             mean_vectorized_rewards += mean_vectorized_rewards_1_traj
-            mean_preference_rewards += mean_preference_rewards_1_traj
         mean_vectorized_rewards = mean_vectorized_rewards/len(self.trajectories)
-        mean_preference_rewards = mean_preference_rewards/len(self.trajectories)
         print("mean_vectorized_rewards = ", mean_vectorized_rewards)
-        print("mean_preference_rewards = ", mean_preference_rewards)
 
-        return mean_vectorized_rewards, mean_preference_rewards, preference_rewards
+        return mean_vectorized_rewards
 
         
 

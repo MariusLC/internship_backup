@@ -13,7 +13,7 @@ from utils.save_data import *
 
 if __name__ == '__main__':
 
-    after_moral_filename = "generated_data/v3/after_moral/from_scratch_all_combi_actionOrder1023.pt"
+    after_moral_filename = "generated_data/v3/after_moral/from_scratch_all_combi_actionOrder1023_airl_traj.pt"
 
     # Pretrained MORAL agent that we want to teach action differences
     # moral_agent_filename = "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3.pt"
@@ -22,8 +22,9 @@ if __name__ == '__main__':
 
     # Pretrained preference model estimating expert preferences
     # preference_model_filename = "generated_data/v3/pref_model/1000q_ParetoDom.pt"
-    preference_model_filename = "generated_data/v3/pref_model/ALLCOMBI_5b_2000e_[1, 0, 2, 3].pt"
+    # preference_model_filename = "generated_data/v3/pref_model/ALLCOMBI_5b_2000e_[1, 0, 2, 3].pt"
     # preference_model_filename = "generated_data/v3/pref_model/trajectories/ALLCOMBI_100q_5b_2000e_[3, 1, 0, 2].pt"
+    preference_model_filename = "generated_data/v3/pref_model/airl/trajectories/ALLCOMBI_5b_2000e_[1, 0, 2, 3].pt"
 
     airl_agents_lambda = [[0,1,0,1],[0,0,1,1]]
 
@@ -53,7 +54,10 @@ if __name__ == '__main__':
         'after_moral_filename' : after_moral_filename,
         'moral_agent_filename' : moral_agent_filename,
         'preference_model_filename' : preference_model_filename,
-        'airl_agents': airl_agents
+        'airl_agents': airl_agents,
+        'eth_norm' : "v6",
+        'non_eth_norm' : "v5",
+        'airl_agents_lambda' : [[0,1,0,1],[0,0,1,1]],
     })
     config = wandb.config
     env_steps = int(config.env_steps / config.n_workers)
@@ -114,7 +118,7 @@ if __name__ == '__main__':
 
             # log objective rewards into volume_buffer before normalizing it
             objective_returns = dataset.log_returns_sum()
-            mean_vectorized_rewards, mean_preference_rewards, preference_rewards = dataset.compute_preference_rewards(w_posterior_mean, non_eth_norm, preference_model)
+            mean_vectorized_rewards, mean_preference_rewards, vectorized_rewards, preference_rewards = dataset.compute_preference_rewards(w_posterior_mean, non_eth_norm, preference_model)
 
             # Log mean vectorized rewards
             for i, vec in enumerate(mean_vectorized_rewards):

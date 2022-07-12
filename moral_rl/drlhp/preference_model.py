@@ -210,6 +210,10 @@ class PreferenceModelTEST(nn.Module):
 class PreferenceBufferTest:
     def __init__(self):
         self.storage = []
+        self.storage_obj_ret = []
 
     def add_preference(self, ret_1, ret_2, mu):
         self.storage.append((ret_1, ret_2, mu))
+
+    def add_obj_ret(self, ret_1, ret_2):
+        self.storage_obj_ret.append((ret_1, ret_2))
