@@ -9,6 +9,7 @@ import wandb
 import pickle
 import argparse
 from utils.save_data import *
+from moral.airl import *
 
 
 if __name__ == '__main__':
@@ -50,11 +51,10 @@ if __name__ == '__main__':
         'gamma': 0.999,
         'epsilon': 0.1,
         'ppo_epochs': 5,
-        "env_dim": 4,
+        "env_dim": len(airl_agents_lambda)+1,
         'after_moral_filename' : after_moral_filename,
         'moral_agent_filename' : moral_agent_filename,
         'preference_model_filename' : preference_model_filename,
-        'airl_agents': airl_agents,
         'eth_norm' : "v6",
         'non_eth_norm' : "v5",
         'airl_agents_lambda' : [[0,1,0,1],[0,0,1,1]],
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     # Initialize Models
     ppo = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
-    ppo.load_state_dict(torch.load(moral_agent_filename, map_location=torch.device('cpu')))
+    # ppo.load_state_dict(torch.load(moral_agent_filename, map_location=torch.device('cpu')))
 
     optimizer = torch.optim.Adam(ppo.parameters(), lr=config.lr_ppo)
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
@@ -85,12 +85,24 @@ if __name__ == '__main__':
     preference_model = PreferenceModelTEST(config.env_dim).to(device)
     preference_model.load_state_dict(torch.load(preference_model_filename, map_location=torch.device('cpu')))
 
+    rand_agent = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+    non_eth_expert_filename = "generated_data/v3/"+str([1,0,0,0])+"/expert.pt"
+    non_eth_expert = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+    non_eth_expert.load_state_dict(torch.load(non_eth_expert_filename, map_location=torch.device('cpu')))
+
     # airl agents
     airl_agents = []
     for i, lmbd in enumerate(airl_agents_lambda):
         airl_agent_filename = "generated_data/v3/"+str(lmbd)+"/discriminator.pt"
+        airl_policy_filename = "generated_data/v3/"+str(lmbd)+"/generator.pt"
         airl_agents.append(Discriminator(state_shape=state_shape, in_channels=in_channels).to(device))
         airl_agents[i].load_state_dict(torch.load(airl_agent_filename, map_location=torch.device('cpu')))
+        airl_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+        airl_policy.load_state_dict(torch.load(airl_policy_filename, map_location=torch.device('cpu')))
+        args = airl_agents[i].estimate_normalisation_points(eth_norm, rand_agent, airl_policy, config.env_id, config.gamma, steps=1000)
+        airl_agents[i].set_eval()
+
+    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000)
 
 
     for t in tqdm(range(int(config.env_steps / config.n_workers))):
@@ -106,11 +118,11 @@ if __name__ == '__main__':
         for j, airl_agent in enumerate(airl_agents):
             airl_rewards.append(airl_agent.forward(airl_state, airl_next_state, config.gamma, eth_norm).squeeze(1))
 
-        for j in range(nb_experts):
-            airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
+        for j in range(len(airl_agents_lambda)):
+            airl_rewards[j] = airl_rewards[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
 
-        airl_rewards_array = np.array(airl_rewards_list)
-        new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
+        airl_rewards_array = np.array(airl_rewards)
+        new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards[0]))]
 
         train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
 
@@ -118,18 +130,12 @@ if __name__ == '__main__':
 
             # log objective rewards into volume_buffer before normalizing it
             objective_returns = dataset.log_returns_sum()
-            mean_vectorized_rewards, mean_preference_rewards, vectorized_rewards, preference_rewards = dataset.compute_preference_rewards(w_posterior_mean, non_eth_norm, preference_model)
+            mean_vectorized_rewards, mean_preference_rewards = dataset.compute_preference_rewards(non_eth_norm, preference_model)
 
             # Log mean vectorized rewards
             for i, vec in enumerate(mean_vectorized_rewards):
                 wandb.log({'vectorized_rew_mean ['+str(i)+']': vec}, step=t*config.n_workers)
             wandb.log({'mean_preference_rewards': mean_preference_rewards}, step=t*config.n_workers)
-
-            # objective_logs = dataset.log_objectives()
-            # for i in range(objective_logs.shape[1]):
-            #     wandb.log({'Obj_' + str(i): objective_logs[:, i].mean()})
-            # for ret in dataset.log_rewards():
-            #     wandb.log({'Returns': ret})
 
             # Log Objectives
             obj_ret_logs = np.mean(objective_returns, axis=0)

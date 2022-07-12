@@ -60,3 +60,15 @@ if __name__ == '__main__':
 		print("compare_actions_ba = ", compare_actions_ba)
 		print("compare_trajectories_ab = ", compare_trajectories_ab)
 		print("compare_trajectories_ba = ", compare_trajectories_ba)
+
+
+	order = [3,1,0,2]
+	preference_giver = EthicalParetoGiverv3_ObjectiveOrder(order)
+	preference_buffer = PreferenceBufferTest()
+
+	n_queries = 10
+	for i in range(n_queries):
+		ret_a = randomlist = random.sample(range(0, 13), 3) + [random.randint(-8, 0)]
+		ret_b = randomlist = random.sample(range(0, 13), 3) + [random.randint(-8, 0)]
+		auto_preference = preference_giver.query_pair(ret_a, ret_b)
+		preference_buffer.add_preference(ret_a, ret_b, auto_preference)

@@ -393,6 +393,43 @@ class TrajectoryDataset:
 
         return mean_vectorized_rewards
 
+
+    def compute_preference_rewards(self, non_eth_norm, pref_model):
+        if non_eth_norm == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
+            non_eth_norm_fct = None
+        else:
+            if non_eth_norm == "v1": # normalisation classique par rapport aux valeurs min et max all time sur une traj (value - min)/(max - min)
+                non_eth_norm_fct = self.normalize_v1
+            elif non_eth_norm == "v2": # division par la moyenne des rewards sur une trajectoire pour tout le batch de données courant (data_set)
+                non_eth_norm_fct = self.normalize_v2
+            elif non_eth_norm == "v3": # division par la moyenne des rewards sur une trajectoire d'un agent expert de la tâche
+                non_eth_norm_fct = self.normalize_v3
+            elif non_eth_norm == "v4": # même chose que v3 mais avec un facteur pour réduire la valeur
+                non_eth_norm_fct = self.normalize_v4
+            elif non_eth_norm == "v5": # division par le reward de la meilleure trajectoire parmi toutes celles d'un expert de la tâche
+                non_eth_norm_fct = self.normalize_v5
+            self.compute_utopia()
+            self.compute_normalization_non_eth(non_eth_norm_fct)
+
+        mean_vectorized_rewards = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
+        mean_preference_rewards = 0
+        for i in range(len(self.trajectories)):
+            mean_vectorized_rewards_1_traj = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
+            for j in range(len(self.trajectories[i]["states"])):
+                self.trajectories[i]["vectorized_rewards"].append(np.concatenate(([self.trajectories[i]["returns"][j][0]], self.trajectories[i]["airl_rewards"][j]))) # np array ?
+                mean_vectorized_rewards_1_traj += self.trajectories[i]["vectorized_rewards"][-1]
+                print("vect rew = ", self.trajectories[i]["vectorized_rewards"][j])
+                self.trajectories[i]["rewards"].append(pref_model.forward(torch.tensor(self.trajectories[i]["vectorized_rewards"][j]).float().to(device)).item())
+                mean_preference_rewards += self.trajectories[i]["rewards"][-1]
+
+            mean_vectorized_rewards += mean_vectorized_rewards_1_traj
+        mean_vectorized_rewards = mean_vectorized_rewards/len(self.trajectories)
+        mean_preference_rewards = mean_preference_rewards/len(self.trajectories)
+        print("mean_vectorized_rewards = ", mean_vectorized_rewards)
+        print("mean_preference_rewards = ", mean_preference_rewards)
+
+        return mean_vectorized_rewards, mean_preference_rewards
+
         
 
 
