@@ -1,4 +1,8 @@
-se connecter :
+se connecter à une machine du lip6 à partir d'une machine exterieure :
+
+	ssh lechapelier@gates.lip6.fr
+
+se connecter au cluster à partir d'une machine du lip6 :
 
 	ssh lechapelier@cluster.lip6.fr
 

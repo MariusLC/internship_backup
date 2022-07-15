@@ -207,7 +207,7 @@ class PreferenceLearner:
 
         return np.array(w_arr)[self.warmup:]
 
-    def mcmc_test(self, w_init='mode', posterior_mode="moral", prop_w_mode="moral"):
+    def mcmc_test(self, w_init='mode', prop_w_mode="moral", posterior_mode="moral"):
         if w_init == 'mode':
             w_init = [0 for i in range(self.d)]
 
@@ -219,7 +219,7 @@ class PreferenceLearner:
         # print("posterior_prob w_init = ", self.posterior_log_prob_test_prints(self.deltas, self.prefs, w_init, self.returns))
 
         for i in range(1, self.warmup + self.n_iter + 1):
-            # print("w_curr = ", w_curr)
+            w_new = None
             if prop_w_mode == "moral":
                 w_new = self.propose_w(w_curr)
             elif prop_w_mode == "normalized_linalg":
@@ -228,10 +228,6 @@ class PreferenceLearner:
                 w_new = self.propose_w_normalized_linalg_positive(w_curr)
             elif prop_w_mode == "normalized":
                 w_new = self.propose_w_normalized(w_curr)
-            
-            # w_new = self.propose_w(w_curr)
-            # w_new = w_new / sum(abs(w_new))
-            # w_new = w_new / np.linalg.norm(w_new)
 
             if posterior_mode == "moral":
                 prob_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
