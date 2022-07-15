@@ -12,7 +12,7 @@ moral_path: "moral_agents/"
 model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
-special_name_agent: "norm_v6_v5"
+special_name_agent: "norm_v6_v3_temperature"
 
 # new stuff about normalization
 rand: "rand/"
@@ -34,7 +34,7 @@ ratio: [1, 3, 1]
 # ratio: [1, 1, 1, 1, 1, 1, 1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 normalization_eth_sett: "v6"
-normalization_non_eth_sett: "v5"
+normalization_non_eth_sett: "v3"
 
 
 #######

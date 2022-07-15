@@ -121,7 +121,6 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
     # Active Learning
     preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
-    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
