@@ -75,7 +75,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     # Initialize Models
     print('Initializing and Normalizing Rewards...')
     ppo = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
-    ppo.load_state_dict(torch.load(moral_agent_filename, map_location=torch.device('cpu')))
+    ppo.load_state_dict(torch.load(conig.moral_agent_filename, map_location=torch.device('cpu')))
     optimizer = torch.optim.Adam(ppo.parameters(), lr=config.lr_ppo)
 
 
