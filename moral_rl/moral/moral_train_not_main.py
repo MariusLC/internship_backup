@@ -52,6 +52,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'eth_norm': eth_norm,
             'non_eth_norm': non_eth_norm,
             'temperature_mcmc' : 3,
+            'volumeVsEUS' : False, # False = Akrour
             },
         reinit=True)
     config = wandb.config
@@ -94,8 +95,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
-        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
+        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
+        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
         # nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
         
@@ -115,13 +116,13 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
-    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
-    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
+    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
+    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Active Learning
-    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
-    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
+    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
+    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
@@ -135,43 +136,46 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     # preference_giver = ParetoDominationPreferenceGiverv3(ratio=config.ratio)
 
 
+    train_ready = False
     for t in tqdm(range(env_steps)):
         # print("T = ",t)
         # print("query_freq = ", query_freq)
 
         # Query User
-        if t % query_freq == 0 and t > 0:
+        # if t % query_freq == 0 and t > 0:
+        if train_ready:
             best_delta = volume_buffer.best_delta
 
             # Using ground truth returns for preference elicitation
             res = volume_buffer.best_returns
             # print(res)
             ret_a, ret_b = volume_buffer.best_returns
-            print(f'Found trajectory pair: {(ret_a, ret_b)}')
-            print(f'Corresponding best delta: {best_delta}')
+            # print(f'Found trajectory pair: {(ret_a, ret_b)}')
+            # print(f'Corresponding best delta: {best_delta}')
             preference = preference_giver.query_pair(ret_a, ret_b)
             print(f'obtained preference: {preference}')
 
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
             preference_learner.log_returns(ret_a, ret_b)
-            # w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
-            w_posterior = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode="moral", posterior_mode="basic_temperature")
-            print("w_posterior = ", w_posterior)
+            w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
+            # w_posterior = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode="moral", posterior_mode="basic_temperature")
+            # print("w_posterior = ", w_posterior)
             w_posterior_mean = w_posterior.mean(axis=0)
-            print("w_posterior_mean = ", w_posterior_mean)
+            print("w_posterior_mean pre norm = ", w_posterior_mean)
 
             if sum(w_posterior_mean) != 0: 
 
-                # # making a 1 norm vector from w_posterior
-                # w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+                # making a 1 norm vector from w_posterior
+                w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
 
-                # normalize the vector 
-                w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
+                # # normalize the vector 
+                # w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
                 
                 print(f'New Posterior Mean {w_posterior_mean}')
             else :
                 print(f'Keep the current Posterior Mean {w_posterior_mean}')
+            print("\n")
 
             # Log weight vector
             for i in range(len(w_posterior_mean)):
@@ -233,15 +237,20 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg)
             #update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
 
-            # Sample two random trajectories & compare expected volume removal with best pair
-            if volume_buffer.auto_pref:
-                # new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair()
-                new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
-                volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b, logs_a, logs_b, random=False)
+            if config.volumeVsEUS:
+                # Sample two random trajectories & compare expected volume removal with best pair
+                if volume_buffer.auto_pref:
+                    # new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair()
+                    new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
+                    volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b, logs_a, logs_b, random=False)
+                else:
+                    # new_returns_a, new_returns_b = volume_buffer.sample_return_pair()
+                    new_returns_a, new_returns_b = volume_buffer.sample_return_pair_v2()
+                    volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b)
             else:
-                # new_returns_a, new_returns_b = volume_buffer.sample_return_pair()
-                new_returns_a, new_returns_b = volume_buffer.sample_return_pair_v2()
-                volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b)
+                # Akrour query selection
+                volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner)
+
 
             # Reset PPO buffer
             dataset.reset_trajectories()

@@ -165,11 +165,11 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
             if sum(w_posterior_mean) != 0: 
 
-                # # making a 1 norm vector from w_posterior
-                # w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+                # making a 1 norm vector from w_posterior
+                w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
 
-                # normalize the vector 
-                w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
+                # # normalize the vector 
+                # w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
                 
                 print(f'New Posterior Mean {w_posterior_mean}')
             else :

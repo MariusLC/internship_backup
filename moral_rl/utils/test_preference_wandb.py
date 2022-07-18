@@ -91,8 +91,11 @@ if __name__ == '__main__':
 
 	env_id = c["env_rad"]+c["env"]
 
+	volume_buffer = VolumeBuffer(len(c["ratio"]))
+
 	# Create Environment
-	env = GymWrapper(env_id)
+	env = VecEnv(env_id, config.n_workers)
+	# env = GymWrapper(env_id)
 	states = env.reset()
 	states_tensor = torch.tensor(states).float().to(device)
 
@@ -183,18 +186,29 @@ if __name__ == '__main__':
 			states = next_states.copy()
 			states_tensor = torch.tensor(states).float().to(device)
 
-		objective_returns = dataset.log_returns_sum()
-		dataset.compute_scalarized_rewards(w_posterior_mean, c["normalization_non_eth_sett"], None)
-		observed_rewards = dataset.log_vectorized_rew_sum()
+		volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+		mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, c["normalization_non_eth_sett"], None)
+		volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
 
+		# objective_returns = dataset.log_returns_sum()
+		# dataset.compute_scalarized_rewards(w_posterior_mean, c["normalization_non_eth_sett"], None)
+		# observed_rewards = dataset.log_vectorized_rew_sum()
 
-		# GET RET AND REW and delta rew
-		# ret_a = [5, 5, 5]
-		# ret_b = [5, 10, 5]
-		ret_a = objective_returns[0]
-		ret_b = objective_returns[1]
-		observed_rew_a = np.array(observed_rewards[0])
-		observed_rew_b = np.array(observed_rewards[1])
+		if c["query_selection"] == "random":
+			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.sample_return_pair_v2()
+		elif c["query_selection"] == "compare_EUS":
+			for i in range(c["nb_query_test"]):
+				volume_buffer.compare_EUS(self, w_posterior, w_posterior_mean, preference_learner)
+			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+		elif c["query_selection"] == "compare_MORAL":
+			for i in range(c["nb_query_test"]):
+				volume_buffer.compare_MORAL(self, w_posterior)
+			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+
+		# ret_a = objective_returns[0]
+		# ret_b = objective_returns[1]
+		# observed_rew_a = np.array(observed_rewards[0])
+		# observed_rew_b = np.array(observed_rewards[1])
 		delta = observed_rew_a - observed_rew_b
 
 		observed_rew_a_norm = observed_rew_a/np.linalg.norm(observed_rew_a)

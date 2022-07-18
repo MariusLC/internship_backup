@@ -26,6 +26,14 @@ class PreferenceLearner:
         self.deltas.append(delta)
         self.prefs.append(pref)
 
+    def pop_returns(self):
+        self.returns.pop()
+
+    def pop_preference(self):
+        self.deltas.pop()
+        self.prefs.pop()
+
+
     def w_prior(self, w):
         self.cpt_nb_steps += 1
         if np.linalg.norm(w) <=1 and np.all(np.array(w) >= 0):
@@ -452,6 +460,65 @@ class VolumeBuffer:
             self.best_delta = delta
             self.best_observed_returns = (new_returns_a, new_returns_b)
             self.best_returns = (logs_a, logs_b)
+
+    def compare_MORAL(self, w_posterior, random=False):
+        new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_v2()
+        delta = new_returns_a - new_returns_b
+        volume_delta = self.volume_removal_basic_log_lik(w_posterior, new_returns_a, new_returns_b, delta)
+        if volume_delta > self.best_volume or random:
+            self.best_volume = volume_delta
+            self.best_delta = delta
+            self.best_observed_returns = (new_returns_a, new_returns_b)
+            self.best_returns = (logs_a, logs_b)
+
+
+    def compare_EUS(self, w_posterior, w_posterior_mean, preference_learner):
+        new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_v2()
+        delta = new_returns_a - new_returns_b
+        # np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
+
+        # 1rst mcmc (a>b)
+        preference_learner.log_preference(delta, 1)
+        preference_learner.log_returns(new_returns_a, new_returns_b)
+        w_posterior_sup = preference_learner.mcmc_vanilla(w_posterior_mean)
+        # w_posterior = preference_learner.mcmc_test(w_posterior_mean, posterior_mode="moral", prop_w_mode="basic_temperature")
+        w_posterior_mean_sup = w_posterior_sup.mean(axis=0)
+        w_posterior_mean_sup = w_posterior_mean_sup/np.linalg.norm(w_posterior_mean_sup)
+        EUS_sup = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_sup)
+        preference_learner.pop_preference()
+        preference_learner.pop_returns()
+
+        # 2nd mcmc (a>b)
+        preference_learner.log_preference(delta, -1)
+        preference_learner.log_returns(new_returns_a, new_returns_b)
+        w_posterior_inf = preference_learner.mcmc_vanilla(w_posterior_mean)
+        # w_posterior = preference_learner.mcmc_test(w_posterior_mean, posterior_mode="moral", prop_w_mode="basic_temperature")
+        w_posterior_mean_inf = w_posterior_inf.mean(axis=0)
+        w_posterior_mean_inf = w_posterior_mean_inf/np.linalg.norm(w_posterior_mean_inf)
+        
+        EUS_inf = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_inf)
+        preference_learner.pop_preference()
+        preference_learner.pop_returns()
+
+        volume_delta = EUS_sup + EUS_inf
+        print(f'rew_a{new_returns_a}')
+        print(f'rew_b{new_returns_b}')
+        print(f'log_a{logs_a}')
+        print(f'log_b{logs_b}')
+        print(f'Posterior Mean Sup{w_posterior_mean_sup}')
+        print(f'Posterior Mean Inf{w_posterior_mean_inf}')
+        print(f'EUS_sup{EUS_sup}')
+        print(f'EUS_inf{EUS_inf}')
+        print(f'EUS{volume_delta}')
+
+        if volume_delta > self.best_volume:
+            self.best_volume = volume_delta
+            self.best_delta = delta
+            self.best_observed_returns = (new_returns_a, new_returns_b)
+            self.best_returns = (logs_a, logs_b)
+
+    def get_best():
+        return self.best_returns, self.best_observed_returns
 
     def reset(self):
         self.best_volume = -np.inf

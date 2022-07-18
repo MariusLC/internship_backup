@@ -51,3 +51,5 @@ du cluster au pc :
 	cp 'generated_data/v3/[0, 0, 1, 0]/expert.pt' '~/Documents/backup/moral_rl/generated_data/v3/[0, 0, 1, 0]/'
 	cp -r 'generated_data/v3/[0, 1, 1, 1]' ~/Documents/backup/moral_rl/generated_data/v3/
 	cp -r generated_data/v3/moral_agents/ ~/Documents/backup/moral_rl/generated_data/v3/
+
+	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
