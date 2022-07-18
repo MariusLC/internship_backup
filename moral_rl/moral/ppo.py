@@ -201,6 +201,20 @@ class TrajectoryDataset:
         for i, tau in enumerate(self.trajectories):
             returns[i] = sum(tau['returns'])
         return returns
+
+    def log_returns_actions(self):
+        returns = []
+        for i, tau in enumerate(self.trajectories):
+            for r in tau['returns']:
+                returns.append(r)
+        return returns
+
+    def log_returns_actions(self):
+        returns = []
+        for i, tau in enumerate(self.trajectories):
+            for r in tau['vectorized_rewards']:
+                returns.append(r)
+        return returns
     
 
     def normalize_v1(self, value, traj_size):

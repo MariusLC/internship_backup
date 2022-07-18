@@ -302,6 +302,12 @@ class VolumeBuffer:
     def log_statistics_sum(self, objective_logs_sum):
         self.objective_logs_sum = objective_logs_sum
 
+    def log_rewards_2(self, observed_logs_sum):
+        self.observed_logs_sum = np.concatenate((self.observed_logs_sum, observed_logs_sum))
+
+    def log_statistics_2(self, objective_logs_sum):
+        self.objective_logs_sum = np.concatenate((self.objective_logs_sum, objective_logs_sum))
+
     @staticmethod
     def volume_removal(w_posterior, delta):
         expected_volume_a = 0
@@ -317,39 +323,45 @@ class VolumeBuffer:
         # print("len(w_posterior) = ", len(w_posterior)) # == batch size des rollout ?
         return min(expected_volume_a / len(w_posterior), expected_volume_b / len(w_posterior))
 
+    def volume_removal_basic_log_lik(w_posterior, ret_a, ret_b, delta):
+        expected_volume_a = 0
+        expected_volume_b = 0
+        expected_volume_a_delta = 0
+        expected_volume_b_delta = 0
+        for w in w_posterior:
+            expected_volume_a += (1 - PreferenceLearner.basic_loglik_temperature(w, ret_a, ret_b, 1))
+            expected_volume_b += (1 - PreferenceLearner.basic_loglik_temperature(w, ret_b, ret_a, 1))
+
+            expected_volume_a_delta += (1 - PreferenceLearner.f_loglik(w, delta, 1))
+            expected_volume_b_delta += (1 - PreferenceLearner.f_loglik(w, delta, -1))
+
+            print("expected_volume_a = ", expected_volume_a)
+            print("expected_volume_b = ", expected_volume_b)
+            print("expected_volume_a_delta = ", expected_volume_a_delta)
+            print("expected_volume_b_delta = ", expected_volume_b_delta)
+
+        mini = min(expected_volume_a / len(w_posterior), expected_volume_b / len(w_posterior))
+        min_delta = min(expected_volume_a_delta / len(w_posterior), expected_volume_b_delta / len(w_posterior))
+        print("min = ", mini)
+        print("min_delta = ", min_delta)
+        return mini
+
 
     def sample_return_pair_v2(self):
-        # observed_logs_returns = np.array(self.observed_logs).sum(axis=0)
         observed_logs_returns = self.observed_logs_sum
-        # print("observed_logs_returns = ", observed_logs_returns)
-        # print(len(observed_logs_returns))
         rand_idx = np.random.choice(np.arange(len(observed_logs_returns)), 2, replace=False)
-
-        # new_returns_a = observed_logs_returns[rand_idx[0], 0:3]
-        # new_returns_b = observed_logs_returns[rand_idx[1], 0:3]
         new_returns_a = observed_logs_returns[rand_idx[0]]
         new_returns_b = observed_logs_returns[rand_idx[1]]
 
         # Reset observed logs
-        self.observed_logs = []
+        self.observed_logs_sum = []
 
         # Also return ground truth logs for automatic preferences
         if self.auto_pref:
-            # objective_logs_returns = np.array(self.objective_logs).sum(axis=0)
             objective_logs_returns = self.objective_logs_sum
-
-            # logs_a = objective_logs_returns[rand_idx[0], 0:3]
-            # logs_b = objective_logs_returns[rand_idx[1], 0:3]
-            # print("objective_logs_returns = ", objective_logs_returns)
-            # print(len(objective_logs_returns))
-            # logs_a = objective_logs_returns[rand_idx[0]][:-1]
-            # logs_b = objective_logs_returns[rand_idx[1]][:-1]
             logs_a = objective_logs_returns[rand_idx[0]][:self.dimension_ratio]
             logs_b = objective_logs_returns[rand_idx[1]][:self.dimension_ratio]
-            
-            # print(logs_a)
-
-            self.objective_logs = []
+            self.objective_logs_sum = []
             return np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
         else:
             return np.array(new_returns_a), np.array(new_returns_b)
@@ -424,6 +436,15 @@ class VolumeBuffer:
             # print("self.best_observed_returns ", self.best_observed_returns)
             self.best_returns = (logs_a, logs_b)
             # print("self.best_returns ", self.best_returns)
+
+    def compare_delta_basic_log_lik(self, w_posterior, new_returns_a, new_returns_b, logs_a=None, logs_b=None, random=False):
+        delta = new_returns_a - new_returns_b
+        volume_delta = self.volume_removal_basic_log_lik(w_posterior, new_returns_a, new_returns_b, delta)
+        if volume_delta > self.best_volume or random:
+            self.best_volume = volume_delta
+            self.best_delta = delta
+            self.best_observed_returns = (new_returns_a, new_returns_b)
+            self.best_returns = (logs_a, logs_b)
 
     def reset(self):
         self.best_volume = -np.inf

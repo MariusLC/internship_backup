@@ -143,8 +143,6 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             best_delta = volume_buffer.best_delta
 
             # Using ground truth returns for preference elicitation
-            res = volume_buffer.best_returns
-            # print(res)
             ret_a, ret_b = volume_buffer.best_returns
             print(f'Found trajectory pair: {(ret_a, ret_b)}')
             print(f'Corresponding best delta: {best_delta}')
@@ -205,9 +203,10 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         if train_ready:
 
             # log objective rewards into volume_buffer before normalizing it
-            volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+            volume_buffer.log_statistics_2(dataset.log_returns_actions())
             mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, non_eth_norm, wandb)
-            volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
+            volume_buffer.log_rewards_2(dataset.log_vectorized_rew_actions())
+
 
             # mean_traj(ppo, discriminator_list, config, eth_norm, steps=1000)
 
@@ -236,11 +235,11 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             if volume_buffer.auto_pref:
                 # new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair()
                 new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
-                volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b, logs_a, logs_b, random=False)
+                volume_buffer.compare_delta_basic_log_lik(w_posterior, new_returns_a, new_returns_b, logs_a, logs_b, random=False)
             else:
                 # new_returns_a, new_returns_b = volume_buffer.sample_return_pair()
                 new_returns_a, new_returns_b = volume_buffer.sample_return_pair_v2()
-                volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b)
+                volume_buffer.compare_delta_basic_log_lik(w_posterior, new_returns_a, new_returns_b)
 
             # Reset PPO buffer
             dataset.reset_trajectories()
