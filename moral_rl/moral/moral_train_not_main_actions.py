@@ -52,6 +52,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'eth_norm': eth_norm,
             'non_eth_norm': non_eth_norm,
             'temperature_mcmc' : 1,
+            'moral_agent_filename' : "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
             },
         reinit=True)
     config = wandb.config
@@ -74,6 +75,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     # Initialize Models
     print('Initializing and Normalizing Rewards...')
     ppo = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
+    ppo.load_state_dict(torch.load(moral_agent_filename, map_location=torch.device('cpu')))
     optimizer = torch.optim.Adam(ppo.parameters(), lr=config.lr_ppo)
 
 

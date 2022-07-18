@@ -12,7 +12,7 @@ moral_path: "moral_agents/"
 model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
-special_name_agent: "Q_on_ACTIONS_norm_v6_v3_temperature"
+special_name_agent: "Q_on_ACTIONS_norm_v6_v3_temperature_after_moral"
 
 # new stuff about normalization
 rand: "rand/"
