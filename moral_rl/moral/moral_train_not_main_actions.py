@@ -153,6 +153,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
+            preference_learner.log_returns(ret_a, ret_b)
             # w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
             w_posterior = preference_learner.mcmc_test(w_posterior_mean, posterior_mode="moral", prop_w_mode="basic_temperature")
             print("w_posterior = ", w_posterior)
