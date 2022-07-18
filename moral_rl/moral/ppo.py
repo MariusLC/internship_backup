@@ -209,7 +209,7 @@ class TrajectoryDataset:
                 returns.append(r)
         return returns
 
-    def log_returns_actions(self):
+    def log_vectorized_rew_actions(self):
         returns = []
         for i, tau in enumerate(self.trajectories):
             for r in tau['vectorized_rewards']:

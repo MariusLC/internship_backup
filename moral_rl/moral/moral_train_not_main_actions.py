@@ -51,7 +51,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'lambd': lambd,
             'eth_norm': eth_norm,
             'non_eth_norm': non_eth_norm,
-            'temperature_mcmc' : 2,
+            'temperature_mcmc' : 1,
             },
         reinit=True)
     config = wandb.config
@@ -96,6 +96,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
         args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
         # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
+        
         # nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
         
@@ -120,6 +121,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Active Learning
+    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
     preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
@@ -152,8 +154,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
             preference_learner.log_returns(ret_a, ret_b)
-            # w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
-            w_posterior = preference_learner.mcmc_test(w_posterior_mean, posterior_mode="moral", prop_w_mode="basic_temperature")
+            w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
+            # w_posterior = preference_learner.mcmc_test(w_posterior_mean, posterior_mode="moral", prop_w_mode="basic_temperature")
             print("w_posterior = ", w_posterior)
             w_posterior_mean = w_posterior.mean(axis=0)
             print("w_posterior_mean = ", w_posterior_mean)
@@ -203,9 +205,9 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         if train_ready:
 
             # log objective rewards into volume_buffer before normalizing it
-            volume_buffer.log_statistics_2(dataset.log_returns_actions())
+            volume_buffer.log_statistics_sum(dataset.log_returns_actions())
             mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, non_eth_norm, wandb)
-            volume_buffer.log_rewards_2(dataset.log_vectorized_rew_actions())
+            volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_actions())
 
 
             # mean_traj(ppo, discriminator_list, config, eth_norm, steps=1000)
@@ -235,11 +237,11 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             if volume_buffer.auto_pref:
                 # new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair()
                 new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
-                volume_buffer.compare_delta_basic_log_lik(w_posterior, new_returns_a, new_returns_b, logs_a, logs_b, random=False)
+                volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b, logs_a, logs_b, random=False)
             else:
                 # new_returns_a, new_returns_b = volume_buffer.sample_return_pair()
                 new_returns_a, new_returns_b = volume_buffer.sample_return_pair_v2()
-                volume_buffer.compare_delta_basic_log_lik(w_posterior, new_returns_a, new_returns_b)
+                volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b)
 
             # Reset PPO buffer
             dataset.reset_trajectories()

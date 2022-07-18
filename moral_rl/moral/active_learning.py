@@ -287,6 +287,8 @@ class VolumeBuffer:
         self.observed_logs = []
         self.objective_logs = []
         self.dimension_ratio = dim_ratio
+        self.objective_logs_sum = []
+        self.observed_logs_sum = []
 
     def log_statistics(self, statistics):
         # print("objective LOG : ", statistics)
@@ -323,11 +325,14 @@ class VolumeBuffer:
         # print("len(w_posterior) = ", len(w_posterior)) # == batch size des rollout ?
         return min(expected_volume_a / len(w_posterior), expected_volume_b / len(w_posterior))
 
+    @staticmethod
     def volume_removal_basic_log_lik(w_posterior, ret_a, ret_b, delta):
         expected_volume_a = 0
         expected_volume_b = 0
         expected_volume_a_delta = 0
         expected_volume_b_delta = 0
+
+        nb_error = 0
         for w in w_posterior:
             expected_volume_a += (1 - PreferenceLearner.basic_loglik_temperature(w, ret_a, ret_b, 1))
             expected_volume_b += (1 - PreferenceLearner.basic_loglik_temperature(w, ret_b, ret_a, 1))
@@ -335,15 +340,17 @@ class VolumeBuffer:
             expected_volume_a_delta += (1 - PreferenceLearner.f_loglik(w, delta, 1))
             expected_volume_b_delta += (1 - PreferenceLearner.f_loglik(w, delta, -1))
 
-            print("expected_volume_a = ", expected_volume_a)
-            print("expected_volume_b = ", expected_volume_b)
-            print("expected_volume_a_delta = ", expected_volume_a_delta)
-            print("expected_volume_b_delta = ", expected_volume_b_delta)
-
+            # print("expected_volume_a = ", expected_volume_a)
+            # print("expected_volume_b = ", expected_volume_b)
+            # print("expected_volume_a_delta = ", expected_volume_a_delta)
+            # print("expected_volume_b_delta = ", expected_volume_b_delta)
+            if (expected_volume_a > expected_volume_b and expected_volume_a_delta <= expected_volume_b_delta) or (expected_volume_a < expected_volume_b and expected_volume_a_delta >= expected_volume_b_delta):
+                nb_error += 1
         mini = min(expected_volume_a / len(w_posterior), expected_volume_b / len(w_posterior))
         min_delta = min(expected_volume_a_delta / len(w_posterior), expected_volume_b_delta / len(w_posterior))
         print("min = ", mini)
         print("min_delta = ", min_delta)
+        print("nb_error = ", nb_error)
         return mini
 
 

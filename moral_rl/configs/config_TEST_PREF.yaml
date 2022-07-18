@@ -34,8 +34,9 @@ normalization_eth_sett: "v6"
 normalization_non_eth_sett: "v3"
 
 # pref
-posterior_mode: "basic"
-prop_w_mode: "normalized_linalg"
+posterior_mode: "moral"
+prop_w_mode: "basic_temperature"
+temperature_mcmc: 2
 n_workers: 1
 gamma: 0.999
 batchsize_ppo: 2
