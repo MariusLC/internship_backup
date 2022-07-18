@@ -135,15 +135,12 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     preference_giver = PreferenceGiverv3(ratio=config.ratio)
     # preference_giver = ParetoDominationPreferenceGiverv3(ratio=config.ratio)
 
-
-    train_ready = False
     for t in tqdm(range(env_steps)):
         # print("T = ",t)
         # print("query_freq = ", query_freq)
 
         # Query User
-        # if t % query_freq == 0 and t > 0:
-        if train_ready:
+        if t % query_freq == 0 and t > 0:
             best_delta = volume_buffer.best_delta
 
             # Using ground truth returns for preference elicitation
@@ -205,6 +202,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         airl_rewards_array = np.array(airl_rewards_list)
         new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
         train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
+        print("train_ready = ", train_ready)
+        print(str(len(dataset.trajectories)) + " < " + str(dataset.batch_size))
 
 
         if train_ready:

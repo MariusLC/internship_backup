@@ -41,20 +41,20 @@ def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORM
 		ret_b_linalg_normalized.append(ret_b_copy[i]/ret_b_norm)
 
 	# scipy.stats.entropy(pk, qk=None, base=None, axis=0) = S = sum(pk * log(pk / qk), axis=axis)
-	print("ret_a_normalized = ", ret_a_normalized)
-	print("ret_b_normalized = ", ret_b_normalized)
-	print("ret_a_linalg_normalized = ", ret_a_linalg_normalized)
-	print("ret_b_linalg_normalized = ", ret_b_linalg_normalized)
-	print("self.ratio_normalized = ", RATIO_NORMALIZED)
+	# print("ret_a_normalized = ", ret_a_normalized)
+	# print("ret_b_normalized = ", ret_b_normalized)
+	# print("ret_a_linalg_normalized = ", ret_a_linalg_normalized)
+	# print("ret_b_linalg_normalized = ", ret_b_linalg_normalized)
+	# print("self.ratio_normalized = ", RATIO_NORMALIZED)
 
 	kl_a = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
 	kl_b = st.entropy(ret_b_normalized, RATIO_NORMALIZED)
 	kl_a_linalg = st.entropy(ret_a_linalg_normalized, RATIO_linalg_NORMALIZED)
 	kl_b_linalg = st.entropy(ret_b_linalg_normalized, RATIO_linalg_NORMALIZED)
-	print("kl_a = ", kl_a)
-	print("kl_b = ", kl_b)
-	print("kl_a_linalg = ", kl_a_linalg)
-	print("kl_b_linalg = ", kl_b_linalg)
+	# print("kl_a = ", kl_a)
+	# print("kl_b = ", kl_b)
+	# print("kl_a_linalg = ", kl_a_linalg)
+	# print("kl_b_linalg = ", kl_b_linalg)
 
 	if kl_a < kl_b:
 		preference = 1
@@ -122,11 +122,11 @@ if __name__ == '__main__':
 		discriminator_list[i].load_state_dict(torch.load(discriminators_filenames[i], map_location=torch.device('cpu')))
 		generator_list.append(PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device))
 		generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
-		args = discriminator_list[i].estimate_normalisation_points(c["normalization_eth_sett"], rand_agent, generator_list[i], env_id, c["gamma"], steps=10000)
+		args = discriminator_list[i].estimate_normalisation_points(c["normalization_eth_sett"], rand_agent, generator_list[i], env_id, c["gamma"], steps=1000)
 		discriminator_list[i].set_eval()
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
-	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
+	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
 
 
 
@@ -154,6 +154,7 @@ if __name__ == '__main__':
 			# Environment interaction
 			actions, log_probs = agent_test.act(states_tensor)
 			next_states, rewards, done, info = env.step(actions)
+			# print("done = ", done)
 
 			# Fetch AIRL rewards
 			airl_state = torch.tensor(states).to(device).float()
@@ -162,25 +163,25 @@ if __name__ == '__main__':
 
 			airl_rewards_list = []
 			for j in range(c["nb_experts"]):
-				airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, c["gamma"], c["normalization_eth_sett"]).squeeze(1).item())
+				airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, c["gamma"], c["normalization_eth_sett"]).squeeze(1))
 
 			for j in range(c["nb_experts"]):
-				airl_rewards_list[j] = airl_rewards_list[j] * (not done)
+				airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
+				# airl_rewards_list[j] = airl_rewards_list[j] * (not done)
+
+			airl_rewards_array = np.array(airl_rewards_list)
+			new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
+			train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
+			# print("train_ready = ", train_ready)
+			# print(str(len(dataset.trajectories)) + " < " + str(dataset.batch_size))
 
 			# airl_rewards_array = np.array([rewards[0]]+airl_rewards_list)
-			airl_rewards_array = airl_rewards_array = np.array(airl_rewards_list)
+			# airl_rewards_array = airl_rewards_array = np.array(airl_rewards_list)
 
-			train_ready = dataset.write_tuple_norm([states], [actions], None, [rewards], [airl_rewards_array], [done], [log_probs])
+			# train_ready = dataset.write_tuple_norm([states], [actions], None, [rewards], [airl_rewards_array], [done], [log_probs])
 
 			# curr_objective_returns.append(rewards)
 			# curr_observed_rewards.append(airl_rewards_array)
-
-			if done :
-				# array_rew = np.array(curr_observed_rewards)
-				# objective_returns.append(curr_objective_returns)
-				# observed_rewards.append(curr_observed_rewards)
-				# nb_traj += 1
-				env.reset()
 
 			# Prepare state input for next time step
 			states = next_states.copy()
@@ -195,14 +196,14 @@ if __name__ == '__main__':
 		# observed_rewards = dataset.log_vectorized_rew_sum()
 
 		if c["query_selection"] == "random":
-			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.sample_return_pair_v2()
+			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_v2()
 		elif c["query_selection"] == "compare_EUS":
 			for i in range(c["nb_query_test"]):
-				volume_buffer.compare_EUS(self, w_posterior, w_posterior_mean, preference_learner)
+				volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_MORAL":
 			for i in range(c["nb_query_test"]):
-				volume_buffer.compare_MORAL(self, w_posterior)
+				volume_buffer.compare_MORAL(w_posterior)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
 		# ret_a = objective_returns[0]
@@ -211,18 +212,18 @@ if __name__ == '__main__':
 		# observed_rew_b = np.array(observed_rewards[1])
 		delta = observed_rew_a - observed_rew_b
 
-		observed_rew_a_norm = observed_rew_a/np.linalg.norm(observed_rew_a)
-		observed_rew_b_norm = observed_rew_b/np.linalg.norm(observed_rew_b)
+		# observed_rew_a_norm = observed_rew_a/np.linalg.norm(observed_rew_a)
+		# observed_rew_b_norm = observed_rew_b/np.linalg.norm(observed_rew_b)
 		print("ret_a = ",ret_a)
 		print("ret_b = ",ret_b)
 		print("observed_rew_a = ",observed_rew_a)
 		print("observed_rew_b = ",observed_rew_b)
-		print("observed_rew_a_norm = ",observed_rew_a_norm)
-		print("observed_rew_b_norm = ",observed_rew_b_norm)
+		# print("observed_rew_a_norm = ",observed_rew_a_norm)
+		# print("observed_rew_b_norm = ",observed_rew_b_norm)
 		print("delta = ",delta)
 
 		# go query the preference expert
-		preference, kl_a, kl_b = query_pair(ret_a[:-1], ret_b[:-1], c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED)
+		preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED)
 		print(preference)
 
 		HOF.append((kl_a, ret_a, observed_rew_a))

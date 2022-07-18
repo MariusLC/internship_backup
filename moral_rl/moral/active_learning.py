@@ -473,7 +473,12 @@ class VolumeBuffer:
 
 
     def compare_EUS(self, w_posterior, w_posterior_mean, preference_learner):
-        new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_v2()
+        rand_idx = np.random.choice(np.arange(len(self.observed_logs_sum)), 2, replace=False)
+        new_returns_a = self.observed_logs_sum[rand_idx[0]]
+        new_returns_b = self.observed_logs_sum[rand_idx[1]]
+        logs_a = self.objective_logs_sum[rand_idx[0]][:self.dimension_ratio]
+        logs_b = self.objective_logs_sum[rand_idx[1]][:self.dimension_ratio]
+
         delta = new_returns_a - new_returns_b
         # np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
 
