@@ -37,15 +37,15 @@ normalization_non_eth_sett: "v3"
 n_queries: 200
 nb_query_test: 20
 # query_selection: "compare_EUS"
-# query_selection: "compare_MORAL"
+query_selection: "compare_MORAL"
 # query_selection: "compare_EUS"
-query_selection: "random"
+# query_selection: "random"
 posterior_mode: "moral"
 prop_w_mode: "basic_temperature"
 # prop_w_mode: "moral"
-temperature_mcmc: 2
-n_workers: 2
-batchsize_ppo: 2
+temperature_mcmc: 1
+n_workers: 12
+batchsize_ppo: 12
 gamma: 0.999
 dimension_pref: 3
 agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"

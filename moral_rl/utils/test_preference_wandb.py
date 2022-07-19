@@ -126,12 +126,14 @@ if __name__ == '__main__':
 		discriminator_list[i].set_eval()
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
-	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	# test
-	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
+	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
+	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
+	
 
 
-
+	# test
+	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
 	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
@@ -200,15 +202,15 @@ if __name__ == '__main__':
 		if c["query_selection"] == "random":
 			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_v2()
 		elif c["query_selection"] == "compare_EUS":
-			for i in range(c["nb_query_test"]):
+			for k in range(c["nb_query_test"]):
 				volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_MORAL":
-			for i in range(c["nb_query_test"]):
+			for k in range(c["nb_query_test"]):
 				volume_buffer.compare_MORAL(w_posterior)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_basic_log_lik":
-			for i in range(c["nb_query_test"]):
+			for k in range(c["nb_query_test"]):
 				volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
@@ -257,6 +259,9 @@ if __name__ == '__main__':
 
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
+		# wandb.log({'w_posterior_mean['+str(3)+"]": w_posterior_mean[0]}, step=i)
+		# wandb.log({'test': 3}, step=i)
+		# wandb.log({'test2': 3})
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
