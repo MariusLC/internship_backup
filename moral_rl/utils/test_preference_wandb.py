@@ -126,7 +126,9 @@ if __name__ == '__main__':
 		discriminator_list[i].set_eval()
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
-	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
+	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
+	# test
+	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
 
 
 
@@ -205,6 +207,10 @@ if __name__ == '__main__':
 			for i in range(c["nb_query_test"]):
 				volume_buffer.compare_MORAL(w_posterior)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+		elif c["query_selection"] == "compare_basic_log_lik":
+			for i in range(c["nb_query_test"]):
+				volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc)
+			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
 		# ret_a = objective_returns[0]
 		# ret_b = objective_returns[1]
@@ -254,6 +260,8 @@ if __name__ == '__main__':
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
+		volume_buffer.reset()
+		volume_buffer.reset_batch() # Do we need to reset batch every time ?
 
 	dtype = [("kl_a", float), ("ret_a", np.float64, (4,)), ("observed_rew_a", np.float64, (3,))]
 	HOF = np.array(HOF, dtype=dtype)
