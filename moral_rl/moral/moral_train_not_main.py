@@ -51,7 +51,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'lambd': lambd,
             'eth_norm': eth_norm,
             'non_eth_norm': non_eth_norm,
-            'temperature_mcmc' : 4,
+            'temperature_mcmc' : 2,
             'volumeVsEUS' : True, # False = Akrour
             'prop_w_mode': "moral", 
             'posterior_mode' : "basic_temperature",
