@@ -51,8 +51,10 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'lambd': lambd,
             'eth_norm': eth_norm,
             'non_eth_norm': non_eth_norm,
-            'temperature_mcmc' : 1,
-            'volumeVsEUS' : False, # False = Akrour
+            'temperature_mcmc' : 4,
+            'volumeVsEUS' : True, # False = Akrour
+            'prop_w_mode': "moral", 
+            'posterior_mode' : "basic_temperature",
             },
         reinit=True)
     config = wandb.config
@@ -95,8 +97,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
-        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
+        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
+        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
         
         # nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
@@ -117,13 +119,13 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
-    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
-    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
+    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
+    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Active Learning
-    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
-    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
+    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
+    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
@@ -156,8 +158,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
             preference_learner.log_returns(ret_a, ret_b)
-            w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
-            # w_posterior = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode="moral", posterior_mode="basic_temperature")
+            # w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
+            w_posterior = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode=config.prop_w_mode, posterior_mode=config.posterior_mode)
             # print("w_posterior = ", w_posterior)
             w_posterior_mean = w_posterior.mean(axis=0)
             print("w_posterior_mean pre norm = ", w_posterior_mean)
