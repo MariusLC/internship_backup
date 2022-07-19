@@ -16,6 +16,8 @@ class PreferenceLearner:
         self.cpt_nb_steps = 0
         self.cpt_new_acc = 0
         self.cpt_prob_supp = 0
+        self.cpt_prior_and_accepted = 0
+        self.cpt_prior_new_w = 0
 
         self.temperature = temperature
 
@@ -151,25 +153,28 @@ class PreferenceLearner:
 
         return loglik + log_prior
 
-    def posterior_log_prob_print(self, deltas, prefs, w, returns):
+    def posterior_log_prob_print(self, deltas, prefs, w, returns, t):
         f_logliks = []
+        f_logliks_basic = []
+        f_logliks_temperature = []
         for i in range(len(prefs)):
-            f_logliks.append(self.f_loglik(w, deltas[i], prefs[i]))
-            # print("w = ", w)
-            # print("ret_a = ", returns[i][0])
-            # print("ret_b = ", returns[i][1])
-            # print("deltas = ", deltas[i])
-            # print("prefs = ", prefs[i])
-            # print("loglik 2.0 delta = ", f_logliks[-1])
-            # print("loglik vanilla delta = ", self.vanilla_loglik(w, deltas[i], prefs[i]))
-            # print("loglik basic a>b = ", self.basic_loglik(w, returns[i][0], returns[i][1]))
-            # print("loglik basic b>a = ", self.basic_loglik(w, returns[i][1], returns[i][0]))
+            if prefs[i] == 1 :
+                f_logliks.append(self.f_loglik(w, deltas[i], prefs[i]))
+                f_logliks_basic.append(self.basic_loglik(w, returns[i][0], returns[i][1]))
+                f_logliks_temperature.append(self.basic_loglik_temperature(w, returns[i][0], returns[i][1], t))
+            else :
+                f_logliks.append(self.f_loglik(w, deltas[i], prefs[i]))
+                f_logliks_basic.append(self.basic_loglik(w, returns[i][0], returns[i][1]))
+                f_logliks_temperature.append(self.basic_loglik_temperature(w, returns[i][1], returns[i][0], t))
         loglik = np.sum(f_logliks)
+        logliks_basic = np.sum(f_logliks_basic)
+        logliks_temperature = np.sum(f_logliks_temperature)
         log_prior = np.log(self.w_prior(w) + 1e-5)
-        print("sum loglik = ", loglik)
-        print("prior = ", log_prior)
-
-        return loglik + log_prior
+        print("loglik = ", loglik)
+        print("logliks_basic = ", logliks_basic)
+        print("logliks_temperature = ", logliks_temperature)
+        print("log_prior = ", log_prior)
+        return loglik + log_prior, logliks_basic + log_prior, logliks_temperature + log_prior
 
     def posterior_log_prob(self, deltas, prefs, w):
         f_logliks = []
@@ -237,6 +242,8 @@ class PreferenceLearner:
             elif prop_w_mode == "normalized":
                 w_new = self.propose_w_normalized(w_curr)
 
+            
+
             if posterior_mode == "moral":
                 prob_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
                 prob_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
@@ -247,11 +254,16 @@ class PreferenceLearner:
                 prob_curr = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
                 prob_new = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_new, self.returns, self.temperature)
             elif posterior_mode == "print" : 
-                prob_curr = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns)
-                prob_new = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns)
+                print("w_curr = ", w_curr)
+                prob_curr, prob_curr_basic, prob_curr_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
+                print("w_new = ", w_new)
+                prob_new, prob_new_basic, prob_new_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns, self.temperature)
             elif posterior_mode == "vanilla" : 
                 prob_curr = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
                 prob_new = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
+
+            if prob_new < -9:
+                    self.cpt_prior_new_w += 1
 
             if prob_new > prob_curr:
                 self.cpt_prob_supp += 1
@@ -263,25 +275,51 @@ class PreferenceLearner:
                 # print("qr_a = ", qr_a)
                 # print("qr_b = ", qr_b)
                 # print("qr = ", qr)
+
+
                 acceptance_ratio = np.exp(prob_new - prob_curr) * qr
+                # acceptance_ratio = np.exp(prob_new - prob_curr) * qr
+                # acceptance_ratio_basic = np.exp(prob_new_basic - prob_curr_basic) * qr
+                # acceptance_ratio_temperature = np.exp(prob_new_temperature - prob_curr_temperature) * qr
+                # print("acceptance_ratio_moral = ", acceptance_ratio)
+                # print("acceptance_ratio_basic = ", acceptance_ratio_basic)
+                # print("acceptance_ratio_temperature = ", acceptance_ratio_temperature)
                 # print("acceptance_ratio = ", acceptance_ratio)
             acceptance_prob = min(1, acceptance_ratio)
 
             if acceptance_prob > st.uniform(0, 1).rvs():
                 w_curr = w_new
+                # prob_curr = prob_new ?
                 accept_cum = accept_cum + 1
                 w_arr.append(w_new)
                 self.cpt_new_acc += 1
+                if prob_new < -9:
+                    self.cpt_prior_and_accepted += 1
             else:
                 w_arr.append(w_curr)
 
             accept_rates.append(accept_cum / i)
 
         self.accept_rates = np.array(accept_rates)[self.warmup:]
-        # print("self.cpt_pior = ",self.cpt_pior)
+
+        nb_steps = self.warmup + self.n_iter
         # print("self.cpt_nb_steps = ", self.cpt_nb_steps)
         # print("self.cpt_prob_supp = ", self.cpt_prob_supp)
         # print("self.cpt_new_acc = ", self.cpt_new_acc)
+        # print("self.cpt_pior = ",self.cpt_pior)
+        print("nb new w hit by prior = " + str(self.cpt_prior_new_w) + " / " + str(nb_steps))
+        print("nb accepted = ", str(self.cpt_prior_and_accepted)+ " / " + str(self.cpt_prior_new_w))
+        print("nb new w that weren't hit by prior = " + str(nb_steps - self.cpt_prior_new_w) + " / " + str(nb_steps) + "("  + str(round(100*(nb_steps - self.cpt_prior_new_w)/nb_steps,1)) + "%)")
+        # print("pourcentage of new w in the prior space = " + str(round(100*(nb_steps - self.cpt_prior_new_w)/nb_steps,1)))
+        print("nb new w accepted = " + str(self.cpt_new_acc) + " / " + str(nb_steps))
+        print("nb new w prob sup to curr w = " + str(self.cpt_prob_supp) + " / " + str(nb_steps))
+        self.cpt_pior = 0
+        self.cpt_nb_steps = 0
+        self.cpt_prob_supp = 0
+        self.cpt_new_acc = 0
+        self.cpt_prior_and_accepted = 0
+        self.cpt_prior_new_w = 0
+
         return np.array(w_arr)[self.warmup:]
 
 
