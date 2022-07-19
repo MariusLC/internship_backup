@@ -51,8 +51,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'lambd': lambd,
             'eth_norm': eth_norm,
             'non_eth_norm': non_eth_norm,
-            'temperature_mcmc' : 2,
-            'volumeVsEUS' : True, # False = Akrour
+            'temperature_mcmc' : 1,
+            'volumeVsEUS' : False, # False = Akrour
             },
         reinit=True)
     config = wandb.config
@@ -95,8 +95,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
 
 
-        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
-        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
+        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=10000)
+        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], config.env_id, config.gamma, steps=1000) # tests
         
         # nadir_point_traj, nadir_point_action = discriminator_list[i].estimate_nadir_point(rand_agent, config, steps=10000)
         # upper_bound, lower_bound, mean, norm_mean = discriminator_list[i].estimate_utopia_all(generator_list[i], config, steps=10000)
@@ -117,13 +117,13 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
-    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
-    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
+    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=10000)
+    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Active Learning
-    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
-    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
+    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
+    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
@@ -261,88 +261,3 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         # save_data(ppo, moral_filename)
 
     save_data(ppo, moral_filename)
-
-
-
-def mean_traj(agent, discriminators, config, eth_norm, steps=10000):
-    dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=1)
-    env = GymWrapper(config.env_id)
-    states = env.reset()
-    states_tensor = torch.tensor(states).float().to(device)
-
-    # Fetch Shapes
-    n_actions = env.action_space.n
-    obs_shape = env.observation_space.shape
-    state_shape = obs_shape[:-1]
-    in_channels = obs_shape[-1]
-
-    # Init returns
-    objective_returns = []
-    objective_running_returns = np.zeros(4)
-
-    estimated_returns = [[] for i in range(len(discriminators))]
-    running_returns = np.zeros(len(discriminators))
-
-    for t in range(steps):
-        actions, log_probs = agent.act(states_tensor)
-        next_states, rewards, done, info = env.step(actions)
-        # print("rewards eaaefe = ", rewards)
-        
-
-        airl_state = torch.tensor(states).to(device).float()
-        airl_next_state = torch.tensor(next_states).to(device).float()
-        # print(objective_running_returns)
-        # print(rewards)
-
-        objective_running_returns += np.array(rewards)
-
-        airl_rewards_list = []
-        for j, discrim in enumerate(discriminators):
-            airl_rewards = discrim.forward(airl_state, airl_next_state, config.gamma, eth_norm).item()
-            # test_rewards = discrim.forward(airl_state, airl_next_state, config.gamma, "v3").item()
-            airl_rewards_list.append(airl_rewards)
-            
-
-            # print("airl_rewards = ", airl_rewards)
-
-            if done:
-                airl_rewards = 0
-                next_states = env.reset()
-            running_returns[j] += airl_rewards
-            
-
-            if done:
-                # print("running_returns[j] = ",running_returns[j])
-                # print("estimated_returns[j] = ", estimated_returns[j])
-                estimated_returns[j].append(running_returns[j])
-                running_returns[j] = 0
-                
-        if done :
-            objective_returns.append(objective_running_returns)
-            objective_running_returns = np.zeros(4)
-            # print("end traj")
-            # print("estimated_returns = ", [e[-1] for e in estimated_returns])
-            # print("objective returns = ", objective_returns[-1])
-
-        airl_rewards_array = np.array(airl_rewards_list)
-        # new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
-        new_airl_rewards = airl_rewards_array
-
-        dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
-
-        states = next_states.copy()
-        states_tensor = torch.tensor(states).float().to(device)
-
-    ret_est = np.mean(np.array(estimated_returns), axis = 1)
-    ret_obj = np.mean(np.array(objective_returns), axis = 0)
-    print("estimated_returns = ", ret_est)
-    print("objective returns = ", ret_obj)
-    print("vectorized_rewards = ", np.concatenate((np.array([ret_obj[0]]),ret_est)))
-
-    returns = dataset.log_returns_sum()
-    print("sum return = ", returns)
-    dataset.compute_normalization_non_eth(None)
-    returns = dataset.log_returns_sum()
-    vec_rew = dataset.log_vectorized_rew_sum()
-    print("sum return = ", returns)
-    print("vect rew = ", vec_rew)

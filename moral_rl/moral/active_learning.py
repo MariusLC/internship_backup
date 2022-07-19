@@ -476,8 +476,10 @@ class VolumeBuffer:
         rand_idx = np.random.choice(np.arange(len(self.observed_logs_sum)), 2, replace=False)
         new_returns_a = self.observed_logs_sum[rand_idx[0]]
         new_returns_b = self.observed_logs_sum[rand_idx[1]]
-        logs_a = self.objective_logs_sum[rand_idx[0]][:self.dimension_ratio]
-        logs_b = self.objective_logs_sum[rand_idx[1]][:self.dimension_ratio]
+        # logs_a = self.objective_logs_sum[rand_idx[0]][:self.dimension_ratio]
+        # logs_b = self.objective_logs_sum[rand_idx[1]][:self.dimension_ratio]
+        logs_a = self.objective_logs_sum[rand_idx[0]]
+        logs_b = self.objective_logs_sum[rand_idx[1]]
 
         delta = new_returns_a - new_returns_b
         # np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
@@ -522,7 +524,7 @@ class VolumeBuffer:
             self.best_observed_returns = (new_returns_a, new_returns_b)
             self.best_returns = (logs_a, logs_b)
 
-    def get_best():
+    def get_best(self):
         return self.best_returns, self.best_observed_returns
 
     def reset(self):
