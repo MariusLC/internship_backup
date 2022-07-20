@@ -242,13 +242,13 @@ if __name__ == '__main__':
 		# preference_learner.log_returns(ret_a[:-1], ret_b[:-1])
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 		print("w_posterior_mean = ", w_posterior_mean)
-		# w_posterior = preference_learner.mcmc_test(w_posterior_mean, c["prop_w_mode"], c["posterior_mode"])
+		w_posterior = preference_learner.mcmc_test(w_posterior_mean, c["prop_w_mode"], c["posterior_mode"])
 
 
-		w_posterior, mean_prob_w_new_moral, mean_prob_w_new_basic, mean_prob_w_new_temperature = preference_learner.mcmc_print(w_posterior_mean, c["prop_w_mode"])
-		wandb.log({'mean_prob_w_new_moral]': mean_prob_w_new_moral}, step=i)
-		wandb.log({'mean_prob_w_new_basic]': mean_prob_w_new_basic}, step=i)
-		wandb.log({'mean_prob_w_new_temperature]': mean_prob_w_new_temperature}, step=i)
+		# w_posterior, mean_prob_w_new_moral, mean_prob_w_new_basic, mean_prob_w_new_temperature = preference_learner.mcmc_print(w_posterior_mean, c["prop_w_mode"])
+		# wandb.log({'mean_prob_w_new_moral]': mean_prob_w_new_moral}, step=i)
+		# wandb.log({'mean_prob_w_new_basic]': mean_prob_w_new_basic}, step=i)
+		# wandb.log({'mean_prob_w_new_temperature]': mean_prob_w_new_temperature}, step=i)
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
