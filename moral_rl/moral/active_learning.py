@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import scipy.stats as st
-
+import time
 
 class PreferenceLearner:
     def __init__(self, n_iter, warmup, d, temperature=None):
@@ -86,6 +86,12 @@ class PreferenceLearner:
     def propose_w(w_curr):
         w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
         return w_new
+
+    @staticmethod
+    def propose_w_np(w_curr):
+        w_new = np.random.multivariate_normal(w_curr, np.ones((len(w_curr), len(w_curr))))
+        return w_new
+
 
 
     @staticmethod
@@ -235,6 +241,7 @@ class PreferenceLearner:
             w_new = None
             if prop_w_mode == "moral":
                 w_new = self.propose_w(w_curr)
+                # w_new = self.propose_w_np(w_curr)
             elif prop_w_mode == "normalized_linalg":
                 w_new = self.propose_w_normalized_linalg(w_curr)
             elif prop_w_mode == "normalized_linalg_positive":
@@ -254,10 +261,10 @@ class PreferenceLearner:
                 prob_curr = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
                 prob_new = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_new, self.returns, self.temperature)
             elif posterior_mode == "print" : 
-                print("w_curr = ", w_curr)
-                prob_curr, prob_curr_basic, prob_curr_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
-                print("w_new = ", w_new)
-                prob_new, prob_new_basic, prob_new_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns, self.temperature)
+                # print("w_curr = ", w_curr)
+                prob_curr_moral, prob_curr, prob_curr_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
+                # print("w_new = ", w_new)
+                prob_new_moral, prob_new, prob_new_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns, self.temperature)
             elif posterior_mode == "vanilla" : 
                 prob_curr = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
                 prob_new = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
@@ -272,22 +279,56 @@ class PreferenceLearner:
                 qr_a = self.propose_w_prob(w_curr, w_new)
                 qr_b = self.propose_w_prob(w_new, w_curr)
                 qr = qr_a / qr_b
+                # if qr != 1:    NEVER HAPPENS qr is symetrical because propose_w_prob is the gaussian distribution
+                #     print("qr_a = ", qr_a)
+                #     print("qr_b = ", qr_b)
+                #     print("qr = ", qr)
                 # print("qr_a = ", qr_a)
                 # print("qr_b = ", qr_b)
                 # print("qr = ", qr)
 
 
                 acceptance_ratio = np.exp(prob_new - prob_curr) * qr
-                # acceptance_ratio = np.exp(prob_new - prob_curr) * qr
-                # acceptance_ratio_basic = np.exp(prob_new_basic - prob_curr_basic) * qr
-                # acceptance_ratio_temperature = np.exp(prob_new_temperature - prob_curr_temperature) * qr
-                # print("acceptance_ratio_moral = ", acceptance_ratio)
-                # print("acceptance_ratio_basic = ", acceptance_ratio_basic)
-                # print("acceptance_ratio_temperature = ", acceptance_ratio_temperature)
+                acceptance_ratio_moral = np.exp(prob_new_moral - prob_curr_moral) * qr
+                acceptance_ratio_temperature = np.exp(prob_new_temperature - prob_curr_temperature) * qr
+
+                print("w_curr = ", w_curr)
+                print("w_new = ", w_new)
+                print("prob_curr_moral = ", prob_curr_moral)
+                print("prob_new_moral = ", prob_new_moral)
+                print("prob_curr_basic = ", prob_curr)
+                print("prob_new_basic = ", prob_new)
+                print("prob_curr_temperature = ", prob_curr_temperature)
+                print("prob_new_temperature = ", prob_new_temperature)
+                if prob_new <= prob_curr:
+                    print("qr_a = ", qr_a)
+                    print("qr_b = ", qr_b)
+                    print("qr = ", qr)
+                    print("acceptance_ratio_moral = ", acceptance_ratio_moral)
+                    print("acceptance_ratio_basic = ", acceptance_ratio)
+                    print("acceptance_ratio_temperature = ", acceptance_ratio_temperature)
+                
                 # print("acceptance_ratio = ", acceptance_ratio)
             acceptance_prob = min(1, acceptance_ratio)
 
             if acceptance_prob > st.uniform(0, 1).rvs():
+                if prob_new < -9:
+                    # print("w_curr = ", w_curr)
+                    # print("w_new = ", w_new)
+                    # print("prob_curr_moral = ", prob_curr_moral)
+                    # print("prob_new_moral = ", prob_new_moral)
+                    # print("prob_curr_basic = ", prob_curr)
+                    # print("prob_new_basic = ", prob_new)
+                    # print("prob_curr_temperature = ", prob_curr_temperature)
+                    # print("prob_new_temperature = ", prob_new_temperature)
+                    # if prob_new <= prob_curr:
+                    #     print("qr_a = ", qr_a)
+                    #     print("qr_b = ", qr_b)
+                    #     print("qr = ", qr)
+                    #     print("acceptance_ratio_moral = ", acceptance_ratio_moral)
+                    #     print("acceptance_ratio_basic = ", acceptance_ratio)
+                    #     print("acceptance_ratio_temperature = ", acceptance_ratio_temperature)
+                    time.sleep(30)
                 w_curr = w_new
                 # prob_curr = prob_new ?
                 accept_cum = accept_cum + 1
