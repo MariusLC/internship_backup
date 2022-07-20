@@ -2,6 +2,7 @@ import numpy as np
 import math
 import scipy.stats as st
 import time
+import wandb
 
 class PreferenceLearner:
 	def __init__(self, n_iter, warmup, d, temperature=None):
@@ -52,6 +53,10 @@ class PreferenceLearner:
 			return 1e100
 		else:
 			return 0
+
+	def outside_prior_space(self, w):
+		return not (np.linalg.norm(w) <=1 and np.all(np.array(w) >= 0))
+
 
 	def sample_w_prior(self, n):
 		sample = np.random.rand(n, self.d)
@@ -129,7 +134,7 @@ class PreferenceLearner:
 				f_logliks.append(self.vanilla_loglik(w, deltas[i], prefs[i]))
 		loglik = np.sum(f_logliks)
 		log_prior = np.log(self.w_prior(w) + 1e-5)
-		return loglik + log_prior
+		return loglik + log_prior, loglik, log_prior
 
 
 	def posterior_log_prob_basic_log_lik(self, deltas, prefs, w, returns):
@@ -153,7 +158,7 @@ class PreferenceLearner:
 		# print("sum loglik = ", loglik)
 		# print("prior = ", log_prior)
 
-		return loglik + log_prior
+		return loglik + log_prior, loglik, log_prior
 
 	def posterior_log_prob_basic_log_lik_temperature(self, deltas, prefs, w, returns, t):
 		f_logliks = []
@@ -166,7 +171,7 @@ class PreferenceLearner:
 		# log_prior = np.log(self.w_prior(w) + 1e-5)
 		log_prior = np.log(self.w_prior_marius(w) + 1e-5)
 
-		return loglik + log_prior
+		return loglik + log_prior, loglik, log_prior
 
 	def posterior_log_prob_print(self, deltas, prefs, w, returns, t):
 		f_logliks = []
@@ -189,7 +194,7 @@ class PreferenceLearner:
 		# print("logliks_basic = ", logliks_basic)
 		# print("logliks_temperature = ", logliks_temperature)
 		# print("log_prior = ", log_prior)
-		return loglik + log_prior, logliks_basic + log_prior, logliks_temperature + log_prior
+		return loglik + log_prior, logliks_basic + log_prior, logliks_temperature + log_prior, loglik, logliks_basic, logliks_temperature, log_prior
 
 	def posterior_log_prob(self, deltas, prefs, w):
 		f_logliks = []
@@ -198,7 +203,7 @@ class PreferenceLearner:
 		loglik = np.sum(f_logliks)
 		log_prior = np.log(self.w_prior(w) + 1e-5)
 
-		return loglik + log_prior
+		return loglik + log_prior, loglik, log_prior
 
 	def mcmc_vanilla(self, w_init='mode'):
 		if w_init == 'mode':
@@ -212,8 +217,8 @@ class PreferenceLearner:
 		for i in range(1, self.warmup + self.n_iter + 1):
 			w_new = self.propose_w(w_curr)
 
-			prob_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
-			prob_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
+			prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
+			prob_new, loglik_new, log_prior_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
 
 			if prob_new > prob_curr:
 				acceptance_ratio = 1
@@ -235,7 +240,7 @@ class PreferenceLearner:
 
 		return np.array(w_arr)[self.warmup:]
 
-	def mcmc_test(self, w_init='mode', prop_w_mode="moral", posterior_mode="moral"):
+	def mcmc_test(self, w_init='mode', prop_w_mode="moral", posterior_mode="moral", step=None):
 		if w_init == 'mode':
 			w_init = [0 for i in range(self.d)]
 
@@ -245,6 +250,10 @@ class PreferenceLearner:
 		accept_cum = 0
 
 		# print("posterior_prob w_init = ", self.posterior_log_prob_test_prints(self.deltas, self.prefs, w_init, self.returns))
+
+		mean_prob_w_new = 0
+		mean_prob_w_new_log_lik = 0
+		mean_prob_w_new_log_prior = 0
 
 		for i in range(1, self.warmup + self.n_iter + 1):
 			w_new = None
@@ -261,25 +270,29 @@ class PreferenceLearner:
 			
 
 			if posterior_mode == "moral":
-				prob_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
-				prob_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
+				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
+				prob_new, loglik_new, log_prior_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
 			elif posterior_mode == "basic" : 
-				prob_curr = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_curr, self.returns)
-				prob_new = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_new, self.returns)
+				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_curr, self.returns)
+				prob_new, loglik_new, log_prior_new = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_new, self.returns)
 			elif posterior_mode == "basic_temperature" : 
-				prob_curr = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
-				prob_new = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_new, self.returns, self.temperature)
-			elif posterior_mode == "print" : 
-				# print("w_curr = ", w_curr)
-				prob_curr_moral, prob_curr, prob_curr_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
-				# print("w_new = ", w_new)
-				prob_new_moral, prob_new, prob_new_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns, self.temperature)
+				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
+				prob_new, loglik_new, log_prior_new = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_new, self.returns, self.temperature)
+			# elif posterior_mode == "print" : 
+			# 	# print("w_curr = ", w_curr)
+			# 	prob_curr_moral, prob_curr, prob_curr_temperature, loglik_moral_curr, logliks_basic_curr, logliks_temperature_curr, log_prior_curr = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
+			# 	# print("w_new = ", w_new)
+			# 	prob_new_moral, prob_new, prob_new_temperature, loglik_moral_new, logliks_basic_new, logliks_temperature_new, log_prior_new = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns, self.temperature)
 			elif posterior_mode == "vanilla" : 
-				prob_curr = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
-				prob_new = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
+				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
+				prob_new, loglik_new, log_prior_new = self.posterior_log_prob_vanilla(self.deltas, self.prefs, w_curr)
 
-			if prob_new < -9:
-					self.cpt_prior_new_w += 1
+			mean_prob_w_new += prob_new
+			mean_prob_w_new_log_lik += loglik_new
+			mean_prob_w_new_log_prior += log_prior_new
+
+			if self.outside_prior_space(w_new):
+				self.cpt_prior_new_w += 1
 
 			if prob_new > prob_curr:
 				self.cpt_prob_supp += 1
@@ -299,7 +312,7 @@ class PreferenceLearner:
 				accept_cum = accept_cum + 1
 				w_arr.append(w_new)
 				self.cpt_new_acc += 1
-				if prob_new < -9:
+				if self.outside_prior_space(w_new):
 					self.cpt_prior_and_accepted += 1
 			else:
 				w_arr.append(w_curr)
@@ -319,6 +332,22 @@ class PreferenceLearner:
 		# print("pourcentage of new w in the prior space = " + str(round(100*(nb_steps - self.cpt_prior_new_w)/nb_steps,1)))
 		print("nb new w accepted = " + str(self.cpt_new_acc) + " / " + str(nb_steps))
 		print("nb new w prob sup to curr w = " + str(self.cpt_prob_supp) + " / " + str(nb_steps))
+
+		mean_prob_w_new = mean_prob_w_new / nb_steps
+		mean_prob_w_new_log_lik = mean_prob_w_new_log_lik / nb_steps
+		mean_prob_w_new_log_prior = mean_prob_w_new_log_prior / nb_steps
+
+		if step != None:
+			print("step")
+			wandb.log({"nb new w outside prior space": self.cpt_prior_new_w}, step=step)
+			wandb.log({"nb accepted oustide prior space": self.cpt_prior_and_accepted}, step=step)
+			wandb.log({"nb new w inside prior space": nb_steps - self.cpt_prior_new_w}, step=step)
+			wandb.log({"nb accepted": self.cpt_new_acc}, step=step)
+			wandb.log({"nb accepted without prob sup": self.cpt_prob_supp}, step=step)
+			wandb.log({"mean_prob_w_new": mean_prob_w_new}, step=step)
+			wandb.log({"mean_prob_w_new_log_lik": mean_prob_w_new_log_lik}, step=step)
+			wandb.log({"mean_prob_w_new_log_prior": mean_prob_w_new_log_prior}, step=step)
+
 		self.cpt_pior = 0
 		self.cpt_nb_steps = 0
 		self.cpt_prob_supp = 0
@@ -329,7 +358,7 @@ class PreferenceLearner:
 		return np.array(w_arr)[self.warmup:]
 
 
-	def mcmc_print(self, w_init='mode', prop_w_mode="moral", posterior_mode="moral"):
+	def mcmc_print(self, w_init='mode', prop_w_mode="moral", posterior_mode="moral", step = None):
 		if w_init == 'mode':
 			w_init = [0 for i in range(self.d)]
 
@@ -359,9 +388,9 @@ class PreferenceLearner:
 			
 
 			# print("w_curr = ", w_curr)
-			prob_curr_moral, prob_curr_basic, prob_curr_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
+			prob_curr_moral, prob_curr_basic, prob_curr_temperature, loglik_moral_curr, logliks_basic_curr, logliks_temperature_curr, log_prior_curr = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
 			# print("w_new = ", w_new)
-			prob_new_moral, prob_new_basic, prob_new_temperature = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns, self.temperature)
+			prob_new_moral, prob_new_basic, prob_new_temperature, loglik_moral_new, logliks_basic_new, logliks_temperature_new, log_prior_new = self.posterior_log_prob_print(self.deltas, self.prefs, w_new, self.returns, self.temperature)
 
 
 			mean_prob_w_new_moral += prob_new_moral
@@ -372,8 +401,8 @@ class PreferenceLearner:
 			prob_curr = prob_curr_basic
 			prob_new = prob_new_basic
 
-			if prob_new < -9:
-					self.cpt_prior_new_w += 1
+			if self.outside_prior_space(w_new):
+				self.cpt_prior_new_w += 1
 
 			if prob_new > prob_curr:
 				self.cpt_prob_supp += 1
@@ -382,8 +411,6 @@ class PreferenceLearner:
 				qr_a = self.propose_w_prob(w_curr, w_new)
 				qr_b = self.propose_w_prob(w_new, w_curr)
 				qr = qr_a / qr_b
-
-
 
 				acceptance_ratio = np.exp(prob_new - prob_curr) * qr
 
@@ -433,7 +460,7 @@ class PreferenceLearner:
 				accept_cum = accept_cum + 1
 				w_arr.append(w_new)
 				self.cpt_new_acc += 1
-				if prob_new < -9:
+				if self.outside_prior_space(w_new):
 					self.cpt_prior_and_accepted += 1
 			else:
 				w_arr.append(w_curr)
@@ -464,7 +491,17 @@ class PreferenceLearner:
 		mean_prob_w_new_basic = mean_prob_w_new_basic/nb_steps
 		mean_prob_w_new_temperature = mean_prob_w_new_temperature/nb_steps
 
-		return np.array(w_arr)[self.warmup:], mean_prob_w_new_moral, mean_prob_w_new_basic, mean_prob_w_new_temperature
+		if step != None:
+			wandb.log({"nb new w outside prior space": self.cpt_prior_new_w}, step=step)
+			wandb.log({"nb accepted oustide prior space": self.cpt_prior_and_accepted}, step=step)
+			wandb.log({"nb new w inside prior space": nb_steps - self.cpt_prior_new_w}, step=step)
+			wandb.log({"nb accepted": self.cpt_new_acc}, step=step)
+			wandb.log({"nb accepted without prob sup": self.cpt_prob_supp}, step=step)
+			wandb.log({"mean_prob_w_new_moral": mean_prob_w_new_moral}, step=step)
+			wandb.log({"mean_prob_w_new_basic": mean_prob_w_new_basic}, step=step)
+			wandb.log({"mean_prob_w_new_temperature": mean_prob_w_new_temperature}, step=step)
+
+		return np.array(w_arr)[self.warmup:]
 
 
 class VolumeBuffer:

@@ -8,6 +8,7 @@ from moral.ppo import *
 from utils.load_config import *
 from moral.airl import *
 from moral.active_learning import *
+from tqdm import tqdm
 
 
 def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORMALIZED):
@@ -64,6 +65,38 @@ def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORM
 		preference = 1 if np.random.rand() < 0.5 else -1
 	return preference, kl_a, kl_b
 
+def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_norm, non_eth_norm, env_steps=1000):
+	states = env.reset()
+	states_tensor = torch.tensor(states).float().to(device)
+	for t in tqdm(range(env_steps)):
+		actions, log_probs = agent.act(states_tensor)
+		next_states, rewards, done, info = env.step(actions)
+
+		airl_state = torch.tensor(states).to(device).float()
+		airl_next_state = torch.tensor(next_states).to(device).float()
+
+		airl_rewards_list = []
+		for j in range(len(discriminator_list)):
+			airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, gamma, eth_norm).squeeze(1))
+
+		for j in range(len(discriminator_list)):
+			airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
+
+		airl_rewards_array = np.array(airl_rewards_list)
+		new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
+		train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
+
+		states = next_states.copy()
+		states_tensor = torch.tensor(states).float().to(device)
+
+	mean_returns = np.array(dataset.log_returns_sum()).mean(axis=0)
+	w = [0.5 for j in range(len(discriminator_list)+1)]
+	mean_vectorized_rewards = dataset.compute_scalarized_rewards(w, non_eth_norm, None) # wandb
+	# volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
+
+	dataset.reset_trajectories()
+
+	return mean_returns, mean_vectorized_rewards
 
 
 # Use GPU if available
@@ -130,7 +163,9 @@ if __name__ == '__main__':
 	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
 	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	
-
+	mean_returns, mean_vectorized_rewards = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
+	print("mean_returns = ", mean_returns)
+	print("mean_vectorized_rewards = ", mean_vectorized_rewards)
 
 	# test
 	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
@@ -242,13 +277,10 @@ if __name__ == '__main__':
 		# preference_learner.log_returns(ret_a[:-1], ret_b[:-1])
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 		print("w_posterior_mean = ", w_posterior_mean)
-		w_posterior = preference_learner.mcmc_test(w_posterior_mean, c["prop_w_mode"], c["posterior_mode"])
+		w_posterior = preference_learner.mcmc_test(w_posterior_mean, c["prop_w_mode"], c["posterior_mode"], step=i)
 
 
-		# w_posterior, mean_prob_w_new_moral, mean_prob_w_new_basic, mean_prob_w_new_temperature = preference_learner.mcmc_print(w_posterior_mean, c["prop_w_mode"])
-		# wandb.log({'mean_prob_w_new_moral]': mean_prob_w_new_moral}, step=i)
-		# wandb.log({'mean_prob_w_new_basic]': mean_prob_w_new_basic}, step=i)
-		# wandb.log({'mean_prob_w_new_temperature]': mean_prob_w_new_temperature}, step=i)
+		# w_posterior = preference_learner.mcmc_print(w_posterior_mean, c["prop_w_mode"], step=i)
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
@@ -264,11 +296,13 @@ if __name__ == '__main__':
 		else :
 			print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
+		weighted_rew_mean = w_posterior_mean * mean_vectorized_rewards
+		distance = sum([(weighted_rew_mean[j] - RATIO_NORMALIZED[j])**2 for j in range(len(weighted_rew_mean))])
+
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
-		# wandb.log({'w_posterior_mean['+str(3)+"]": w_posterior_mean[0]}, step=i)
-		# wandb.log({'test': 3}, step=i)
-		# wandb.log({'test2': 3})
+			wandb.log({'weighted_rew_mean ['+str(j)+']': weighted_rew_mean[j]}, step=i)
+		wandb.log({'distance': distance}, step=i)
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
@@ -279,3 +313,6 @@ if __name__ == '__main__':
 	HOF = np.array(HOF, dtype=dtype)
 	HOF_sorted = np.sort(HOF, order="kl_a")
 	print("HOF = ", HOF_sorted)
+
+
+	
