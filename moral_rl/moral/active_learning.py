@@ -48,9 +48,8 @@ class PreferenceLearner:
 	def w_prior_marius(self, w):
 		self.cpt_nb_steps += 1
 		if np.linalg.norm(w) <=1 and np.all(np.array(w) >= 0):
-			# print("PIOR, w = ", w)
 			self.cpt_pior += 1
-			return (2**self.d)/(math.pi**(self.d/2)/math.gamma(self.d/2 + 1))
+			return 1e100
 		else:
 			return 0
 
@@ -164,7 +163,8 @@ class PreferenceLearner:
 			else :
 				f_logliks.append(self.basic_loglik_temperature(w, returns[i][1], returns[i][0], t))
 		loglik = np.sum(f_logliks)
-		log_prior = np.log(self.w_prior(w) + 1e-5)
+		# log_prior = np.log(self.w_prior(w) + 1e-5)
+		log_prior = np.log(self.w_prior_marius(w) + 1e-5)
 
 		return loglik + log_prior
 
@@ -246,10 +246,6 @@ class PreferenceLearner:
 
 		# print("posterior_prob w_init = ", self.posterior_log_prob_test_prints(self.deltas, self.prefs, w_init, self.returns))
 
-		mean_prob_w_new_moral = 0
-		mean_prob_w_new_basic = 0
-		mean_prob_w_new_temperature = 0
-
 		for i in range(1, self.warmup + self.n_iter + 1):
 			w_new = None
 			if prop_w_mode == "moral":
@@ -292,56 +288,12 @@ class PreferenceLearner:
 				qr_a = self.propose_w_prob(w_curr, w_new)
 				qr_b = self.propose_w_prob(w_new, w_curr)
 				qr = qr_a / qr_b
-				# if qr != 1:    NEVER HAPPENS qr is symetrical because propose_w_prob is the gaussian distribution
-				#     print("qr_a = ", qr_a)
-				#     print("qr_b = ", qr_b)
-				#     print("qr = ", qr)
-				# print("qr_a = ", qr_a)
-				# print("qr_b = ", qr_b)
-				# print("qr = ", qr)
-
 
 				acceptance_ratio = np.exp(prob_new - prob_curr) * qr
-				acceptance_ratio_moral = np.exp(prob_new_moral - prob_curr_moral) * qr
-				acceptance_ratio_temperature = np.exp(prob_new_temperature - prob_curr_temperature) * qr
-
-				print("w_curr = ", w_curr)
-				print("w_new = ", w_new)
-				print("prob_curr_moral = ", prob_curr_moral)
-				print("prob_new_moral = ", prob_new_moral)
-				print("prob_curr_basic = ", prob_curr)
-				print("prob_new_basic = ", prob_new)
-				print("prob_curr_temperature = ", prob_curr_temperature)
-				print("prob_new_temperature = ", prob_new_temperature)
-				if prob_new <= prob_curr:
-					print("qr_a = ", qr_a)
-					print("qr_b = ", qr_b)
-					print("qr = ", qr)
-					print("acceptance_ratio_moral = ", acceptance_ratio_moral)
-					print("acceptance_ratio_basic = ", acceptance_ratio)
-					print("acceptance_ratio_temperature = ", acceptance_ratio_temperature)
 				
-				# print("acceptance_ratio = ", acceptance_ratio)
 			acceptance_prob = min(1, acceptance_ratio)
 
 			if acceptance_prob > st.uniform(0, 1).rvs():
-				if prob_new < -9:
-					# print("w_curr = ", w_curr)
-					# print("w_new = ", w_new)
-					# print("prob_curr_moral = ", prob_curr_moral)
-					# print("prob_new_moral = ", prob_new_moral)
-					# print("prob_curr_basic = ", prob_curr)
-					# print("prob_new_basic = ", prob_new)
-					# print("prob_curr_temperature = ", prob_curr_temperature)
-					# print("prob_new_temperature = ", prob_new_temperature)
-					# if prob_new <= prob_curr:
-					#     print("qr_a = ", qr_a)
-					#     print("qr_b = ", qr_b)
-					#     print("qr = ", qr)
-					#     print("acceptance_ratio_moral = ", acceptance_ratio_moral)
-					#     print("acceptance_ratio_basic = ", acceptance_ratio)
-					#     print("acceptance_ratio_temperature = ", acceptance_ratio_temperature)
-					time.sleep(30)
 				w_curr = w_new
 				# prob_curr = prob_new ?
 				accept_cum = accept_cum + 1
@@ -459,7 +411,7 @@ class PreferenceLearner:
 			acceptance_prob = min(1, acceptance_ratio)
 
 			if acceptance_prob > st.uniform(0, 1).rvs():
-				if prob_new < -9:
+				# if prob_new < -9:
 					# print("w_curr = ", w_curr)
 					# print("w_new = ", w_new)
 					# print("prob_curr_moral = ", prob_curr_moral)
@@ -475,7 +427,7 @@ class PreferenceLearner:
 					#     print("acceptance_ratio_moral = ", acceptance_ratio_moral)
 					#     print("acceptance_ratio_basic = ", acceptance_ratio)
 					#     print("acceptance_ratio_temperature = ", acceptance_ratio_temperature)
-					time.sleep(30)
+					# time.sleep(30)
 				w_curr = w_new
 				# prob_curr = prob_new ?
 				accept_cum = accept_cum + 1
