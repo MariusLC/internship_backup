@@ -246,9 +246,9 @@ if __name__ == '__main__':
 
 
 		w_posterior, mean_prob_w_new_moral, mean_prob_w_new_basic, mean_prob_w_new_temperature = preference_learner.mcmc_print(w_posterior_mean, c["prop_w_mode"])
-		wandb.log({'mean_prob_w_new_moral]': mean_prob_w_new_moral/nb_steps}, step=i)
-        wandb.log({'mean_prob_w_new_basic]': mean_prob_w_new_basic/nb_steps}, step=i)
-        wandb.log({'mean_prob_w_new_temperature]': mean_prob_w_new_temperature/nb_steps}, step=i)
+		wandb.log({'mean_prob_w_new_moral]': mean_prob_w_new_moral}, step=i)
+		wandb.log({'mean_prob_w_new_basic]': mean_prob_w_new_basic}, step=i)
+		wandb.log({'mean_prob_w_new_temperature]': mean_prob_w_new_temperature}, step=i)
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
