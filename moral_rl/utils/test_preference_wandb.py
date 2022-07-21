@@ -163,9 +163,9 @@ if __name__ == '__main__':
 	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
 	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	
-	mean_returns, mean_vectorized_rewards = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
-	print("mean_returns = ", mean_returns)
-	print("mean_vectorized_rewards = ", mean_vectorized_rewards)
+	obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
+	print("mean objective reward expert = ", obj_rew)
+	print("mean airl vectorized reward expert = ", vect_rew)
 
 	# test
 	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
@@ -296,13 +296,16 @@ if __name__ == '__main__':
 		else :
 			print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
-		weighted_rew_mean = w_posterior_mean * mean_vectorized_rewards
-		distance = sum([(weighted_rew_mean[j] - RATIO_NORMALIZED[j])**2 for j in range(len(weighted_rew_mean))])
+		weighted_obj_rew = w_posterior_mean * obj_rew
+		weighted_airl_rew = w_posterior_mean * vect_rew
+		distance_obj = sum([(weighted_obj_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(weighted_obj_rew))])
+		distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(weighted_airl_rew))])
 
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
 			wandb.log({'weighted_rew_mean ['+str(j)+']': weighted_rew_mean[j]}, step=i)
-		wandb.log({'distance_to_ratio': distance}, step=i)
+		wandb.log({'distance_obj_to_ratio': distance_obj}, step=i)
+		wandb.log({'distance_airl_to_ratio': distance_airl}, step=i)
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
