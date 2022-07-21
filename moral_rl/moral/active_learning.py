@@ -5,7 +5,7 @@ import time
 import wandb
 
 class PreferenceLearner:
-	def __init__(self, n_iter, warmup, d, temperature=None):
+	def __init__(self, n_iter, warmup, d, temperature=None,  cov_range=1):
 		self.n_iter = n_iter
 		self.warmup = warmup
 		self.d = d
@@ -13,6 +13,7 @@ class PreferenceLearner:
 		self.deltas = []
 		self.prefs = []
 		self.returns = []
+
 		self.cpt_pior = 0
 		self.cpt_nb_steps = 0
 		self.cpt_new_acc = 0
@@ -21,6 +22,7 @@ class PreferenceLearner:
 		self.cpt_prior_new_w = 0
 
 		self.temperature = temperature
+		self.cov_range = cov_range
 
 	def log_returns(self, ret_a, ret_b):
 		self.returns.append([ret_a, ret_b])
@@ -92,36 +94,36 @@ class PreferenceLearner:
 
 	@staticmethod
 	def propose_w_prob(w1, w2):
-		q = st.multivariate_normal(mean=w1, cov=1).pdf(w2)
+		q = st.multivariate_normal(mean=w1, cov=self.cov_range).pdf(w2)
 		return q
 
 	@staticmethod
 	def propose_w(w_curr):
-		w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
+		w_new = st.multivariate_normal(mean=w_curr, cov=self.cov_range).rvs()
 		return w_new
 
 	@staticmethod
 	def propose_w_np(w_curr):
-		w_new = np.random.multivariate_normal(w_curr, np.ones((len(w_curr), len(w_curr))))
+		w_new = np.random.multivariate_normal(w_curr, np.ones((len(w_curr), len(w_curr)))*self.cov_range)
 		return w_new
 
 
 
 	@staticmethod
 	def propose_w_normalized(w_curr):
-		w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
+		w_new = st.multivariate_normal(mean=w_curr, cov=self.cov_range).rvs()
 		w_new = w_new / np.sum(w_new)
 		return w_new
 
 	@staticmethod
 	def propose_w_normalized_linalg(w_curr):
-		w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
+		w_new = st.multivariate_normal(mean=w_curr, cov=self.cov_range).rvs()
 		w_new = w_new / np.linalg.norm(w_new)
 		return w_new
 
 	@staticmethod
 	def propose_w_normalized_linalg_positive(w_curr):
-		w_new = st.multivariate_normal(mean=w_curr, cov=1).rvs()
+		w_new = st.multivariate_normal(mean=w_curr, cov=self.cov_range).rvs()
 		w_new = abs(w_new)
 		w_new = w_new / np.linalg.norm(w_new)
 		return w_new

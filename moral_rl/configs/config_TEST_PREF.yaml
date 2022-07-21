@@ -49,6 +49,7 @@ posterior_mode: "basic_temperature"
 
 prop_w_mode: "moral"
 temperature_mcmc: 3
+cov_range: 0.5
 n_workers: 2
 batchsize_ppo: 2
 gamma: 0.999

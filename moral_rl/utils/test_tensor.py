@@ -81,12 +81,13 @@ if __name__ == '__main__':
 	w = [0.5, 0.5, 0.5]
 	nb_samples = 10000
 	# gaussian_samples = np.random.normal(w, 1, nb_samples)
-	cov = [[1 for i in range(len(w))] for j in range(len(w))]
-	cov = np.ones((len(w), len(w)))
+	cov_range = 0.3
+	# cov = [[cov_range for i in range(len(w))] for j in range(len(w))]
+	cov = np.ones((len(w), len(w)))*cov_range
 	print(cov)
 	# cov = np.eye(len(w))
 	gaussian_samples = np.random.multivariate_normal(w, cov, nb_samples)
-	moral_samples = st.multivariate_normal(mean=w, cov=0.5).rvs(size=nb_samples)
+	moral_samples = st.multivariate_normal(mean=w, cov=cov_range).rvs(size=nb_samples)
 
 	gaussian_mean = np.mean(gaussian_samples, axis=0)
 	moral_mean = np.mean(moral_samples,  axis=0)
@@ -124,10 +125,14 @@ if __name__ == '__main__':
 	print("nb_g_pos_len1 = ", nb_g_pos_len1)
 	print("nb_m_pos_len1 = ", nb_m_pos_len1)
 
+	# print(gaussian_samples[:10])
+	# print(gaussian_samples[:10][:,0])
+
 	for i in range(len(w)):
-		plt.hist(np.histogram(gaussian_samples[i]), bins='auto')
-		plt.show()
-		plt.hist(np.histogram(moral_samples[i]), bins='auto')
+		plt.hist(gaussian_samples[:,i], bins='auto', label='np')
+		# plt.show()
+		plt.hist(moral_samples[:,i], bins='auto', label='st')
+		plt.legend(prop={'size': 10})
 		plt.show()
 
 

@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
 	# test
 	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
-	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
+	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean = w_posterior.mean(axis=0)
