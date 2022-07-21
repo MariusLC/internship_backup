@@ -298,8 +298,8 @@ if __name__ == '__main__':
 
 		weighted_obj_rew = w_posterior_mean * obj_rew
 		weighted_airl_rew = w_posterior_mean * vect_rew
-		distance_obj = sum([(weighted_obj_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(weighted_obj_rew))])
-		distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(weighted_airl_rew))])
+		distance_obj = sum([(weighted_obj_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+		distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
