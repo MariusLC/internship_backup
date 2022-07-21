@@ -321,7 +321,8 @@ if __name__ == '__main__':
 			wandb.log({'weighted_obj_rew_sum ['+str(j)+']': weighted_obj_rew_sum[j]}, step=i)
 			wandb.log({'weighted_obj_rew_linalg ['+str(j)+']': weighted_obj_rew_linalg[j]}, step=i)
 			wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=i)
-		wandb.log({'distance_obj_to_ratio': distance_obj}, step=i)
+		wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=i)
+		wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=i)
 		wandb.log({'distance_airl_to_ratio': distance_airl}, step=i)
 
 
