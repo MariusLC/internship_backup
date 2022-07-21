@@ -48,8 +48,8 @@ def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORM
 	# print("ret_b_linalg_normalized = ", ret_b_linalg_normalized)
 	# print("self.ratio_normalized = ", RATIO_NORMALIZED)
 
-	kl_a = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
-	kl_b = st.entropy(ret_b_normalized, RATIO_NORMALIZED)
+	kl_a_sum = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
+	kl_b_sum = st.entropy(ret_b_normalized, RATIO_NORMALIZED)
 	kl_a_linalg = st.entropy(ret_a_linalg_normalized, RATIO_linalg_NORMALIZED)
 	kl_b_linalg = st.entropy(ret_b_linalg_normalized, RATIO_linalg_NORMALIZED)
 	# print("kl_a = ", kl_a)
