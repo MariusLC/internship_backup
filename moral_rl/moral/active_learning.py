@@ -93,37 +93,37 @@ class PreferenceLearner:
 		return np.log(e_a/(e_a + e_b))
 
 	@staticmethod
-	def propose_w_prob(w1, w2):
-		q = st.multivariate_normal(mean=w1, cov=self.cov_range).pdf(w2)
+	def propose_w_prob(w1, w2, cov_range):
+		q = st.multivariate_normal(mean=w1, cov=cov_range).pdf(w2)
 		return q
 
 	@staticmethod
-	def propose_w(w_curr):
-		w_new = st.multivariate_normal(mean=w_curr, cov=self.cov_range).rvs()
+	def propose_w(w_curr, cov_range):
+		w_new = st.multivariate_normal(mean=w_curr, cov=cov_range).rvs()
 		return w_new
 
 	@staticmethod
-	def propose_w_np(w_curr):
-		w_new = np.random.multivariate_normal(w_curr, np.ones((len(w_curr), len(w_curr)))*self.cov_range)
+	def propose_w_np(w_curr, cov_range):
+		w_new = np.random.multivariate_normal(w_curr, np.ones((len(w_curr), len(w_curr)))*cov_range)
 		return w_new
 
 
 
 	@staticmethod
-	def propose_w_normalized(w_curr):
-		w_new = st.multivariate_normal(mean=w_curr, cov=self.cov_range).rvs()
+	def propose_w_normalized(w_curr, cov_range):
+		w_new = st.multivariate_normal(mean=w_curr, cov=cov_range).rvs()
 		w_new = w_new / np.sum(w_new)
 		return w_new
 
 	@staticmethod
-	def propose_w_normalized_linalg(w_curr):
-		w_new = st.multivariate_normal(mean=w_curr, cov=self.cov_range).rvs()
+	def propose_w_normalized_linalg(w_curr, cov_range):
+		w_new = st.multivariate_normal(mean=w_curr, cov=cov_range).rvs()
 		w_new = w_new / np.linalg.norm(w_new)
 		return w_new
 
 	@staticmethod
-	def propose_w_normalized_linalg_positive(w_curr):
-		w_new = st.multivariate_normal(mean=w_curr, cov=self.cov_range).rvs()
+	def propose_w_normalized_linalg_positive(w_curr, cov_range):
+		w_new = st.multivariate_normal(mean=w_curr, cov=cov_range).rvs()
 		w_new = abs(w_new)
 		w_new = w_new / np.linalg.norm(w_new)
 		return w_new
@@ -217,7 +217,7 @@ class PreferenceLearner:
 		accept_cum = 0
 
 		for i in range(1, self.warmup + self.n_iter + 1):
-			w_new = self.propose_w(w_curr)
+			w_new = self.propose_w(w_curr, self.cov_range)
 
 			prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
 			prob_new, loglik_new, log_prior_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
@@ -225,7 +225,7 @@ class PreferenceLearner:
 			if prob_new > prob_curr:
 				acceptance_ratio = 1
 			else:
-				qr = self.propose_w_prob(w_curr, w_new) / self.propose_w_prob(w_new, w_curr)
+				qr = self.propose_w_prob(w_curr, w_new, self.cov_range) / self.propose_w_prob(w_new, w_curr, self.cov_range)
 				acceptance_ratio = np.exp(prob_new - prob_curr) * qr
 			acceptance_prob = min(1, acceptance_ratio)
 
@@ -260,14 +260,14 @@ class PreferenceLearner:
 		for i in range(1, self.warmup + self.n_iter + 1):
 			w_new = None
 			if prop_w_mode == "moral":
-				w_new = self.propose_w(w_curr)
+				w_new = self.propose_w(w_curr, self.cov_range)
 				# w_new = self.propose_w_np(w_curr)
 			elif prop_w_mode == "normalized_linalg":
-				w_new = self.propose_w_normalized_linalg(w_curr)
+				w_new = self.propose_w_normalized_linalg(w_curr, self.cov_range)
 			elif prop_w_mode == "normalized_linalg_positive":
-				w_new = self.propose_w_normalized_linalg_positive(w_curr)
+				w_new = self.propose_w_normalized_linalg_positive(w_curr, self.cov_range)
 			elif prop_w_mode == "normalized":
-				w_new = self.propose_w_normalized(w_curr)
+				w_new = self.propose_w_normalized(w_curr, self.cov_range)
 
 			
 
@@ -300,8 +300,8 @@ class PreferenceLearner:
 				self.cpt_prob_supp += 1
 				acceptance_ratio = 1
 			else:
-				qr_a = self.propose_w_prob(w_curr, w_new)
-				qr_b = self.propose_w_prob(w_new, w_curr)
+				qr_a = self.propose_w_prob(w_curr, w_new, self.cov_range)
+				qr_b = self.propose_w_prob(w_new, w_curr, self.cov_range)
 				qr = qr_a / qr_b
 
 				acceptance_ratio = np.exp(prob_new - prob_curr) * qr
@@ -378,14 +378,14 @@ class PreferenceLearner:
 		for i in range(1, self.warmup + self.n_iter + 1):
 			w_new = None
 			if prop_w_mode == "moral":
-				w_new = self.propose_w(w_curr)
+				w_new = self.propose_w(w_curr, self.cov_range)
 				# w_new = self.propose_w_np(w_curr)
 			elif prop_w_mode == "normalized_linalg":
-				w_new = self.propose_w_normalized_linalg(w_curr)
+				w_new = self.propose_w_normalized_linalg(w_curr, self.cov_range)
 			elif prop_w_mode == "normalized_linalg_positive":
-				w_new = self.propose_w_normalized_linalg_positive(w_curr)
+				w_new = self.propose_w_normalized_linalg_positive(w_curr, self.cov_range)
 			elif prop_w_mode == "normalized":
-				w_new = self.propose_w_normalized(w_curr)
+				w_new = self.propose_w_normalized(w_curr, self.cov_range)
 
 			
 
@@ -410,8 +410,8 @@ class PreferenceLearner:
 				self.cpt_prob_supp += 1
 				acceptance_ratio = 1
 			else:
-				qr_a = self.propose_w_prob(w_curr, w_new)
-				qr_b = self.propose_w_prob(w_new, w_curr)
+				qr_a = self.propose_w_prob(w_curr, w_new, self.cov_range)
+				qr_b = self.propose_w_prob(w_new, w_curr, self.cov_range)
 				qr = qr_a / qr_b
 
 				acceptance_ratio = np.exp(prob_new - prob_curr) * qr
