@@ -182,6 +182,7 @@ if __name__ == '__main__':
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean = w_posterior.mean(axis=0)
+	w_posterior_mean_uniform = w_posterior_mean
 
 	HOF = []
 
@@ -286,7 +287,9 @@ if __name__ == '__main__':
 		# preference_learner.log_returns(ret_a[:-1], ret_b[:-1])
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 		print("w_posterior_mean = ", w_posterior_mean)
-		w_posterior = preference_learner.mcmc_test(w_posterior_mean, c["prop_w_mode"], c["posterior_mode"], step=i)
+
+		w_posterior = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i)
+		# w_posterior = preference_learner.mcmc_test(w_posterior_mean, c["prop_w_mode"], c["posterior_mode"], step=i)
 
 
 		# w_posterior = preference_learner.mcmc_print(w_posterior_mean, c["prop_w_mode"], step=i)

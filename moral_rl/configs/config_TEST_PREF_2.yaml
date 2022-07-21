@@ -53,7 +53,7 @@ cov_range: 0.5
 prior: "marius"
 # prior: "moral"
 n_workers: 12
-batchsize_ppo: 50
+batchsize_ppo: 120
 gamma: 0.999
 dimension_pref: 3
 agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
