@@ -49,7 +49,7 @@ posterior_mode: "basic_temperature"
 
 prop_w_mode: "moral"
 temperature_mcmc: 3
-cov_range: 0.1
+cov_range: 0.3
 prior: "marius"
 # prior: "moral"
 n_workers: 2
