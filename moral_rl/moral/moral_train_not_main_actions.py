@@ -51,9 +51,12 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'lambd': lambd,
             'eth_norm': eth_norm,
             'non_eth_norm': non_eth_norm,
-            'temperature_mcmc' : 1,
             'moral_agent_filename' : "from_scratch",
             # 'moral_agent_filename' : "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
+            'prop_w_mode': "moral", 
+            'posterior_mode' : "basic_temperature",
+            'temperature_mcmc' : 2,
+            'prior': "marius",
             },
         reinit=True)
     config = wandb.config
@@ -125,7 +128,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
     # Active Learning
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
-    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc)
+    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, , prior=config.prior)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
@@ -157,8 +160,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
             preference_learner.log_returns(ret_a, ret_b)
-            w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
-            # w_posterior = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode="moral", posterior_mode="basic_temperature")
+            # w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
+            w_posterior = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode=config.prop_w_mode, posterior_mode=config.posterior_mode)
             print("w_posterior = ", w_posterior)
             w_posterior_mean = w_posterior.mean(axis=0)
             print("w_posterior_mean = ", w_posterior_mean)
