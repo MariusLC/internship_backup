@@ -296,8 +296,8 @@ if __name__ == '__main__':
 		else :
 			print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
-		weighted_obj_rew = w_posterior_mean * obj_rew
-		weighted_airl_rew = w_posterior_mean * vect_rew
+		weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
+		weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
 		distance_obj = sum([(weighted_obj_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 		distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 
