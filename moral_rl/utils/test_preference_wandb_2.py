@@ -111,7 +111,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # folder to load config file
 CONFIG_PATH = "configs/"
-CONFIG_FILENAME = "config_TEST_PREF.yaml"
+CONFIG_FILENAME = "config_TEST_PREF_2.yaml"
 
 if __name__ == '__main__':
 
@@ -181,73 +181,58 @@ if __name__ == '__main__':
 	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
-	w_posterior_mean = w_posterior.mean(axis=0)
+	w_posterior_mean_uniform = w_posterior.mean(axis=0)
 
 	HOF = []
 
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
 
-	for i in range(c["n_queries"]): 
+	# objective_returns = []
+	# observed_rewards = []
+	# nb_traj = 0
+	print("\n")
+	train_ready = False
+	while not train_ready:
 
-		# objective_returns = []
-		# observed_rewards = []
-		# nb_traj = 0
-		print("\n")
-		train_ready = False
-		while not train_ready:
-			curr_objective_returns = []
-			curr_observed_rewards = []
+		# Environment interaction
+		actions, log_probs = agent_test.act(states_tensor)
+		next_states, rewards, done, info = env.step(actions)
+		# print("done = ", done)
 
-			# Environment interaction
-			actions, log_probs = agent_test.act(states_tensor)
-			next_states, rewards, done, info = env.step(actions)
-			# print("done = ", done)
-
-			# Fetch AIRL rewards
-			airl_state = torch.tensor(states).to(device).float()
-			airl_next_state = torch.tensor(next_states).to(device).float()
+		# Fetch AIRL rewards
+		airl_state = torch.tensor(states).to(device).float()
+		airl_next_state = torch.tensor(next_states).to(device).float()
 
 
-			airl_rewards_list = []
-			for j in range(c["nb_experts"]):
-				airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, c["gamma"], c["normalization_eth_sett"]).squeeze(1))
+		airl_rewards_list = []
+		for j in range(c["nb_experts"]):
+			airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, c["gamma"], c["normalization_eth_sett"]).squeeze(1))
 
-			for j in range(c["nb_experts"]):
-				airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
-				# airl_rewards_list[j] = airl_rewards_list[j] * (not done)
+		for j in range(c["nb_experts"]):
+			airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
+			# airl_rewards_list[j] = airl_rewards_list[j] * (not done)
 
-			airl_rewards_array = np.array(airl_rewards_list)
-			new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
-			train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
-			# print("train_ready = ", train_ready)
-			# print(str(len(dataset.trajectories)) + " < " + str(dataset.batch_size))
+		airl_rewards_array = np.array(airl_rewards_list)
+		new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
+		train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
 
-			# airl_rewards_array = np.array([rewards[0]]+airl_rewards_list)
-			# airl_rewards_array = airl_rewards_array = np.array(airl_rewards_list)
+		# Prepare state input for next time step
+		states = next_states.copy()
+		states_tensor = torch.tensor(states).float().to(device)
 
-			# train_ready = dataset.write_tuple_norm([states], [actions], None, [rewards], [airl_rewards_array], [done], [log_probs])
+	print("nb_traj = ", len(dataset.trajectories))
+	volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+	mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
+	volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
 
-			# curr_objective_returns.append(rewards)
-			# curr_observed_rewards.append(airl_rewards_array)
-
-			# Prepare state input for next time step
-			states = next_states.copy()
-			states_tensor = torch.tensor(states).float().to(device)
-
-		volume_buffer.log_statistics_sum(dataset.log_returns_sum())
-		mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, c["normalization_non_eth_sett"], None)
-		volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
-
-		# objective_returns = dataset.log_returns_sum()
-		# dataset.compute_scalarized_rewards(w_posterior_mean, c["normalization_non_eth_sett"], None)
-		# observed_rewards = dataset.log_vectorized_rew_sum()
+	for i in range(c["n_queries"]):
 
 		if c["query_selection"] == "random":
-			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_v2()
+			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset()
 		elif c["query_selection"] == "compare_EUS":
 			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner)
+				volume_buffer.compare_EUS(w_posterior, w_posterior_mean_uniform, preference_learner)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_MORAL":
 			for k in range(c["nb_query_test"]):
@@ -285,11 +270,8 @@ if __name__ == '__main__':
 		preference_learner.log_preference(delta, preference)
 		# preference_learner.log_returns(ret_a[:-1], ret_b[:-1])
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
-		print("w_posterior_mean = ", w_posterior_mean)
-		w_posterior = preference_learner.mcmc_test(w_posterior_mean, c["prop_w_mode"], c["posterior_mode"], step=i)
 
-
-		# w_posterior = preference_learner.mcmc_print(w_posterior_mean, c["prop_w_mode"], step=i)
+		w_posterior = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i)
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
@@ -321,19 +303,19 @@ if __name__ == '__main__':
 
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
-			wandb.log({'weighted_obj_rew ['+str(j)+']': weighted_obj_rew[j]}, step=i)
-			wandb.log({'weighted_obj_rew_sum ['+str(j)+']': weighted_obj_rew_sum[j]}, step=i)
-			wandb.log({'weighted_obj_rew_linalg ['+str(j)+']': weighted_obj_rew_linalg[j]}, step=i)
+			# wandb.log({'weighted_obj_rew ['+str(j)+']': weighted_obj_rew[j]}, step=i)
+			# wandb.log({'weighted_obj_rew_sum ['+str(j)+']': weighted_obj_rew_sum[j]}, step=i)
+			# wandb.log({'weighted_obj_rew_linalg ['+str(j)+']': weighted_obj_rew_linalg[j]}, step=i)
 			wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=i)
 		wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=i)
 		wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=i)
 		wandb.log({'distance_airl_to_ratio': distance_airl}, step=i)
 
 
-		# Reset PPO buffer
-		dataset.reset_trajectories()
-		volume_buffer.reset()
-		volume_buffer.reset_batch() # Do we need to reset batch every time ?
+		# # Reset PPO buffer
+		# dataset.reset_trajectories()
+		# volume_buffer.reset()
+		# volume_buffer.reset_batch() # Do we need to reset batch every time ?
 
 	dtype = [("kl_a", float), ("ret_a", np.float64, (4,)), ("observed_rew_a", np.float64, (3,))]
 	HOF = np.array(HOF, dtype=dtype)

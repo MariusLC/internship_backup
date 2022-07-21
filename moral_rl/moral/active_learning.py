@@ -53,7 +53,7 @@ class PreferenceLearner:
 		self.cpt_nb_steps += 1
 		if np.linalg.norm(w) <=1 and np.all(np.array(w) >= 0):
 			self.cpt_pior += 1
-			return 1e100
+			return 1e1000
 		else:
 			return 0
 
