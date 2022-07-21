@@ -303,7 +303,8 @@ if __name__ == '__main__':
 
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
-			wandb.log({'weighted_rew_mean ['+str(j)+']': weighted_rew_mean[j]}, step=i)
+			wandb.log({'weighted_obj_rew ['+str(j)+']': weighted_obj_rew[j]}, step=i)
+			wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=i)
 		wandb.log({'distance_obj_to_ratio': distance_obj}, step=i)
 		wandb.log({'distance_airl_to_ratio': distance_airl}, step=i)
 
