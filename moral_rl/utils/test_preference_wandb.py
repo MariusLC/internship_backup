@@ -11,7 +11,7 @@ from moral.active_learning import *
 from tqdm import tqdm
 
 
-def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORMALIZED):
+def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum"):
 	print("query_pair = "+str(ret_a)+" , "+str(ret_b))
 
 	ret_a_copy = ret_a.copy()
@@ -56,6 +56,13 @@ def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORM
 	# print("kl_b = ", kl_b)
 	# print("kl_a_linalg = ", kl_a_linalg)
 	# print("kl_b_linalg = ", kl_b_linalg)
+
+	if norm == "sum":
+		kl_a = kl_a_sum
+		kl_b = kl_b_sum
+	elif norm == "linalg":
+		kl_a = kl_a_linalg
+		kl_b = kl_b_linalg
 
 	if kl_a < kl_b:
 		preference = 1
@@ -164,6 +171,8 @@ if __name__ == '__main__':
 	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	
 	obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
+	obj_rew_norm_sum = obj_rew / sum(obj_rew)
+	obj_rew_norm_linalg = obj_rew / np.linalg.norm(obj_rew)
 	print("mean objective reward expert = ", obj_rew)
 	print("mean airl vectorized reward expert = ", vect_rew)
 
@@ -266,7 +275,7 @@ if __name__ == '__main__':
 		print("delta = ",delta)
 
 		# go query the preference expert
-		preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED)
+		preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum")
 		print(preference)
 
 		HOF.append((kl_a, ret_a, observed_rew_a))
@@ -296,17 +305,25 @@ if __name__ == '__main__':
 		else :
 			print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
+
 		weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
+		weighted_obj_rew_sum = w_posterior_mean * obj_rew_norm_sum[:len(w_posterior_mean)]
+		weighted_obj_rew_linalg = w_posterior_mean * obj_rew_norm_linalg[:len(w_posterior_mean)]
 		weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
-		distance_obj = sum([(weighted_obj_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+
+		distance_obj_sum = sum([(weighted_obj_rew_sum[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+		distance_obj_linalg = sum([(weighted_obj_rew_linalg[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 		distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
 			wandb.log({'weighted_obj_rew ['+str(j)+']': weighted_obj_rew[j]}, step=i)
+			wandb.log({'weighted_obj_rew_sum ['+str(j)+']': weighted_obj_rew_sum[j]}, step=i)
+			wandb.log({'weighted_obj_rew_linalg ['+str(j)+']': weighted_obj_rew_linalg[j]}, step=i)
 			wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=i)
 		wandb.log({'distance_obj_to_ratio': distance_obj}, step=i)
 		wandb.log({'distance_airl_to_ratio': distance_airl}, step=i)
+
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
