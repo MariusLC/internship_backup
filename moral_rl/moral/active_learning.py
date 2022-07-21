@@ -5,7 +5,7 @@ import time
 import wandb
 
 class PreferenceLearner:
-	def __init__(self, n_iter, warmup, d, temperature=None,  cov_range=1):
+	def __init__(self, n_iter, warmup, d, temperature=None,  cov_range=1, prior="moral"):
 		self.n_iter = n_iter
 		self.warmup = warmup
 		self.d = d
@@ -23,6 +23,7 @@ class PreferenceLearner:
 
 		self.temperature = temperature
 		self.cov_range = cov_range
+		self.prior = prior
 
 	def log_returns(self, ret_a, ret_b):
 		self.returns.append([ret_a, ret_b])
@@ -139,7 +140,7 @@ class PreferenceLearner:
 		return loglik + log_prior, loglik, log_prior
 
 
-	def posterior_log_prob_basic_log_lik(self, deltas, prefs, w, returns):
+	def posterior_log_prob_basic_log_lik(self, deltas, prefs, w, returns, prior="moral"):
 		f_logliks = []
 		for i in range(len(prefs)):
 			if prefs[i] == 1 :
@@ -156,13 +157,18 @@ class PreferenceLearner:
 			# print("loglik basic a>b = ", self.basic_loglik(w, returns[i][0], returns[i][1]))
 			# print("loglik basic b>a = ", self.basic_loglik(w, returns[i][1], returns[i][0]))
 		loglik = np.sum(f_logliks)
-		log_prior = np.log(self.w_prior(w) + 1e-5)
+
+		if prior == "moral":
+			log_prior = np.log(self.w_prior(w) + 1e-5)
+		elif prior == "marius":
+			log_prior = np.log(self.w_prior_marius(w) + 1e-5)
+
 		# print("sum loglik = ", loglik)
 		# print("prior = ", log_prior)
 
 		return loglik + log_prior, loglik, log_prior
 
-	def posterior_log_prob_basic_log_lik_temperature(self, deltas, prefs, w, returns, t):
+	def posterior_log_prob_basic_log_lik_temperature(self, deltas, prefs, w, returns, t, prior="moral"):
 		f_logliks = []
 		for i in range(len(prefs)):
 			if prefs[i] == 1 :
@@ -170,12 +176,15 @@ class PreferenceLearner:
 			else :
 				f_logliks.append(self.basic_loglik_temperature(w, returns[i][1], returns[i][0], t))
 		loglik = np.sum(f_logliks)
-		# log_prior = np.log(self.w_prior(w) + 1e-5)
-		log_prior = np.log(self.w_prior_marius(w) + 1e-5)
+
+		if prior == "moral":
+			log_prior = np.log(self.w_prior(w) + 1e-5)
+		elif prior == "marius":
+			log_prior = np.log(self.w_prior_marius(w) + 1e-5)
 
 		return loglik + log_prior, loglik, log_prior
 
-	def posterior_log_prob_print(self, deltas, prefs, w, returns, t):
+	def posterior_log_prob_print(self, deltas, prefs, w, returns, t, prior="moral"):
 		f_logliks = []
 		f_logliks_basic = []
 		f_logliks_temperature = []
@@ -275,11 +284,11 @@ class PreferenceLearner:
 				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob(self.deltas, self.prefs, w_curr)
 				prob_new, loglik_new, log_prior_new = self.posterior_log_prob(self.deltas, self.prefs, w_new)
 			elif posterior_mode == "basic" : 
-				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_curr, self.returns)
-				prob_new, loglik_new, log_prior_new = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_new, self.returns)
+				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_curr, self.returns, self.prior)
+				prob_new, loglik_new, log_prior_new = self.posterior_log_prob_basic_log_lik(self.deltas, self.prefs, w_new, self.returns, self.prior)
 			elif posterior_mode == "basic_temperature" : 
-				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
-				prob_new, loglik_new, log_prior_new = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_new, self.returns, self.temperature)
+				prob_curr, loglik_curr, log_prior_curr = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_curr, self.returns, self.temperature, self.prior)
+				prob_new, loglik_new, log_prior_new = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_new, self.returns, self.temperature, self.prior)
 			# elif posterior_mode == "print" : 
 			# 	# print("w_curr = ", w_curr)
 			# 	prob_curr_moral, prob_curr, prob_curr_temperature, loglik_moral_curr, logliks_basic_curr, logliks_temperature_curr, log_prior_curr = self.posterior_log_prob_print(self.deltas, self.prefs, w_curr, self.returns, self.temperature)
