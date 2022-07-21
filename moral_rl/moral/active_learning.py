@@ -168,8 +168,8 @@ class PreferenceLearner:
 			else :
 				f_logliks.append(self.basic_loglik_temperature(w, returns[i][1], returns[i][0], t))
 		loglik = np.sum(f_logliks)
-		# log_prior = np.log(self.w_prior(w) + 1e-5)
-		log_prior = np.log(self.w_prior_marius(w) + 1e-5)
+		log_prior = np.log(self.w_prior(w) + 1e-5)
+		# log_prior = np.log(self.w_prior_marius(w) + 1e-5)
 
 		return loglik + log_prior, loglik, log_prior
 
