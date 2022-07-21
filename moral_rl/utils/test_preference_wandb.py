@@ -302,7 +302,7 @@ if __name__ == '__main__':
 		for j in range(len(w_posterior_mean)):
 			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
 			wandb.log({'weighted_rew_mean ['+str(j)+']': weighted_rew_mean[j]}, step=i)
-		wandb.log({'distance': distance}, step=i)
+		wandb.log({'distance_to_ratio': distance}, step=i)
 
 		# Reset PPO buffer
 		dataset.reset_trajectories()
