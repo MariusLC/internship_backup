@@ -177,8 +177,8 @@ if __name__ == '__main__':
 	print("mean airl vectorized reward expert = ", vect_rew)
 
 	# test
-	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
-	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=100000, warmup=10000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
+	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=100000, warmup=10000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean_uniform = w_posterior.mean(axis=0)
@@ -272,46 +272,49 @@ if __name__ == '__main__':
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 
+		w_posterior = []
+		w_posterior_temp = w_posterior_mean_uniform
+		for i in range(10):
+			w_posterior_temp = preference_learner.mcmc_test(w_posterior_temp, c["prop_w_mode"], c["posterior_mode"], step=i)
+			np.concatenate((w_posterior, w_posterior_temp))
 
-	w_posterior = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i)
+		w_posterior_mean = w_posterior.mean(axis=0)
+		print("w_posterior_mean = ", w_posterior_mean)
+		if sum(w_posterior_mean) != 0: 
 
-	w_posterior_mean = w_posterior.mean(axis=0)
-	print("w_posterior_mean = ", w_posterior_mean)
-	if sum(w_posterior_mean) != 0: 
+			# making a 1 norm vector from w_posterior
+			w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
 
-		# making a 1 norm vector from w_posterior
-		w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
-
-		# # normalize the vector 
-		# w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
-		
-		print(f'New Posterior Mean {w_posterior_mean}')
-	else :
-		print(f'Keep the current Posterior Mean {w_posterior_mean}')
-
-
-	weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
-	weighted_obj_rew_sum = w_posterior_mean * obj_rew_norm_sum[:len(w_posterior_mean)]
-	weighted_obj_rew_linalg = w_posterior_mean * obj_rew_norm_linalg[:len(w_posterior_mean)]
-	weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
-
-	distance_obj_sum = sum([(weighted_obj_rew_sum[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
-	distance_obj_linalg = sum([(weighted_obj_rew_linalg[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
-	distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
-
-	# kl_a_sum = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
-	# kl_b_linalg = st.entropy(ret_b_linalg_normalized, RATIO_linalg_NORMALIZED)
+			# # normalize the vector 
+			# w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
+			
+			print(f'New Posterior Mean {w_posterior_mean}')
+		else :
+			print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
 
-	for j in range(len(w_posterior_mean)):
-		wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
-		# wandb.log({'weighted_obj_rew ['+str(j)+']': weighted_obj_rew[j]}, step=i)
-		# wandb.log({'weighted_obj_rew_sum ['+str(j)+']': weighted_obj_rew_sum[j]}, step=i)
-		# wandb.log({'weighted_obj_rew_linalg ['+str(j)+']': weighted_obj_rew_linalg[j]}, step=i)
-		wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=i)
-	wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=i)
-	wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=i)
-	wandb.log({'distance_airl_to_ratio': distance_airl}, step=i)
+		weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
+		weighted_obj_rew_sum = w_posterior_mean * obj_rew_norm_sum[:len(w_posterior_mean)]
+		weighted_obj_rew_linalg = w_posterior_mean * obj_rew_norm_linalg[:len(w_posterior_mean)]
+		weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
+
+		distance_obj_sum = sum([(weighted_obj_rew_sum[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+		distance_obj_linalg = sum([(weighted_obj_rew_linalg[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+		distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+
+		# kl_a_sum = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
+		# kl_b_linalg = st.entropy(ret_b_linalg_normalized, RATIO_linalg_NORMALIZED)
+
+
+		for j in range(len(w_posterior_mean)):
+			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
+			# wandb.log({'weighted_obj_rew ['+str(j)+']': weighted_obj_rew[j]}, step=i)
+			# wandb.log({'weighted_obj_rew_sum ['+str(j)+']': weighted_obj_rew_sum[j]}, step=i)
+			# wandb.log({'weighted_obj_rew_linalg ['+str(j)+']': weighted_obj_rew_linalg[j]}, step=i)
+			wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=i)
+		wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=i)
+		wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=i)
+		wandb.log({'distance_airl_to_ratio': distance_airl}, step=i)
 
 
 		# # Reset PPO buffer
