@@ -177,8 +177,8 @@ if __name__ == '__main__':
 	print("mean airl vectorized reward expert = ", vect_rew)
 
 	# test
-	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
-	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=100000, warmup=10000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean_uniform = w_posterior.mean(axis=0)
