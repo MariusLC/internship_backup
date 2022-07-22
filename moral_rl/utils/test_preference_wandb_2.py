@@ -281,6 +281,7 @@ if __name__ == '__main__':
 			else :
 				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
 			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
+			w_posterior_mean_temp = w_posterior_mean_temp/np.linalg.norm(w_posterior_mean_temp)
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)

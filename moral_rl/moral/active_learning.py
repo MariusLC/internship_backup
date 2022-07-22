@@ -266,6 +266,9 @@ class PreferenceLearner:
 		mean_prob_w_new_log_lik = 0
 		mean_prob_w_new_log_prior = 0
 
+
+		print("w_initial = "+str(w_init)+" outside prior space = "+str(self.outside_prior_space(w_init)))
+
 		for i in range(1, self.warmup + self.n_iter + 1):
 			w_new = None
 			if prop_w_mode == "moral":
