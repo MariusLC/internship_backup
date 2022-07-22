@@ -274,9 +274,9 @@ if __name__ == '__main__':
 
 		w_posterior = []
 		w_posterior_mean_temp = w_posterior_mean_uniform
-		for i in range(10):
+		for j in range(10):
 			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i)
-			if i == 0 : 
+			if j == 0 : 
 				w_posterior = w_posterior_temp
 			else :
 				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
