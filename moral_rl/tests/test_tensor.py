@@ -7,7 +7,7 @@ import numpy as np
 # from tqdm import tqdm
 import torch
 # import matplotlib.pyplot as plt
-# import wandb
+import wandb
 # import argparse
 # import yaml
 # import os
@@ -78,57 +78,57 @@ if __name__ == '__main__':
 
 
 
-	w = [0.5, 0.5, 0.5]
-	nb_samples = 10000
-	# gaussian_samples = np.random.normal(w, 1, nb_samples)
-	cov = [[1 for i in range(len(w))] for j in range(len(w))]
-	cov = np.ones((len(w), len(w)))
-	print(cov)
-	# cov = np.eye(len(w))
-	gaussian_samples = np.random.multivariate_normal(w, cov, nb_samples)
-	moral_samples = st.multivariate_normal(mean=w, cov=0.5).rvs(size=nb_samples)
+	# w = [0.5, 0.5, 0.5]
+	# nb_samples = 10000
+	# # gaussian_samples = np.random.normal(w, 1, nb_samples)
+	# cov = [[1 for i in range(len(w))] for j in range(len(w))]
+	# cov = np.ones((len(w), len(w)))
+	# print(cov)
+	# # cov = np.eye(len(w))
+	# gaussian_samples = np.random.multivariate_normal(w, cov, nb_samples)
+	# moral_samples = st.multivariate_normal(mean=w, cov=0.5).rvs(size=nb_samples)
 
-	gaussian_mean = np.mean(gaussian_samples, axis=0)
-	moral_mean = np.mean(moral_samples,  axis=0)
-	gaussian_std = np.std(gaussian_samples, axis=0)
-	moral_std = np.std(moral_samples,  axis=0)
+	# gaussian_mean = np.mean(gaussian_samples, axis=0)
+	# moral_mean = np.mean(moral_samples,  axis=0)
+	# gaussian_std = np.std(gaussian_samples, axis=0)
+	# moral_std = np.std(moral_samples,  axis=0)
 
-	nb_g_positive = 0
-	nb_m_positive = 0
-	nb_g_len1 = 0
-	nb_m_len1 = 0
-	nb_g_pos_len1 = 0
-	nb_m_pos_len1 = 0
-	for i in range(nb_samples):
-		if (gaussian_samples[i]>0).all():
-			nb_g_positive += 1
-			if np.linalg.norm(gaussian_samples[i])<=1:
-				nb_g_pos_len1 += 1
-		if (moral_samples[i]>0).all():
-			nb_m_positive += 1
-			if np.linalg.norm(moral_samples[i])<=1:
-				nb_m_pos_len1 += 1
-		if np.linalg.norm(gaussian_samples[i])<=1:
-			nb_g_len1 += 1
-		if np.linalg.norm(moral_samples[i])<=1:
-			nb_m_len1 += 1
+	# nb_g_positive = 0
+	# nb_m_positive = 0
+	# nb_g_len1 = 0
+	# nb_m_len1 = 0
+	# nb_g_pos_len1 = 0
+	# nb_m_pos_len1 = 0
+	# for i in range(nb_samples):
+	# 	if (gaussian_samples[i]>0).all():
+	# 		nb_g_positive += 1
+	# 		if np.linalg.norm(gaussian_samples[i])<=1:
+	# 			nb_g_pos_len1 += 1
+	# 	if (moral_samples[i]>0).all():
+	# 		nb_m_positive += 1
+	# 		if np.linalg.norm(moral_samples[i])<=1:
+	# 			nb_m_pos_len1 += 1
+	# 	if np.linalg.norm(gaussian_samples[i])<=1:
+	# 		nb_g_len1 += 1
+	# 	if np.linalg.norm(moral_samples[i])<=1:
+	# 		nb_m_len1 += 1
 
-	print("gaussian_mean = ", gaussian_mean)
-	print("moral_mean = ", moral_mean)
-	print("gaussian_std = ", gaussian_std)
-	print("moral_std = ", moral_std)
-	print("nb_g_positive = ", nb_g_positive)
-	print("nb_m_positive = ", nb_m_positive)
-	print("nb_g_len1 = ", nb_g_len1)
-	print("nb_m_len1 = ", nb_m_len1)
-	print("nb_g_pos_len1 = ", nb_g_pos_len1)
-	print("nb_m_pos_len1 = ", nb_m_pos_len1)
+	# print("gaussian_mean = ", gaussian_mean)
+	# print("moral_mean = ", moral_mean)
+	# print("gaussian_std = ", gaussian_std)
+	# print("moral_std = ", moral_std)
+	# print("nb_g_positive = ", nb_g_positive)
+	# print("nb_m_positive = ", nb_m_positive)
+	# print("nb_g_len1 = ", nb_g_len1)
+	# print("nb_m_len1 = ", nb_m_len1)
+	# print("nb_g_pos_len1 = ", nb_g_pos_len1)
+	# print("nb_m_pos_len1 = ", nb_m_pos_len1)
 
-	for i in range(len(w)):
-		plt.hist(np.histogram(gaussian_samples[i]), bins='auto')
-		plt.show()
-		plt.hist(np.histogram(moral_samples[i]), bins='auto')
-		plt.show()
+	# for i in range(len(w)):
+	# 	plt.hist(np.histogram(gaussian_samples[i]), bins='auto')
+	# 	plt.show()
+	# 	plt.hist(np.histogram(moral_samples[i]), bins='auto')
+	# 	plt.show()
 
 
 	# q = st.multivariate_normal(mean=w1, cov=1).pdf(w2)
@@ -137,3 +137,10 @@ if __name__ == '__main__':
 	# 	print(i)
 	# 	if i%2==0:
 	# 		time.sleep(30)
+
+	wandb.init(project='Test_print_wandb',
+		config={"test" : 3})
+
+	for i in range(10):
+		for j in range(10):
+			wandb.log({'test': j}, step=i)

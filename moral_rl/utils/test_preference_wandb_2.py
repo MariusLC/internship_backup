@@ -117,7 +117,7 @@ if __name__ == '__main__':
 
 	c = load_config(CONFIG_PATH, CONFIG_FILENAME)
 
-	wandb.init(project='Test_preferences',
+	wandb.init(project='Test_preferences_2',
 		config=c)
 	config=wandb.config
 
@@ -177,7 +177,7 @@ if __name__ == '__main__':
 	print("mean airl vectorized reward expert = ", vect_rew)
 
 	# test
-	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc)
+	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=100000, warmup=10000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
@@ -274,21 +274,33 @@ if __name__ == '__main__':
 
 		w_posterior = []
 		w_posterior_mean_temp = w_posterior_mean_uniform
-		for j in range(10):
-			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i)
+		nb_mcmc = 10
+		for j in range(nb_mcmc):
+			print("w_posterior_mean_temp = ", w_posterior_mean_temp)
+			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
 			if j == 0 : 
 				w_posterior = w_posterior_temp
 			else :
 				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
 			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
-			w_posterior_mean_temp = w_posterior_mean_temp/np.linalg.norm(w_posterior_mean_temp)
+			a = w_posterior_mean_temp
+			w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
+			print("NORM = ", np.linalg.norm(w_posterior_mean_temp))
+			if np.linalg.norm(w_posterior_mean_temp) > 1:
+				print(a)
+			if (w_posterior_mean_temp <0).any():
+				print("\n negative objective")
+				print(a)
+				print(w_posterior_mean_temp)
+				print(w_posterior_temp)
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
 		if sum(w_posterior_mean) != 0: 
 
 			# making a 1 norm vector from w_posterior
-			w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+			# w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+			w_posterior_mean = w_posterior_mean/(np.linalg.norm(w_posterior_mean) + 1e-15)
 
 			# # normalize the vector 
 			# w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
@@ -312,14 +324,11 @@ if __name__ == '__main__':
 
 
 		for j in range(len(w_posterior_mean)):
-			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i)
-			# wandb.log({'weighted_obj_rew ['+str(j)+']': weighted_obj_rew[j]}, step=i)
-			# wandb.log({'weighted_obj_rew_sum ['+str(j)+']': weighted_obj_rew_sum[j]}, step=i)
-			# wandb.log({'weighted_obj_rew_linalg ['+str(j)+']': weighted_obj_rew_linalg[j]}, step=i)
-			wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=i)
-		wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=i)
-		wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=i)
-		wandb.log({'distance_airl_to_ratio': distance_airl}, step=i)
+			wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=i*nb_mcmc)
+			wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=i*nb_mcmc)
+		wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=i*nb_mcmc)
+		wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=i*nb_mcmc)
+		wandb.log({'distance_airl_to_ratio': distance_airl}, step=i*nb_mcmc)
 
 
 		# # Reset PPO buffer

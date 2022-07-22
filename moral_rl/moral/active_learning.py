@@ -53,7 +53,7 @@ class PreferenceLearner:
 		self.cpt_nb_steps += 1
 		if np.linalg.norm(w) <=1 and np.all(np.array(w) >= 0):
 			self.cpt_pior += 1
-			return 1e1000
+			return 1e200
 		else:
 			return 0
 
@@ -268,6 +268,7 @@ class PreferenceLearner:
 
 
 		print("w_initial = "+str(w_init)+" outside prior space = "+str(self.outside_prior_space(w_init)))
+		print("posterior = "+str(self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_init, self.returns, self.temperature, self.prior)))
 
 		for i in range(1, self.warmup + self.n_iter + 1):
 			w_new = None
@@ -320,14 +321,21 @@ class PreferenceLearner:
 				
 			acceptance_prob = min(1, acceptance_ratio)
 
-			if acceptance_prob > st.uniform(0, 1).rvs():
+			rand = st.uniform(0, 1).rvs()
+			if acceptance_prob > rand:
+				if self.outside_prior_space(w_new):
+					self.cpt_prior_and_accepted += 1
+					print("\n\n\nNEW ACCEPTED OUTSIDE : " + str(w_new) + " with probas = " + str([prob_new, loglik_new, log_prior_new]))
+					print("COMPARED TO CURR : " + str(w_curr) + " with probas = " + str([prob_curr, loglik_curr, log_prior_curr]))
+					print("ACCEPTANCE RATIO WAS : ", acceptance_prob)
+					print("rand WAS : ", rand)
+					time.sleep(20)
 				w_curr = w_new
 				# prob_curr = prob_new ?
 				accept_cum = accept_cum + 1
 				w_arr.append(w_new)
 				self.cpt_new_acc += 1
-				if self.outside_prior_space(w_new):
-					self.cpt_prior_and_accepted += 1
+				
 			else:
 				w_arr.append(w_curr)
 

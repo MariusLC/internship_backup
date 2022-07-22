@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean = w_posterior.mean(axis=0)
-	w_posterior_mean_uniform = w_posterior_mean
+	w_posterior_mean_uniform = w_posterior_mean/(np.linalg.norm(w_posterior_mean) + 1e-15)
 
 	HOF = []
 
@@ -299,7 +299,8 @@ if __name__ == '__main__':
 		if sum(w_posterior_mean) != 0: 
 
 			# making a 1 norm vector from w_posterior
-			w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+			# w_posterior_mean = w_posterior_mean/np.linalg.norm(w_posterior_mean)
+			w_posterior_mean = w_posterior_mean/(np.linalg.norm(w_posterior_mean) + 1e-15)
 
 			# # normalize the vector 
 			# w_posterior_mean = w_posterior_mean/np.sum(w_posterior_mean)
