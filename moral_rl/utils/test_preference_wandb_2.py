@@ -273,10 +273,14 @@ if __name__ == '__main__':
 
 
 		w_posterior = []
-		w_posterior_temp = w_posterior_mean_uniform
+		w_posterior_mean_temp = w_posterior_mean_uniform
 		for i in range(10):
-			w_posterior_temp = preference_learner.mcmc_test(w_posterior_temp, c["prop_w_mode"], c["posterior_mode"], step=i)
-			np.concatenate((w_posterior, w_posterior_temp))
+			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i)
+			if i == 0 : 
+				w_posterior = w_posterior_temp
+			else :
+				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
+			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
