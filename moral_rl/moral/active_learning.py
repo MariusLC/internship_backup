@@ -329,7 +329,7 @@ class PreferenceLearner:
 					print("COMPARED TO CURR : " + str(w_curr) + " with probas = " + str([prob_curr, loglik_curr, log_prior_curr]))
 					print("ACCEPTANCE RATIO WAS : ", acceptance_prob)
 					print("rand WAS : ", rand)
-					time.sleep(20)
+					# time.sleep(20)
 				w_curr = w_new
 				# prob_curr = prob_new ?
 				accept_cum = accept_cum + 1
