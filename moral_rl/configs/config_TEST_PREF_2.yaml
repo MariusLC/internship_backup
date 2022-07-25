@@ -32,6 +32,7 @@ ratio: [1, 3, 1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 normalization_eth_sett: "v6"
 normalization_non_eth_sett: "v3"
+n_best: 100
 
 # pref
 n_queries: 200
@@ -51,19 +52,21 @@ posterior_mode: "basic_temperature"
 mcmc_type: parallel
 # mcmc_type: concat
 
-mcmc_log: final
-# mcmc_log: active
+# mcmc_log: final
+mcmc_log: active
 
 prop_w_mode: "moral"
-temperature_mcmc: 3
+temperature_mcmc: 2
 cov_range: 0.5
 prior: "marius"
 # prior: "moral"
 n_workers: 12
+nb_mcmc: 1
 batchsize_ppo: 120
 gamma: 0.999
 dimension_pref: 3
 agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
+demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk"
 
 
 #######
