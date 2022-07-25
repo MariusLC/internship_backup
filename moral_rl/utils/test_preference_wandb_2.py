@@ -325,7 +325,7 @@ if __name__ == '__main__':
 						print("\n negative objective")
 						print(w_posterior_mean_temp)
 
-		elif config.mcmc_log == "only_final" and i == c["n_queries"]:
+		elif config.mcmc_log == "only_final" and i == c["n_queries"]-1:
 			if config.mcmc_type == "parallel":
 				for j in range(nb_mcmc):
 					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
@@ -373,7 +373,7 @@ if __name__ == '__main__':
 					if (w_posterior_mean_temp <0).any():
 						print("\n negative objective")
 						print(w_posterior_mean_temp)
-						
+
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
