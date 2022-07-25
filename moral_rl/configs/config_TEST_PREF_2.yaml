@@ -51,8 +51,8 @@ posterior_mode: "basic_temperature"
 # mcmc_type: parallel
 mcmc_type: concat
 
-mcmc_log: final
-# mcmc_log: active
+# mcmc_log: final
+mcmc_log: active
 
 prop_w_mode: "moral"
 temperature_mcmc: 3
