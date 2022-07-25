@@ -361,7 +361,7 @@ class PreferenceLearner:
 		mean_prob_w_new_log_prior = mean_prob_w_new_log_prior / nb_steps
 
 		if step != None:
-			print("step")
+			# print("step")
 			wandb.log({"nb new w outside prior space": self.cpt_prior_new_w}, step=step)
 			wandb.log({"nb accepted oustide prior space": self.cpt_prior_and_accepted}, step=step)
 			wandb.log({"nb new w inside prior space": nb_steps - self.cpt_prior_new_w}, step=step)
