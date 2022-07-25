@@ -275,24 +275,54 @@ if __name__ == '__main__':
 		w_posterior = []
 		w_posterior_mean_temp = w_posterior_mean_uniform
 		nb_mcmc = 10
-		for j in range(nb_mcmc):
-			print("w_posterior_mean_temp = ", w_posterior_mean_temp)
-			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
-			if j == 0 : 
+
+		if config.mcmc_type == "parallel":
+			for j in range(nb_mcmc):
+				w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
+				if j == 0 : 
+					w_posterior = w_posterior_temp
+				else :
+					w_posterior = np.concatenate((w_posterior, w_posterior_temp))
+				w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
+				# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
+
+				print("NORM = ", np.linalg.norm(w_posterior_mean_temp))
+				if np.linalg.norm(w_posterior_mean_temp) > 1:
+					print(w_posterior_mean_temp)
+				if (w_posterior_mean_temp <0).any():
+					print("\n negative objective")
+					print(w_posterior_mean_temp)
+
+		elif config.mcmc_type == "successive":
+			for j in range(nb_mcmc):
+				w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
 				w_posterior = w_posterior_temp
-			else :
-				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
-			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
-			a = w_posterior_mean_temp
-			w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
-			print("NORM = ", np.linalg.norm(w_posterior_mean_temp))
-			if np.linalg.norm(w_posterior_mean_temp) > 1:
-				print(a)
-			if (w_posterior_mean_temp <0).any():
-				print("\n negative objective")
-				print(a)
-				print(w_posterior_mean_temp)
-				print(w_posterior_temp)
+				w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
+				# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
+
+				print("NORM = ", np.linalg.norm(w_posterior_mean_temp))
+				if np.linalg.norm(w_posterior_mean_temp) > 1:
+					print(w_posterior_mean_temp)
+				if (w_posterior_mean_temp <0).any():
+					print("\n negative objective")
+					print(w_posterior_mean_temp)
+
+		if config.mcmc_type == "concat":
+			for j in range(nb_mcmc):
+				w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
+				if j == 0 : 
+					w_posterior = w_posterior_temp
+				else :
+					w_posterior = np.concatenate((w_posterior, w_posterior_temp))
+				w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
+				# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
+
+				print("NORM = ", np.linalg.norm(w_posterior_mean_temp))
+				if np.linalg.norm(w_posterior_mean_temp) > 1:
+					print(w_posterior_mean_temp)
+				if (w_posterior_mean_temp <0).any():
+					print("\n negative objective")
+					print(w_posterior_mean_temp)
 
 		w_posterior_mean = w_posterior.mean(axis=0)
 		print("w_posterior_mean = ", w_posterior_mean)
