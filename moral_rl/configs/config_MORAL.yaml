@@ -12,7 +12,7 @@ moral_path: "moral_agents/"
 model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
-special_name_agent: "T2_marius_prior_norm_v6_v3"
+special_name_agent: "T3_marius_prior_conv03_norm_v6_v3"
 # special_name_agent: "Q_on_ACTIONS_from_scratch_T2_marius_prior_norm_v6_v3"
 
 # new stuff about normalization
