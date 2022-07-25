@@ -167,8 +167,8 @@ if __name__ == '__main__':
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
 	# test
-	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
-	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
+	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
+	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	
 	obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
 	obj_rew_norm_sum = obj_rew / sum(obj_rew)
@@ -274,7 +274,8 @@ if __name__ == '__main__':
 
 		w_posterior = []
 		w_posterior_mean_temp = w_posterior_mean_uniform
-		nb_mcmc = 10
+		# nb_mcmc = 10
+		nb_mcmc = 1
 		if config.mcmc_log == "active":
 			if config.mcmc_type == "parallel":
 				for j in range(nb_mcmc):
