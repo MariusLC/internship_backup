@@ -47,8 +47,8 @@ query_selection: "random"
 # posterior_mode: "basic"
 posterior_mode: "basic_temperature"
 
-mcmc_type: successive
-# mcmc_type: parallel
+# mcmc_type: successive
+mcmc_type: parallel
 # mcmc_type: concat
 
 
