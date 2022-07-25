@@ -177,8 +177,8 @@ if __name__ == '__main__':
 	print("mean airl vectorized reward expert = ", vect_rew)
 
 	# test
-	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
-	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean_uniform = w_posterior.mean(axis=0)
@@ -221,10 +221,16 @@ if __name__ == '__main__':
 		states = next_states.copy()
 		states_tensor = torch.tensor(states).float().to(device)
 
-	print("nb_traj = ", len(dataset.trajectories))
-	volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+	# print("nb_traj = ", len(dataset.trajectories))
+	# volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+	# mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
+	# volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
+
+	# log objective rewards into volume_buffer before normalizing it
+	volume_buffer.log_statistics_sum(dataset.log_returns_actions())
+	# objective_logs_sum = dataset.log_returns_sum()
 	mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
-	volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
+	volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_actions())
 
 	for i in range(c["n_queries"]):
 

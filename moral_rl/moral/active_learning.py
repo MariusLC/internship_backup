@@ -268,7 +268,8 @@ class PreferenceLearner:
 
 
 		print("w_initial = "+str(w_init)+" outside prior space = "+str(self.outside_prior_space(w_init)))
-		print("posterior = "+str(self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_init, self.returns, self.temperature, self.prior)))
+		post, log_lik, log_prior = self.posterior_log_prob_basic_log_lik_temperature(self.deltas, self.prefs, w_init, self.returns, self.temperature, self.prior)
+		print("posterior = "+str(round(post))+" , log_lik = "+str(round(log_lik))+ " , log_prior = "+str(round(log_prior)))
 
 		for i in range(1, self.warmup + self.n_iter + 1):
 			w_new = None
