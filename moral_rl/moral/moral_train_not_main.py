@@ -51,11 +51,12 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'lambd': lambd,
             'eth_norm': eth_norm,
             'non_eth_norm': non_eth_norm,
-            'temperature_mcmc' : 2,
+            'temperature_mcmc' : 3,
             'volumeVsEUS' : True, # False = Akrour
             'prop_w_mode': "moral", 
             'posterior_mode' : "basic_temperature",
             'prior': "marius",
+            'cov_range': 0.3,
             },
         reinit=True)
     config = wandb.config
@@ -125,7 +126,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Active Learning
-    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, prior=config.prior)
+    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range,prior=config.prior)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
