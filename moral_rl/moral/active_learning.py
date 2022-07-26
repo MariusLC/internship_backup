@@ -587,6 +587,23 @@ class VolumeBuffer:
 
 
 
+	def sample_return_pair_no_batch_reset_no_double_zeros(self):
+		new_returns_a = [0]
+		new_returns_b = [0]
+		while(all(new_returns_a == 0) and all(new_returns_b == 0)):
+			rand_idx = np.random.choice(np.arange(len(self.observed_logs_sum)), 2, replace=False)
+			new_returns_a = self.observed_logs_sum[rand_idx[0]]
+			new_returns_b = self.observed_logs_sum[rand_idx[1]]
+			
+
+		# Also return ground truth logs for automatic preferences
+		if self.auto_pref:
+			logs_a = self.objective_logs_sum[rand_idx[0]]
+			logs_b = self.objective_logs_sum[rand_idx[1]]
+			return np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
+		else:
+			return np.array(new_returns_a), np.array(new_returns_b)
+
 
 	def sample_return_pair_no_batch_reset(self):
 		rand_idx = np.random.choice(np.arange(len(self.observed_logs_sum)), 2, replace=False)

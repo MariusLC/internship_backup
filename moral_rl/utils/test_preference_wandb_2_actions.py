@@ -150,6 +150,7 @@ if __name__ == '__main__':
 	# agent_test_name = "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
 	agent_test = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions)
 	agent_test.load_state_dict(torch.load(c["agent_test_name"], map_location=torch.device('cpu')))
+	traj_test = pickle.load(open(config.demos_filename, 'rb'))
 
 	#Expert i
 	discriminator_list = []
@@ -366,6 +367,12 @@ if __name__ == '__main__':
 			wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*nb_mcmc)
 			wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*nb_mcmc)
 
+			# NEW WEIGHT QUALITY HEURISTIC
+			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval_10 = evaluate_weights(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
+
 
 		elif config.mcmc_log == "final" and i == c["n_queries"]-1:
 			if config.mcmc_type == "parallel":
@@ -451,6 +458,12 @@ if __name__ == '__main__':
 			wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*nb_mcmc)
 			wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*nb_mcmc)
 			wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*nb_mcmc)
+
+			# NEW WEIGHT QUALITY HEURISTIC
+			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval_10 = evaluate_weights(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 
 
 		# # Reset PPO buffer

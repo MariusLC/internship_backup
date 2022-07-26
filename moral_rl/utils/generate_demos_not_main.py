@@ -58,12 +58,13 @@ def generate_demos_1_moral_agent(env_id, nb_demos, n_workers, gamma, expert_file
         discriminator_list[i].load_state_dict(torch.load(discriminators_filenames[i], map_location=torch.device('cpu')))
         generator_list.append(PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device))
         generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
-        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], env_id, gamma=0.999, steps=10000)
-        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], env_id, gamma=0.999, steps=1000) # tests
+        # args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], env_id, gamma=0.999, steps=10000)
+        args = discriminator_list[i].estimate_normalisation_points(eth_norm, rand_agent, generator_list[i], env_id, gamma=0.999, steps=100) # tests
         discriminator_list[i].set_eval()
 
     dataset = TrajectoryDataset(batch_size=nb_demos, n_workers=n_workers)
-    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, env_id, steps=10000)
+    # dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, env_id, steps=10000)
+    dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, env_id, steps=100)
 
     # for t in tqdm(range((max_steps-1)*nb_demos)): # while train_ready = false ?
     batch_full = False
@@ -90,8 +91,11 @@ def generate_demos_1_moral_agent(env_id, nb_demos, n_workers, gamma, expert_file
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
 
+    print("save = ", demos_filename)
     dataset.compute_only_vectorized_rewards(non_eth_norm)
+    print("save = ", demos_filename)
     save_demos(dataset.trajectories, demos_filename)
+    print("save = ", demos_filename)
 
 def generate_demos_1_expert(env_id, nb_demos, expert_filename, demos_filename):
 
