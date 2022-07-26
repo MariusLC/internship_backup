@@ -190,18 +190,18 @@ if __name__ == '__main__':
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
 	# test
-	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
-	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
+	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
+	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	
-	obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
+	obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=10000)
 	obj_rew_norm_sum = obj_rew / sum(obj_rew)
 	obj_rew_norm_linalg = obj_rew / np.linalg.norm(obj_rew)
 	print("mean objective reward expert = ", obj_rew)
 	print("mean airl vectorized reward expert = ", vect_rew)
 
 	# test
-	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
-	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean_uniform = w_posterior.mean(axis=0)
