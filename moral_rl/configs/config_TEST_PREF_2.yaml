@@ -57,7 +57,7 @@ mcmc_log: active
 
 prop_w_mode: "moral"
 temperature_mcmc: 2
-cov_range: 0.3
+cov_range: 1
 prior: "marius"
 # prior: "moral"
 n_workers: 12
