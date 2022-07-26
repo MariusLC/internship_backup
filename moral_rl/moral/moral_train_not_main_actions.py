@@ -55,7 +55,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             # 'moral_agent_filename' : "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
             'prop_w_mode': "moral", 
             'posterior_mode' : "basic_temperature",
-            'temperature_mcmc' : 2,
+            'temperature_mcmc' : 3,
             'prior': "marius",
             'cov_range': 0.1,
             },
