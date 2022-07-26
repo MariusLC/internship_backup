@@ -32,6 +32,32 @@ def evaluate_weights(n_best, w, trajectories, dimension_pref, RATIO_NORMALIZED):
 	mean_entropy /= n_best
 	return mean_entropy
 
+def check_null(ret_a, ret_b):
+	if all(ret_b == 0) and any(ret_a > 0):
+		return 1
+	elif all(ret_a == 0) and any(ret_b > 0):
+		return -1
+	else:
+		return 0.5
+
+def query_pair_no_null(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED):
+	ret_a_copy = np.array(ret_a.copy())[:dimension_pref]+1e-5
+	ret_b_copy = np.array(ret_b.copy())[:dimension_pref]+1e-5
+	ret_a_normalized = ret_a_copy/sum(ret_a_copy)
+	ret_b_normalized = ret_b_copy/sum(ret_b_copy)
+	kl_a = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
+	kl_b = st.entropy(ret_b_normalized, RATIO_NORMALIZED)
+	check = check_null(ret_a, ret_b)
+	if check != 0.5:
+		return check, kl_a, kl_b
+	else :
+		if kl_a < kl_b:
+			preference = 1
+		elif kl_b < kl_a:
+			preference = -1
+		else:
+			preference = 1 if np.random.rand() < 0.5 else -1
+		return preference, kl_a, kl_b
 
 def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum"):
 	print("query_pair = "+str(ret_a)+" , "+str(ret_b))
@@ -190,10 +216,11 @@ if __name__ == '__main__':
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
 	# test
-	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
-	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
+	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
+	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	
-	obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=10000)
+	obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
+	# obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=10000)
 	obj_rew_norm_sum = obj_rew / sum(obj_rew)
 	obj_rew_norm_linalg = obj_rew / np.linalg.norm(obj_rew)
 	print("mean objective reward expert = ", obj_rew)
@@ -289,6 +316,7 @@ if __name__ == '__main__':
 
 		# go query the preference expert
 		preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum")
+		preference, kl_a, kl_b = query_pair_no_null(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED)
 		print(preference)
 
 		HOF.append((kl_a, ret_a, observed_rew_a))
@@ -396,6 +424,7 @@ if __name__ == '__main__':
 
 
 		elif config.mcmc_log == "final" and i == c["n_queries"]-1:
+			print("final")
 			if config.mcmc_type == "parallel":
 				for j in range(config.nb_mcmc):
 					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
