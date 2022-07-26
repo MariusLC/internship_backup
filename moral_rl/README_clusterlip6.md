@@ -46,7 +46,7 @@ du pc au cluster :
 	cp -r ~/Documents/backup/moral_rl/generated_data/v1/rand/ generated_data/v1/
 	cp -r ~/Documents/backup/moral_rl/generated_data/v3/pref_model/ generated_data/v3/
 
-	cp "~/net/big/lechapelier/generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk" "generated_data/v3/moral_agents/" 
+	cp "/net/big/lechapelier/internship_backup/moral_rl/generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk" "generated_data/v3/moral_agents/" 
 
 du cluster au pc :
 	cp -r generated_data/v1/rand/ ~/Documents/backup/moral_rl/generated_data/v1/

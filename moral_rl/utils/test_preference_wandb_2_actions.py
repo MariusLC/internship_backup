@@ -9,6 +9,28 @@ from utils.load_config import *
 from moral.airl import *
 from moral.active_learning import *
 from tqdm import tqdm
+import pickle
+
+def evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED):
+	ret = np.array(traj["returns"]).sum(axis=0)[:dimension_pref]
+	ret_normalized = (ret+1e-5)/sum(ret)
+	kl = st.entropy(ret_normalized, RATIO_NORMALIZED)
+	return kl
+
+def evaluate_weights(n_best, w, trajectories, dimension_pref, RATIO_NORMALIZED):
+	trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
+	best = trajectories[:n_best]
+	mean_entropy = 0
+	for i in range(10):
+		print("vec rew = ", np.array(best[i]["vectorized_rewards"]).sum(axis=0))
+		print("dot = ", np.dot(np.array(best[i]["vectorized_rewards"]).sum(axis=0), w))
+		print("vec ret = ", np.array(best[i]["returns"]).sum(axis=0))
+		print("eval = ", evaluate_traj(best[i], dimension_pref, RATIO_NORMALIZED))
+	time.sleep(10)
+	for traj in best:
+		mean_entropy += evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
+	mean_entropy /= n_best
+	return mean_entropy
 
 
 def query_pair(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum"):
@@ -234,7 +256,6 @@ if __name__ == '__main__':
 	volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_actions())
 
 	for i in range(c["n_queries"]):
-
 		if c["query_selection"] == "random":
 			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset()
 		elif c["query_selection"] == "compare_EUS":
@@ -279,13 +300,13 @@ if __name__ == '__main__':
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 
-		w_posterior = []
+		# w_posterior = []
 		w_posterior_mean_temp = w_posterior_mean_uniform
-		nb_mcmc = 10
+		# config.nb_mcmc = 1
 		if config.mcmc_log == "active":
 			if config.mcmc_type == "parallel":
-				for j in range(nb_mcmc):
-					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
+				for j in range(config.nb_mcmc):
+					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
 					if j == 0 : 
 						w_posterior = w_posterior_temp
 					else :
@@ -301,8 +322,8 @@ if __name__ == '__main__':
 						print(w_posterior_mean_temp)
 
 			elif config.mcmc_type == "successive":
-				for j in range(nb_mcmc):
-					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
+				for j in range(config.nb_mcmc):
+					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
 					w_posterior = w_posterior_temp
 					w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
 					# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
@@ -315,8 +336,8 @@ if __name__ == '__main__':
 						print(w_posterior_mean_temp)
 
 			elif config.mcmc_type == "concat":
-				for j in range(nb_mcmc):
-					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
+				for j in range(config.nb_mcmc):
+					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
 					if j == 0 : 
 						w_posterior = w_posterior_temp
 					else :
@@ -361,11 +382,11 @@ if __name__ == '__main__':
 
 
 			for j in range(len(w_posterior_mean)):
-				wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*nb_mcmc)
-				wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*nb_mcmc)
-			wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*nb_mcmc)
-			wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*nb_mcmc)
-			wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*nb_mcmc)
+				wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*config.nb_mcmc)
+				wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
 
 			# NEW WEIGHT QUALITY HEURISTIC
 			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
@@ -376,8 +397,8 @@ if __name__ == '__main__':
 
 		elif config.mcmc_log == "final" and i == c["n_queries"]-1:
 			if config.mcmc_type == "parallel":
-				for j in range(nb_mcmc):
-					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
+				for j in range(config.nb_mcmc):
+					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
 					if j == 0 : 
 						w_posterior = w_posterior_temp
 					else :
@@ -393,8 +414,8 @@ if __name__ == '__main__':
 						print(w_posterior_mean_temp)
 
 			elif config.mcmc_type == "successive":
-				for j in range(nb_mcmc):
-					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
+				for j in range(config.nb_mcmc):
+					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
 					w_posterior = w_posterior_temp
 					w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
 					# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
@@ -407,8 +428,8 @@ if __name__ == '__main__':
 						print(w_posterior_mean_temp)
 
 			elif config.mcmc_type == "concat":
-				for j in range(nb_mcmc):
-					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*nb_mcmc+j)
+				for j in range(config.nb_mcmc):
+					w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
 					if j == 0 : 
 						w_posterior = w_posterior_temp
 					else :
@@ -453,11 +474,11 @@ if __name__ == '__main__':
 
 
 			for j in range(len(w_posterior_mean)):
-				wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*nb_mcmc)
-				wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*nb_mcmc)
-			wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*nb_mcmc)
-			wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*nb_mcmc)
-			wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*nb_mcmc)
+				wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*config.nb_mcmc)
+				wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
 
 			# NEW WEIGHT QUALITY HEURISTIC
 			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)

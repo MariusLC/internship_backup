@@ -91,11 +91,8 @@ def generate_demos_1_moral_agent(env_id, nb_demos, n_workers, gamma, expert_file
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
 
-    print("save = ", demos_filename)
     dataset.compute_only_vectorized_rewards(non_eth_norm)
-    print("save = ", demos_filename)
     save_demos(dataset.trajectories, demos_filename)
-    print("save = ", demos_filename)
 
 def generate_demos_1_expert(env_id, nb_demos, expert_filename, demos_filename):
 
