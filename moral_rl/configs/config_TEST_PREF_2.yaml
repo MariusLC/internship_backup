@@ -39,9 +39,9 @@ n_queries: 200
 nb_query_test: 20
 
 # query_selection: "compare_EUS"
-query_selection: "compare_MORAL"
+# query_selection: "compare_MORAL"
 # query_selection: "compare_EUS"
-# query_selection: "random"
+query_selection: "random"
 
 # posterior_mode: "print"
 # posterior_mode: "moral"
