@@ -58,6 +58,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'temperature_mcmc' : 3,
             'prior': "marius",
             'cov_range': 0.1,
+            'query_selection': "compare_basic_log_lik",
             },
         reinit=True)
     config = wandb.config
@@ -254,14 +255,14 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             #     volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b)
 
             rew_a, rew_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
-            if c["query_selection"] == "random":
+            if config.query_selection == "random":
                 volume_buffer.best_returns = (ret_a, ret_b)
                 volume_buffer.best_delta = ret_a - ret_b
-            elif c["query_selection"] == "compare_EUS":
+            elif config.query_selection == "compare_EUS":
                 volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner, rew_a, rew_b, logs_a, logs_b)
-            elif c["query_selection"] == "compare_MORAL":
+            elif config.query_selection == "compare_MORAL":
                 volume_buffer.compare_MORAL(w_posterior, rew_a, rew_b, logs_a, logs_b)
-            elif c["query_selection"] == "compare_basic_log_lik":
+            elif config.query_selection == "compare_basic_log_lik":
                 volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc, rew_a, rew_b, logs_a, logs_b)
 
             # Reset PPO buffer
