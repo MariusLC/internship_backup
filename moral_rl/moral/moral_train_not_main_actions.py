@@ -139,7 +139,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
         wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=0)
 
     volume_buffer = VolumeBuffer(len(ratio))
-    preference_giver = PreferenceGiverv3(ratio=config.ratio)
+    # preference_giver = PreferenceGiverv3(ratio=config.ratio)
+    preference_giver = PreferenceGiverv3_no_null(ratio=config.ratio)
     # preference_giver = ParetoDominationPreferenceGiverv3(ratio=config.ratio)
 
 
@@ -149,10 +150,11 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
         # Query User
         if t % query_freq == 0 and t > 0:
-            best_delta = volume_buffer.best_delta
+            ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
             # Using ground truth returns for preference elicitation
-            ret_a, ret_b = volume_buffer.best_returns
+            best_delta = volume_buffer.best_delta
+            # ret_a, ret_b = volume_buffer.best_returns
             print(f'Found trajectory pair: {(ret_a, ret_b)}')
             print(f'Corresponding best delta: {best_delta}')
             preference = preference_giver.query_pair(ret_a, ret_b)
@@ -242,14 +244,25 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             #update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
 
             # Sample two random trajectories & compare expected volume removal with best pair
-            if volume_buffer.auto_pref:
-                # new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair()
-                new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
-                volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b, logs_a, logs_b, random=False)
-            else:
-                # new_returns_a, new_returns_b = volume_buffer.sample_return_pair()
-                new_returns_a, new_returns_b = volume_buffer.sample_return_pair_v2()
-                volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b)
+            # if volume_buffer.auto_pref:
+            #     # new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair()
+            #     new_returns_a, new_returns_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
+            #     volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b, logs_a, logs_b, random=False)
+            # else:
+            #     # new_returns_a, new_returns_b = volume_buffer.sample_return_pair()
+            #     new_returns_a, new_returns_b = volume_buffer.sample_return_pair_v2()
+            #     volume_buffer.compare_delta(w_posterior, new_returns_a, new_returns_b)
+
+            rew_a, rew_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
+            if c["query_selection"] == "random":
+                volume_buffer.best_returns = (ret_a, ret_b)
+                volume_buffer.best_delta = ret_a - ret_b
+            elif c["query_selection"] == "compare_EUS":
+                volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner, rew_a, rew_b, logs_a, logs_b)
+            elif c["query_selection"] == "compare_MORAL":
+                volume_buffer.compare_MORAL(w_posterior, rew_a, rew_b, logs_a, logs_b)
+            elif c["query_selection"] == "compare_basic_log_lik":
+                volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc, rew_a, rew_b, logs_a, logs_b)
 
             # Reset PPO buffer
             dataset.reset_trajectories()

@@ -227,8 +227,8 @@ if __name__ == '__main__':
 	print("mean airl vectorized reward expert = ", vect_rew)
 
 	# test
-	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
-	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean_uniform = w_posterior.mean(axis=0)
@@ -315,7 +315,7 @@ if __name__ == '__main__':
 		print("delta = ",delta)
 
 		# go query the preference expert
-		preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum")
+		# preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum")
 		preference, kl_a, kl_b = query_pair_no_null(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED)
 		print(preference)
 

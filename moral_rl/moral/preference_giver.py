@@ -308,6 +308,64 @@ class EthicalParetoThresholdGiverv3:
 			else :
 				return [0.5, 0.5]
 
+def check_null(ret_a, ret_b):
+	if all(ret_b == 0) and any(ret_a > 0):
+		return 1
+	elif all(ret_a == 0) and any(ret_b > 0):
+		return -1
+	else:
+		return 0.5
+
+def query_pair_no_null(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED):
+	ret_a_copy = np.array(ret_a.copy())[:dimension_pref]+1e-5
+	ret_b_copy = np.array(ret_b.copy())[:dimension_pref]+1e-5
+	ret_a_normalized = ret_a_copy/sum(ret_a_copy)
+	ret_b_normalized = ret_b_copy/sum(ret_b_copy)
+	kl_a = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
+	kl_b = st.entropy(ret_b_normalized, RATIO_NORMALIZED)
+	check = check_null(ret_a, ret_b)
+	if check != 0.5:
+		return check, kl_a, kl_b
+	else :
+		if kl_a < kl_b:
+			preference = 1
+		elif kl_b < kl_a:
+			preference = -1
+		else:
+			preference = 1 if np.random.rand() < 0.5 else -1
+		return preference, kl_a, kl_b
+
+class PreferenceGiverv3_no_null:
+	def __init__(self, ratio, pbrl=False):
+		self.ratio = ratio
+		self.d = len(ratio)
+		self.ratio_normalized = []
+		self.pbrl = pbrl
+
+		ratio_sum = sum(ratio)
+
+		for elem in ratio:
+			self.ratio_normalized.append(elem/ratio_sum)
+
+	def query_pair(ret_a, ret_b):
+		ret_a_copy = np.array(ret_a.copy())[:self.d]+1e-5
+		ret_b_copy = np.array(ret_b.copy())[:self.d]+1e-5
+		ret_a_normalized = ret_a_copy/sum(ret_a_copy)
+		ret_b_normalized = ret_b_copy/sum(ret_b_copy)
+		kl_a = st.entropy(ret_a_normalized, self.ratio_normalized)
+		kl_b = st.entropy(ret_b_normalized, self.ratio_normalized)
+		check = check_null(ret_a, ret_b)
+		if check != 0.5:
+			return check
+		else :
+			if kl_a < kl_b:
+				preference = 1
+			elif kl_b < kl_a:
+				preference = -1
+			else:
+				preference = 1 if np.random.rand() < 0.5 else -1
+			return preference
+
 
 
 class PreferenceGiverv3:

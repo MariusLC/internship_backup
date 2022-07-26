@@ -30,6 +30,35 @@ import time
 
 import matplotlib.pyplot as plt
 
+
+def check_null(ret_a, ret_b):
+	if all(ret_b == 0) and any(ret_a > 0):
+		return 1
+	elif all(ret_a == 0) and any(ret_b > 0):
+		return -1
+	else:
+		return 0.5
+
+def query_pair_no_null(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED):
+	ret_a_copy = np.array(ret_a.copy())[:dimension_pref]+1e-5
+	ret_b_copy = np.array(ret_b.copy())[:dimension_pref]+1e-5
+	ret_a_normalized = ret_a_copy/sum(ret_a_copy)
+	ret_b_normalized = ret_b_copy/sum(ret_b_copy)
+	kl_a = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
+	kl_b = st.entropy(ret_b_normalized, RATIO_NORMALIZED)
+	check = check_null(ret_a, ret_b)
+	if check != 0.5:
+		return check, kl_a, kl_b
+	else :
+		if kl_a < kl_b:
+			preference = 1
+		elif kl_b < kl_a:
+			preference = -1
+		else:
+			preference = 1 if np.random.rand() < 0.5 else -1
+		return preference, kl_a, kl_b
+
+
 if __name__ == '__main__':
 
 
@@ -138,9 +167,11 @@ if __name__ == '__main__':
 	# 	if i%2==0:
 	# 		time.sleep(30)
 
-	wandb.init(project='Test_print_wandb',
-		config={"test" : 3})
-
-	for i in range(10):
-		for j in range(10):
-			wandb.log({'test': j}, step=i)
+	ret_a = np.array([1,2,3,-4])
+	# ret_b = np.array([0,0,0,0])
+	# ret_b = np.array([0,0,4,0])
+	ret_b = np.array([1,5,1,0])
+	ratio_norm = [0.2, 0.6, 0.2]
+	dim = 3
+	a = query_pair_no_null(ret_a, ret_b, dim, ratio_norm)
+	print(a)

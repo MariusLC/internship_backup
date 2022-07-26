@@ -39,8 +39,8 @@ n_queries: 200
 nb_query_test: 20
 
 # query_selection: "compare_EUS"
-# query_selection: "compare_MORAL"
-query_selection: "compare_basic_log_lik"
+query_selection: "compare_MORAL"
+# query_selection: "compare_basic_log_lik"
 # query_selection: "random"
 
 # posterior_mode: "print"
@@ -52,8 +52,8 @@ posterior_mode: "basic_temperature"
 mcmc_type: parallel
 # mcmc_type: concat
 
-# mcmc_log: final
-mcmc_log: active
+mcmc_log: final
+# mcmc_log: active
 
 prop_w_mode: "moral"
 temperature_mcmc: 2

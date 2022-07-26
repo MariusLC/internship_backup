@@ -37,6 +37,11 @@ geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate
 normalization_eth_sett: "v6"
 normalization_non_eth_sett: "v3"
 
+# query_selection: "compare_EUS"
+# query_selection: "compare_MORAL"
+query_selection: "compare_basic_log_lik"
+# query_selection: "random"
+
 
 #######
 # Peschl Values #

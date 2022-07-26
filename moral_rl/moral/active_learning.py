@@ -711,8 +711,9 @@ class VolumeBuffer:
 			self.best_returns = (logs_a, logs_b)
 			# print("self.best_returns ", self.best_returns)
 
-	def compare_delta_basic_log_lik(self, w_posterior, temperature):
-		new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
+	def compare_delta_basic_log_lik(self, w_posterior, temperature, new_returns_a=None, new_returns_b=None, logs_a=None, logs_b=None):
+		if new_returns_a == None:
+			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
 		delta = new_returns_a - new_returns_b
 		volume_delta = self.volume_removal_basic_log_lik(w_posterior, new_returns_a, new_returns_b, delta, temperature)
 		if volume_delta > self.best_volume:
@@ -721,8 +722,9 @@ class VolumeBuffer:
 			self.best_observed_returns = (new_returns_a, new_returns_b)
 			self.best_returns = (logs_a, logs_b)
 
-	def compare_MORAL(self, w_posterior):
-		new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
+	def compare_MORAL(self, w_posterior, new_returns_a=None, new_returns_b=None, logs_a=None, logs_b=None):
+		if new_returns_a == None:
+			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
 		delta = new_returns_a - new_returns_b
 		volume_delta = self.volume_removal(w_posterior, delta)
 		if volume_delta > self.best_volume:
@@ -732,8 +734,9 @@ class VolumeBuffer:
 			self.best_returns = (logs_a, logs_b)
 
 
-	def compare_EUS(self, w_posterior, w_posterior_mean, preference_learner):
-		new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
+	def compare_EUS(self, w_posterior, w_posterior_mean, preference_learner, new_returns_a=None, new_returns_b=None, logs_a=None, logs_b=None):
+		if new_returns_a == None:
+			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
 		delta = new_returns_a - new_returns_b
 		# np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
 
