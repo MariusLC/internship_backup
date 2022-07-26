@@ -387,7 +387,9 @@ if __name__ == '__main__':
 
 			# NEW WEIGHT QUALITY HEURISTIC
 			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval_10 = evaluate_weights(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
 			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 
 
 		elif config.mcmc_log == "final" and i == c["n_queries"]-1:
@@ -477,7 +479,9 @@ if __name__ == '__main__':
 
 			# NEW WEIGHT QUALITY HEURISTIC
 			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval_10 = evaluate_weights(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
 			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 
 
 		# # Reset PPO buffer
