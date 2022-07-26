@@ -56,7 +56,7 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
             'prop_w_mode': "moral", 
             'posterior_mode' : "basic_temperature",
             'prior': "marius",
-            'cov_range': 0.3,
+            'cov_range': 0.1,
             },
         reinit=True)
     config = wandb.config

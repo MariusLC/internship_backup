@@ -42,8 +42,8 @@ normalization_non_eth_sett: "v3"
 # Peschl Values #
 #######
 env_steps: 8000000
-n_queries: 50
-# n_queries: 200
+# n_queries: 50
+n_queries: 200
 #### query_freq: 153 846 # env_steps_moral/(n_queries+2)
 
 
