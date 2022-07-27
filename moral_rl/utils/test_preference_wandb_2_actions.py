@@ -21,55 +21,72 @@ def evaluate_weights(n_best, w, trajectories, dimension_pref, RATIO_NORMALIZED):
 	trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
 	best = trajectories[:n_best]
 	mean_entropy = 0
-	for i in range(10):
-		print("vec rew = ", np.array(best[i]["vectorized_rewards"]).sum(axis=0))
-		print("dot = ", np.dot(np.array(best[i]["vectorized_rewards"]).sum(axis=0), w))
-		print("vec ret = ", np.array(best[i]["returns"]).sum(axis=0))
-		print("eval = ", evaluate_traj(best[i], dimension_pref, RATIO_NORMALIZED))
+	# for i in range(10):
+	# 	print("vec rew = ", np.array(best[i]["vectorized_rewards"]).sum(axis=0))
+	# 	print("dot = ", np.dot(np.array(best[i]["vectorized_rewards"]).sum(axis=0), w))
+	# 	print("vec ret = ", np.array(best[i]["returns"]).sum(axis=0))
+	# 	print("eval = ", evaluate_traj(best[i], dimension_pref, RATIO_NORMALIZED))
 	# time.sleep(10)
 	for traj in best:
 		mean_entropy += evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
 	mean_entropy /= n_best
 	return mean_entropy
 
+def fct_norm(t, w):
+	vec_rew = np.array(t["vectorized_rewards"]).sum(axis=0)
+	vec_rew_norm = vec_rew / sum(abs(vec_rew))
+	dot = np.dot(vec_rew_norm, w)
+	return dot
+
 def evaluate_weights_print(n_best, w, trajectories, dimension_pref, RATIO_NORMALIZED):
 	# Sorted by weighted rew
 	trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
 	best = trajectories[:n_best]
 	mean_entropy = 0
-	top_10_best_rew = []
+	print("top_10_best_rew = ")
 	for traj in best:
 		vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
 		dot = np.dot(vec_rew, w)
 		vec_ret = np.array(traj["returns"]).sum(axis=0)
 		evaluation = evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
-		top_10_best_rew.append([round(vec_rew, 3), round(dot, 3), round(vec_ret, 3), round(evaluation, 3)])
+		print(str(round(dot, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
 		mean_entropy += evaluation
 	mean_entropy /= n_best
 
+	# Sorted by normalized weighted rew
+	trajectories.sort(key=lambda t: fct_norm(t,w), reverse=True)
+	best = trajectories[:n_best]
+	mean_entropy_norm = 0
+	print("top_10_best_rew norm = ")
+	for traj in best:
+		vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
+		dot = np.dot(vec_rew, w)
+		dot_norm = fct_norm(traj, w)
+		vec_ret = np.array(traj["returns"]).sum(axis=0)
+		evaluation = evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
+		print(str(round(dot, 3))+" , "+str(round(dot_norm, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
+		mean_entropy_norm += evaluation
+	mean_entropy_norm /= n_best
+
 	# Sorted by evaluation
-	trajectories.sort(key=lambda t: evaluate_traj(t, dimension_pref, RATIO_NORMALIZED), reverse=True)
+	trajectories.sort(key=lambda t: evaluate_traj(t, dimension_pref, RATIO_NORMALIZED))
 	best = trajectories[:n_best]
 	mean_entropy_eval = 0
-	top_10_best_eval = []
+	print("top_10_best_eval = ")
 	for traj in best:
 		vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
 		dot = np.dot(vec_rew, w)
 		vec_ret = np.array(traj["returns"]).sum(axis=0)
 		evaluation = evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
-		top_10_best_eval.append([round(vec_rew, 3), round(dot, 3), round(vec_ret, 3), round(evaluation, 3)])
+		print(str(round(dot, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
 		mean_entropy_eval += evaluation
 	mean_entropy_eval /= n_best
 
-	print("top_10_best_rew = ")
-	print(top_10_best_rew)
-	print("top_10_best_eval = ")
-	print(top_10_best_eval)
+
 	print("mean_entropy = ", mean_entropy)
+	print("mean_entropy_norm = ", mean_entropy_norm)
 	print("mean_entropy_eval = ", mean_entropy_eval)
-
-
-	return mean_entropy
+	return mean_entropy, mean_entropy_norm
 
 def check_null(ret_a, ret_b):
 	if all(ret_b == 0) and any(ret_a > 0):
@@ -250,24 +267,31 @@ if __name__ == '__main__':
 		discriminator_list[i].load_state_dict(torch.load(discriminators_filenames[i], map_location=torch.device('cpu')))
 		generator_list.append(PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device))
 		generator_list[i].load_state_dict(torch.load(generators_filenames[i], map_location=torch.device('cpu')))
-		args = discriminator_list[i].estimate_normalisation_points(c["normalization_eth_sett"], rand_agent, generator_list[i], env_id, c["gamma"], steps=1000)
+		if config.test:
+			args = discriminator_list[i].estimate_normalisation_points(c["normalization_eth_sett"], rand_agent, generator_list[i], env_id, c["gamma"], steps=1000)
+		else:
+			args = discriminator_list[i].estimate_normalisation_points(c["normalization_eth_sett"], rand_agent, generator_list[i], env_id, c["gamma"], steps=10000)
 		discriminator_list[i].set_eval()
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
-	# test
-	# dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
-	dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
+	if config.test:
+		dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=1000)
+	else :
+		dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	
-	# obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
-	obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=10000)
+	if config.test:
+		obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000)
+	else :
+		obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=10000)
 	obj_rew_norm_sum = obj_rew / sum(obj_rew)
 	obj_rew_norm_linalg = obj_rew / np.linalg.norm(obj_rew)
 	print("mean objective reward expert = ", obj_rew)
 	print("mean airl vectorized reward expert = ", vect_rew)
 
-	# test
-	# preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
-	preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	if config.test:
+		preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
+	else :
+		preference_learner = PreferenceLearner(d=c["dimension_pref"], n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean_uniform = w_posterior.mean(axis=0)
@@ -354,8 +378,8 @@ if __name__ == '__main__':
 		print("delta = ",delta)
 
 		# go query the preference expert
-		# preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum")
-		preference, kl_a, kl_b = query_pair_no_null(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED)
+		preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum")
+		# preference, kl_a, kl_b = query_pair_no_null(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED)
 		print(preference)
 
 		HOF.append((kl_a, ret_a, observed_rew_a))
@@ -457,9 +481,10 @@ if __name__ == '__main__':
 
 			# NEW WEIGHT QUALITY HEURISTIC
 			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
-			weight_eval_10 = evaluate_weights_print(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval_10, weight_eval_10_norm = evaluate_weights_print(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
 			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
 			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
 
 
 		elif config.mcmc_log == "final" and i == c["n_queries"]-1:
@@ -550,9 +575,10 @@ if __name__ == '__main__':
 
 			# NEW WEIGHT QUALITY HEURISTIC
 			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
-			weight_eval_10 = evaluate_weights_print(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval_10, weight_eval_10_norm = evaluate_weights_print(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
 			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
 			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
 
 
 		# # Reset PPO buffer
