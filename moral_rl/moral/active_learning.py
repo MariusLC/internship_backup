@@ -585,21 +585,75 @@ class VolumeBuffer:
 		mini = min(expected_volume_a / len(w_posterior), expected_volume_b / len(w_posterior))
 		return mini
 
-
-
-	def sample_return_pair_no_batch_reset_no_double_zeros(self):
-		new_returns_a = [0]
-		new_returns_b = [0]
-		while(all(new_returns_a == 0) and all(new_returns_b == 0)):
-			rand_idx = np.random.choice(np.arange(len(self.observed_logs_sum)), 2, replace=False)
-			new_returns_a = self.observed_logs_sum[rand_idx[0]]
-			new_returns_b = self.observed_logs_sum[rand_idx[1]]
-			
+	def sample_return_pair_no_batch_reset_no_zeros(self):
+		all_non_zero_index = []
+		for i, elem in enumerate(self.objective_logs_sum):
+			if any(elem > 0):
+				all_non_zero_index.append(i)
+		rand_idx = np.random.choice(all_non_zero_index, 2, replace=False)
+		new_returns_a = self.observed_logs_sum[rand_idx[0]]
+		new_returns_b = self.observed_logs_sum[rand_idx[1]]
+		logs_a = self.objective_logs_sum[rand_idx[0]]
+		logs_b = self.objective_logs_sum[rand_idx[1]]
 
 		# Also return ground truth logs for automatic preferences
 		if self.auto_pref:
+			# logs_a = self.objective_logs_sum[rand_idx[0]]
+			# logs_b = self.objective_logs_sum[rand_idx[1]]
+			return np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
+		else:
+			return np.array(new_returns_a), np.array(new_returns_b)
+
+	def sample_return_pair_no_batch_reset_no_double_zeros(self):
+		logs_a = np.array([0,0])
+		logs_b = np.array([0,0])
+		while(all(logs_a == 0) and all(logs_b == 0)):
+			rand_idx = np.random.choice(np.arange(len(self.observed_logs_sum)), 2, replace=False)
+			new_returns_a = self.observed_logs_sum[rand_idx[0]]
+			new_returns_b = self.observed_logs_sum[rand_idx[1]]
 			logs_a = self.objective_logs_sum[rand_idx[0]]
 			logs_b = self.objective_logs_sum[rand_idx[1]]
+		# print("new_returns_a = ", new_returns_a)
+		# print("new_returns_b = ", new_returns_b)
+		# print("bool a = ", all(new_returns_a == 0))
+		# print("bool b = ", all(new_returns_b == 0))
+
+		# Also return ground truth logs for automatic preferences
+		if self.auto_pref:
+			# logs_a = self.objective_logs_sum[rand_idx[0]]
+			# logs_b = self.objective_logs_sum[rand_idx[1]]
+			return np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
+		else:
+			return np.array(new_returns_a), np.array(new_returns_b)
+
+	def sample_return_pair_no_batch_reset_less_zeros_no_double(self):
+		all_non_zero_index = []
+		all_zero_index = []
+		for i, elem in enumerate(self.objective_logs_sum):
+			if any(elem > 0):
+				all_non_zero_index.append(i)
+			else:
+				all_zero_index.append(i)
+
+		random_zero_pick = np.random.rand()
+		if random_zero_pick > 0.9: # a null vector and a non null vector
+			rand_idx = [np.random.choice(all_zero_index), np.random.choice(all_non_zero_index)]
+			new_returns_a = self.observed_logs_sum[rand_idx[0]]
+			new_returns_b = self.observed_logs_sum[rand_idx[1]]
+			logs_a = self.objective_logs_sum[rand_idx[0]]
+			logs_b = self.objective_logs_sum[rand_idx[1]]
+		else: # 2 different non null vectors
+			logs_a = np.array([0,0])
+			logs_b = np.array([0,0])
+			while(all(logs_a == logs_b)): 
+				rand_idx = np.random.choice(all_non_zero_index, 2, replace=False)
+				new_returns_a = self.observed_logs_sum[rand_idx[0]]
+				new_returns_b = self.observed_logs_sum[rand_idx[1]]
+				logs_a = self.objective_logs_sum[rand_idx[0]]
+				logs_b = self.objective_logs_sum[rand_idx[1]]
+
+		# Also return ground truth logs for automatic preferences
+		if self.auto_pref:
 			return np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
 		else:
 			return np.array(new_returns_a), np.array(new_returns_b)

@@ -38,8 +38,8 @@ normalization_eth_sett: "v6"
 normalization_non_eth_sett: "v3"
 
 # query_selection: "compare_EUS"
-# query_selection: "compare_MORAL"
-query_selection: "compare_basic_log_lik"
+query_selection: "compare_MORAL"
+# query_selection: "compare_basic_log_lik"
 # query_selection: "random"
 
 

@@ -163,7 +163,8 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
             # Run MCMC
             preference_learner.log_preference(best_delta, preference)
-            preference_learner.log_returns(ret_a, ret_b)
+            # preference_learner.log_returns(ret_a, ret_b)
+            preference_learner.log_returns(observed_rew_a, observed_rew_b)
             # w_posterior = preference_learner.mcmc_vanilla(w_posterior_mean)
             w_posterior = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode=config.prop_w_mode, posterior_mode=config.posterior_mode, step=t*config.n_workers)
             print("w_posterior = ", w_posterior)
@@ -256,8 +257,9 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
 
             rew_a, rew_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
             if config.query_selection == "random":
-                volume_buffer.best_returns = (ret_a, ret_b)
-                volume_buffer.best_delta = ret_a - ret_b
+                volume_buffer.best_returns = (logs_a, logs_a)
+                volume_buffer.best_rewards = (rew_a, rew_b)
+                volume_buffer.best_delta = rew_a - rew_b
             elif config.query_selection == "compare_EUS":
                 volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner, rew_a, rew_b, logs_a, logs_b)
             elif config.query_selection == "compare_MORAL":

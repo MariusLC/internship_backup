@@ -37,11 +37,15 @@ n_best: 100
 # pref
 n_queries: 200
 nb_query_test: 20
+pref_giver_no_null: True
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_MORAL"
 # query_selection: "compare_basic_log_lik"
-query_selection: "random"
+# query_selection: "random"
+# query_selection: "random_no_double_null"
+query_selection: "random_less_null"
+
 
 # posterior_mode: "print"
 # posterior_mode: "moral"
@@ -55,6 +59,7 @@ mcmc_type: parallel
 # mcmc_log: final
 mcmc_log: active
 
+test: True
 prop_w_mode: "moral"
 temperature_mcmc: 3
 cov_range: 0.1
@@ -67,8 +72,6 @@ gamma: 0.999
 dimension_pref: 3
 agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
 demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk"
-
-test: True
 
 
 #######

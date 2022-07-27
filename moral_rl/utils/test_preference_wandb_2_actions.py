@@ -10,6 +10,7 @@ from moral.airl import *
 from moral.active_learning import *
 from tqdm import tqdm
 import pickle
+from moral.preference_giver import *
 
 def evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED):
 	ret = np.array(traj["returns"]).sum(axis=0)[:dimension_pref]
@@ -21,12 +22,6 @@ def evaluate_weights(n_best, w, trajectories, dimension_pref, RATIO_NORMALIZED):
 	trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
 	best = trajectories[:n_best]
 	mean_entropy = 0
-	# for i in range(10):
-	# 	print("vec rew = ", np.array(best[i]["vectorized_rewards"]).sum(axis=0))
-	# 	print("dot = ", np.dot(np.array(best[i]["vectorized_rewards"]).sum(axis=0), w))
-	# 	print("vec ret = ", np.array(best[i]["returns"]).sum(axis=0))
-	# 	print("eval = ", evaluate_traj(best[i], dimension_pref, RATIO_NORMALIZED))
-	# time.sleep(10)
 	for traj in best:
 		mean_entropy += evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
 	mean_entropy /= n_best
@@ -68,7 +63,7 @@ def evaluate_weights_print(n_best, w, trajectories, dimension_pref, RATIO_NORMAL
 		mean_entropy_norm += evaluation
 	mean_entropy_norm /= n_best
 
-	# Sorted by evaluation
+	# Sorted by evaluation min
 	trajectories.sort(key=lambda t: evaluate_traj(t, dimension_pref, RATIO_NORMALIZED))
 	best = trajectories[:n_best]
 	mean_entropy_eval = 0
@@ -82,11 +77,30 @@ def evaluate_weights_print(n_best, w, trajectories, dimension_pref, RATIO_NORMAL
 		mean_entropy_eval += evaluation
 	mean_entropy_eval /= n_best
 
+	# Sorted by evaluation max
+	trajectories.sort(key=lambda t: evaluate_traj(t, dimension_pref, RATIO_NORMALIZED), reverse=True)
+	best = trajectories[:n_best]
+	mean_entropy_eval_max = 0
+	print("top_10_best_eval = ")
+	for traj in best:
+		vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
+		dot = np.dot(vec_rew, w)
+		vec_ret = np.array(traj["returns"]).sum(axis=0)
+		evaluation = evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
+		print(str(round(dot, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
+		mean_entropy_eval_max += evaluation
+	mean_entropy_eval_max /= n_best
 
-	print("mean_entropy = ", mean_entropy)
-	print("mean_entropy_norm = ", mean_entropy_norm)
+
+	normalized_mean_entropy = (mean_entropy - mean_entropy_eval)/(mean_entropy_eval_max-mean_entropy_eval)
+	normalized_mean_entropy_norm = (mean_entropy_norm - mean_entropy_eval)/(mean_entropy_eval_max-mean_entropy_eval)
+	print("entropy best rew = ", mean_entropy)
+	print("normalized entropy best rew = ", normalized_mean_entropy)
+	print("entropy best norm rew  = ", mean_entropy_norm)
+	print("normalized entropy best norm rew  = ", normalized_mean_entropy_norm)
 	print("mean_entropy_eval = ", mean_entropy_eval)
-	return mean_entropy, mean_entropy_norm
+	print("mean_entropy_eval_max = ", mean_entropy_eval_max)
+	return normalized_mean_entropy, normalized_mean_entropy_norm
 
 def check_null(ret_a, ret_b):
 	if all(ret_b == 0) and any(ret_a > 0):
@@ -296,10 +310,15 @@ if __name__ == '__main__':
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean_uniform = w_posterior.mean(axis=0)
 
-	HOF = []
+	# HOF = []
 
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
+
+	if config.pref_giver_no_null:
+		preference_giver = PreferenceGiverv3_no_null(config.ratio)
+	else :
+		preference_giver = PreferenceGiverv3(config.ratio)
 
 	# objective_returns = []
 	# observed_rewards = []
@@ -348,6 +367,10 @@ if __name__ == '__main__':
 	for i in range(c["n_queries"]):
 		if c["query_selection"] == "random":
 			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset()
+		elif c["query_selection"] == "random_no_double_null":
+			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset_no_double_zeros()
+		elif c["query_selection"] == "random_less_null":
+			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset_less_zeros_no_double()
 		elif c["query_selection"] == "compare_EUS":
 			for k in range(c["nb_query_test"]):
 				volume_buffer.compare_EUS(w_posterior, w_posterior_mean_uniform, preference_learner)
@@ -378,12 +401,10 @@ if __name__ == '__main__':
 		print("delta = ",delta)
 
 		# go query the preference expert
-		preference, kl_a, kl_b = query_pair(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED, RATIO_linalg_NORMALIZED, norm="sum")
-		# preference, kl_a, kl_b = query_pair_no_null(ret_a, ret_b, c["dimension_pref"], RATIO_NORMALIZED)
-		print(preference)
-
-		HOF.append((kl_a, ret_a, observed_rew_a))
-		HOF.append((kl_b, ret_b, observed_rew_b))
+		preference = preference_giver.query_pair(ret_a, ret_b)
+		# print(preference)
+		# HOF.append((kl_a, ret_a, observed_rew_a))
+		# HOF.append((kl_b, ret_b, observed_rew_b))
 
 		# Run MCMC on expert preferences
 		preference_learner.log_preference(delta, preference)
@@ -480,8 +501,8 @@ if __name__ == '__main__':
 			wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
 
 			# NEW WEIGHT QUALITY HEURISTIC
-			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
-			weight_eval_10, weight_eval_10_norm = evaluate_weights_print(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
+			weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
 			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
 			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 			wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
@@ -574,8 +595,8 @@ if __name__ == '__main__':
 			wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
 
 			# NEW WEIGHT QUALITY HEURISTIC
-			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
-			weight_eval_10, weight_eval_10_norm = evaluate_weights_print(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
+			weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
 			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
 			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 			wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
@@ -586,10 +607,10 @@ if __name__ == '__main__':
 		# volume_buffer.reset()
 		# volume_buffer.reset_batch() # Do we need to reset batch every time ?
 
-	dtype = [("kl_a", float), ("ret_a", np.float64, (4,)), ("observed_rew_a", np.float64, (3,))]
-	HOF = np.array(HOF, dtype=dtype)[:20]
-	HOF_sorted = np.sort(HOF, order="kl_a")
-	print("HOF = ", HOF_sorted)
+	# dtype = [("kl_a", float), ("ret_a", np.float64, (4,)), ("observed_rew_a", np.float64, (3,))]
+	# HOF = np.array(HOF, dtype=dtype)[:20]
+	# HOF_sorted = np.sort(HOF, order="kl_a")
+	# print("HOF = ", HOF_sorted)
 
 
 	

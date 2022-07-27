@@ -69,7 +69,7 @@ def evaluate_weights_print(n_best, w, trajectories, dimension_pref, RATIO_NORMAL
 		mean_entropy_norm += evaluation
 	mean_entropy_norm /= n_best
 
-	# Sorted by evaluation
+	# Sorted by evaluation min
 	trajectories.sort(key=lambda t: evaluate_traj(t, dimension_pref, RATIO_NORMALIZED))
 	best = trajectories[:n_best]
 	mean_entropy_eval = 0
@@ -83,11 +83,30 @@ def evaluate_weights_print(n_best, w, trajectories, dimension_pref, RATIO_NORMAL
 		mean_entropy_eval += evaluation
 	mean_entropy_eval /= n_best
 
+	# Sorted by evaluation max
+	trajectories.sort(key=lambda t: evaluate_traj(t, dimension_pref, RATIO_NORMALIZED), reverse=True)
+	best = trajectories[:n_best]
+	mean_entropy_eval_max = 0
+	print("top_10_best_eval = ")
+	for traj in best:
+		vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
+		dot = np.dot(vec_rew, w)
+		vec_ret = np.array(traj["returns"]).sum(axis=0)
+		evaluation = evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
+		print(str(round(dot, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
+		mean_entropy_eval_max += evaluation
+	mean_entropy_eval_max /= n_best
 
-	print("mean_entropy = ", mean_entropy)
-	print("mean_entropy_norm = ", mean_entropy_norm)
+
+	normalized_mean_entropy = (mean_entropy - mean_entropy_eval)/(mean_entropy_eval_max-mean_entropy_eval)
+	normalized_mean_entropy_norm = (mean_entropy_norm - mean_entropy_eval)/(mean_entropy_eval_max-mean_entropy_eval)
+	print("entropy best rew = ", mean_entropy)
+	print("normalized entropy best rew = ", normalized_mean_entropy)
+	print("entropy best norm rew  = ", mean_entropy_norm)
+	print("normalized entropy best norm rew  = ", normalized_mean_entropy_norm)
 	print("mean_entropy_eval = ", mean_entropy_eval)
-	return mean_entropy, mean_entropy_norm
+	print("mean_entropy_eval_max = ", mean_entropy_eval_max)
+	return normalized_mean_entropy, normalized_mean_entropy_norm
 
 
 
