@@ -26,10 +26,49 @@ def evaluate_weights(n_best, w, trajectories, dimension_pref, RATIO_NORMALIZED):
 		print("dot = ", np.dot(np.array(best[i]["vectorized_rewards"]).sum(axis=0), w))
 		print("vec ret = ", np.array(best[i]["returns"]).sum(axis=0))
 		print("eval = ", evaluate_traj(best[i], dimension_pref, RATIO_NORMALIZED))
-	time.sleep(10)
+	# time.sleep(10)
 	for traj in best:
 		mean_entropy += evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
 	mean_entropy /= n_best
+	return mean_entropy
+
+def evaluate_weights_print(n_best, w, trajectories, dimension_pref, RATIO_NORMALIZED):
+	# Sorted by weighted rew
+	trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
+	best = trajectories[:n_best]
+	mean_entropy = 0
+	top_10_best_rew = []
+	for traj in best:
+		vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
+		dot = np.dot(vec_rew, w)
+		vec_ret = np.array(traj["returns"]).sum(axis=0)
+		evaluation = evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
+		top_10_best_rew.append([round(vec_rew, 3), round(dot, 3), round(vec_ret, 3), round(evaluation, 3)])
+		mean_entropy += evaluation
+	mean_entropy /= n_best
+
+	# Sorted by evaluation
+	trajectories.sort(key=lambda t: evaluate_traj(t, dimension_pref, RATIO_NORMALIZED), reverse=True)
+	best = trajectories[:n_best]
+	mean_entropy_eval = 0
+	top_10_best_eval = []
+	for traj in best:
+		vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
+		dot = np.dot(vec_rew, w)
+		vec_ret = np.array(traj["returns"]).sum(axis=0)
+		evaluation = evaluate_traj(traj, dimension_pref, RATIO_NORMALIZED)
+		top_10_best_eval.append([round(vec_rew, 3), round(dot, 3), round(vec_ret, 3), round(evaluation, 3)])
+		mean_entropy_eval += evaluation
+	mean_entropy_eval /= n_best
+
+	print("top_10_best_rew = ")
+	print(top_10_best_rew)
+	print("top_10_best_eval = ")
+	print(top_10_best_eval)
+	print("mean_entropy = ", mean_entropy)
+	print("mean_entropy_eval = ", mean_entropy_eval)
+
+
 	return mean_entropy
 
 def check_null(ret_a, ret_b):
@@ -418,7 +457,7 @@ if __name__ == '__main__':
 
 			# NEW WEIGHT QUALITY HEURISTIC
 			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
-			weight_eval_10 = evaluate_weights(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval_10 = evaluate_weights_print(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
 			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
 			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 
@@ -511,7 +550,7 @@ if __name__ == '__main__':
 
 			# NEW WEIGHT QUALITY HEURISTIC
 			weight_eval = evaluate_weights(config.n_best, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
-			weight_eval_10 = evaluate_weights(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
+			weight_eval_10 = evaluate_weights_print(10, w_posterior_mean, traj_test, c["dimension_pref"], RATIO_NORMALIZED)
 			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
 			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 
