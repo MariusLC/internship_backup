@@ -61,8 +61,8 @@ mcmc_log: active
 
 test: False
 prop_w_mode: "moral"
-temperature_mcmc: 10
-cov_range: 0.1
+temperature_mcmc: 5
+cov_range: 0.01
 prior: "marius"
 # prior: "moral"
 n_workers: 12
