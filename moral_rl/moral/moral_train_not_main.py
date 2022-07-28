@@ -127,9 +127,9 @@ def moral_train_n_experts(env, ratio, lambd, env_steps_moral, query_freq, non_et
     # dataset.estimate_utopia_point(non_eth_expert, config, steps=10000)
 
     # Active Learning
+    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior)
     # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000, temperature=config.temperature_mcmc, cov_range=config.cov_range,prior=config.prior)
-    # preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=10000, warmup=1000)
-    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100) # tests
+    preference_learner = PreferenceLearner(d=len(lambd)+1, n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior) # tests
     w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
     w_posterior_mean = w_posterior.mean(axis=0)
 
