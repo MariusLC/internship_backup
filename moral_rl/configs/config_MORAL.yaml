@@ -47,20 +47,20 @@ epsilon: 0.1
 ppo_epochs: 5
 eth_norm: "v6"
 non_eth_norm: "v3"
-test: True
+test: False
 
 # PREFERENCES
-Q_on_actions: False
+Q_on_actions: True
 pref_giver_no_null: True
-temperature_mcmc : 3
-cov_range: 0.1
+temperature_mcmc : 40
+cov_range: 0.01
 prop_w_mode: "moral"
 nb_query_test: 1
 
 posterior_mode : "basic_temperature"
 
-prior: "marius"
-# prior: "marius_2"
+# prior: "marius"
+prior: "marius_2"
 # prior: "moral"
 
 # query_selection: "compare_EUS"
