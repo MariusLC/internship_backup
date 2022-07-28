@@ -59,9 +59,9 @@ mcmc_type: parallel
 # mcmc_log: final
 mcmc_log: active
 
-test: True
+test: False
 prop_w_mode: "moral"
-temperature_mcmc: 3
+temperature_mcmc: 5
 cov_range: 0.1
 prior: "marius"
 # prior: "moral"
