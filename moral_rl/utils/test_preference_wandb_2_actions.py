@@ -408,7 +408,6 @@ if __name__ == '__main__':
 
 		# Run MCMC on expert preferences
 		preference_learner.log_preference(delta, preference)
-		# preference_learner.log_returns(ret_a[:-1], ret_b[:-1])
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 
