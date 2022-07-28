@@ -162,6 +162,8 @@ class PreferenceLearner:
 			log_prior = np.log(self.w_prior(w) + 1e-5)
 		elif prior == "marius":
 			log_prior = np.log(self.w_prior_marius(w) + 1e-5)
+		elif prior == "marius_2":
+			log_prior = np.log(self.w_prior(w))
 
 		# print("sum loglik = ", loglik)
 		# print("prior = ", log_prior)
@@ -181,6 +183,8 @@ class PreferenceLearner:
 			log_prior = np.log(self.w_prior(w) + 1e-5)
 		elif prior == "marius":
 			log_prior = np.log(self.w_prior_marius(w) + 1e-5)
+		elif prior == "marius_2":
+			log_prior = np.log(self.w_prior(w))
 
 		return loglik + log_prior, loglik, log_prior
 

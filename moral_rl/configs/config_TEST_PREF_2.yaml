@@ -46,7 +46,6 @@ pref_giver_no_null: True
 # query_selection: "random_no_double_null"
 query_selection: "random_less_null"
 
-
 # posterior_mode: "print"
 # posterior_mode: "moral"
 # posterior_mode: "basic"
@@ -58,18 +57,20 @@ mcmc_type: parallel
 
 # mcmc_log: final
 mcmc_log: active
-
-test: False
 prop_w_mode: "moral"
-temperature_mcmc: 5
+temperature_mcmc: 40
 cov_range: 0.01
-prior: "marius"
-# prior: "moral"
-n_workers: 12
 nb_mcmc: 1
+dimension_pref: 3
+# prior: "marius"
+prior: "marius_2"
+# prior: "moral"
+
+test: True
+n_workers: 12
 batchsize_ppo: 120
 gamma: 0.999
-dimension_pref: 3
+
 agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
 demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk"
 

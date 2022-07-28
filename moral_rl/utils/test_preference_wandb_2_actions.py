@@ -384,10 +384,6 @@ if __name__ == '__main__':
 				volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
-		# ret_a = objective_returns[0]
-		# ret_b = objective_returns[1]
-		# observed_rew_a = np.array(observed_rewards[0])
-		# observed_rew_b = np.array(observed_rewards[1])
 		delta = observed_rew_a - observed_rew_b
 
 		# observed_rew_a_norm = observed_rew_a/np.linalg.norm(observed_rew_a)
