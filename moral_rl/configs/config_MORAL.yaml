@@ -50,6 +50,7 @@ non_eth_norm: "v3"
 test: True
 
 # PREFERENCES
+Q_on_actions: False
 pref_giver_no_null: True
 temperature_mcmc : 3
 cov_range: 0.1
