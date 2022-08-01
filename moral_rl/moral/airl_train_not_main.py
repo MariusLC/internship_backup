@@ -15,14 +15,7 @@ import argparse
 # Device Check
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-
-def airl_train_n_experts(env, env_steps_airl, demos_filename, generators_filenames, discriminators_filenames):
-    for i in range(len(generators_filenames)):
-        airl_train_1_expert(env, env_steps_airl, demos_filename[i], generators_filenames[i], discriminators_filenames[i])
-
-
-
-def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filename, discriminator_filename, prints=False):
+def airl_train_1_expert(c, demos_filename, generator_filename, discriminator_filename, prints=False):
 
     # Load demonstrations
     expert_trajectories = pickle.load(open(demos_filename, 'rb'))
@@ -30,19 +23,7 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
     # Init WandB & Parameters
     wandb.init(
         project='AIRL',
-        config={
-            'env_id': env_id,
-            #'env_steps': 6e6,
-            'env_steps': env_steps_airl,
-            'batchsize_discriminator': 512,
-            'batchsize_ppo': 12,
-            'n_workers': 12,
-            'entropy_reg': 0,
-            'gamma': 0.999,
-            'epsilon': 0.1,
-            'ppo_epochs': 5,
-	    'demos_filename': demos_filename
-            }, 
+        config=c, 
         reinit=True)
     config = wandb.config
 

@@ -15,15 +15,20 @@ model_name: "ppo_"
 # special_name: "entropy_reg_005"
 special_name: ""
 
+# Config parameters
+batchsize_ppo: 12
+n_workers: 12
+lr_ppo: 0.0003
+entropy_reg: 0.05
+gamma: 0.999
+epsilon: 0.1
+ppo_epochs: 5
 
 # Editable parameters
 env: "v3"
 env_rad: "randomized_"
-nb_experts: 1
-experts_weights: [[0,1,1,0]]
-# experts_weights: [[0,1]]
-geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
-
+env_id: "randomized_v3"
+expert_weights: [0,1,1,0]
 
 #######
 # Peschl Values #

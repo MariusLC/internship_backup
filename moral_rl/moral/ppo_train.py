@@ -5,7 +5,6 @@ from moral.ppo_train_not_main import *
 
 # folder to load config file
 CONFIG_PATH = "configs/"
-# CONFIG_FILENAME = "config_PPO.yaml"
 CONFIG_FILENAME = "config_PPO.yaml"
 
 if __name__ == '__main__':
@@ -16,7 +15,6 @@ if __name__ == '__main__':
     if c["vanilla"]:
         vanilla_path = c["vanilla_path"]
 
-    for i in range(c["nb_experts"]):
-        expert_filename = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"+c["expe_path"]+c["special_name"]+c["model_ext"]
-        # print(expert_filename)
-        ppo_train_1_expert(c["env_rad"]+c["env"], c["env_steps"], c["experts_weights"][i], expert_filename)
+    expert_filename = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"])+"/"+c["expe_path"]+c["special_name"]+c["model_ext"]
+    # print(expert_filename)
+    ppo_train_1_expert(c, expert_filename)

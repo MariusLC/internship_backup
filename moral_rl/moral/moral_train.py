@@ -16,12 +16,6 @@ if __name__ == '__main__':
     if c["vanilla"]:
         vanilla_path = c["vanilla_path"]
 
-    c = load_config(CONFIG_PATH, CONFIG_FILENAME)
-
-    vanilla_path = ""
-    if c["vanilla"]:
-        vanilla_path = c["vanilla_path"]
-
     # will impact the utopia point calculated
     gene_or_expert = c["gene_path"]
     if c["geneORexpert"]:

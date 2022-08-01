@@ -15,13 +15,12 @@ if __name__ == '__main__':
     if c["vanilla"]:
         vanilla_path = c["vanilla_path"]
 
-    for i in range(c["nb_experts"]):
-        path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
-        expert_filename = path+c["expe_path"]+c["model_ext"]
-        demos_filename = path+c["demo_path"]+c["demo_ext"]
-        generator_filename = path+c["gene_path"]+c["model_ext"]
-        discriminator_filename = path+c["disc_path"]+c["model_ext"]
-        # print(demos_filename)
-        airl_train_1_expert(c["env_rad"]+c["env"], c["env_steps"], demos_filename, generator_filename, discriminator_filename, prints=False)
+    path = c["data_path"]+c["env_path"]+vanilla_path+str(c["expert_weights"])+"/"
+    expert_filename = path+c["expe_path"]+c["model_ext"]
+    demos_filename = path+c["demo_path"]+c["demo_ext"]
+    generator_filename = path+c["gene_path"]+c["model_ext"]
+    discriminator_filename = path+c["disc_path"]+c["model_ext"]
+    # print(demos_filename)
+    airl_train_1_expert(c, demos_filename, generator_filename, discriminator_filename, prints=False)
 
 

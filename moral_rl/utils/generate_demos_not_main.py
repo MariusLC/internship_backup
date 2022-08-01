@@ -2,8 +2,8 @@ from tqdm import tqdm
 from moral.ppo import PPO
 import torch
 from envs.gym_wrapper import GymWrapper
-from envs.randomized_v2 import MAX_STEPS as max_steps_v2
-from envs.randomized_v3 import MAX_STEPS as max_steps_v3
+# from envs.randomized_v2 import MAX_STEPS as max_steps_v2
+# from envs.randomized_v3 import MAX_STEPS as max_steps_v3
 import pickle
 import argparse
 from utils.save_data import *
@@ -23,11 +23,11 @@ def generate_demos_n_experts(env, nb_demos, experts_filenames, demos_filenames):
 
 
 def generate_demos_1_moral_agent(env_id, nb_demos, n_workers, gamma, expert_filename, demos_filename, non_eth_expert_filename, non_eth_norm, eth_norm, discriminators_filenames, generators_filenames):
-    max_steps = 0
-    if env_id == 'randomized_v2':
-        max_steps = max_steps_v2
-    else :
-        max_steps = max_steps_v3
+    # max_steps = 0
+    # if env_id == 'randomized_v2':
+    #     max_steps = max_steps_v2
+    # else :
+    #     max_steps = max_steps_v3
 
     nb_experts = len(discriminators_filenames)
 
@@ -96,11 +96,11 @@ def generate_demos_1_moral_agent(env_id, nb_demos, n_workers, gamma, expert_file
 
 def generate_demos_1_expert(env_id, nb_demos, expert_filename, demos_filename):
 
-    max_steps = 0
-    if env_id == 'randomized_v2':
-        max_steps = max_steps_v2
-    else :
-        max_steps = max_steps_v3
+    # max_steps = 0
+    # if env_id == 'randomized_v2':
+    #     max_steps = max_steps_v2
+    # else :
+    #     max_steps = max_steps_v3
 
     # Initialize Environment
     env = GymWrapper(env_id)

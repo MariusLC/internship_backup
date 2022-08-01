@@ -49,24 +49,6 @@ if __name__ == '__main__':
 	if c["vanilla"]:
 		vanilla_path = c["vanilla_path"]
 
-	# Init WandB & Parameters
-	wandb.init(project='test_discrim', config={
-		'env_id': c["env_rad"]+c["env"],
-		'gamma': 0.999,
-		'batchsize_discriminator': 512,
-		#'env_steps': 9e6,
-		# 'env_steps': 1000,
-		# 'batchsize_ppo': 12,
-		# 'n_workers': 12,
-		# 'lr_ppo': 3e-4,
-		# 'entropy_reg': 0.05,
-		# 'lambd': [int(i) for i in args.lambd],
-		# 'epsilon': 0.1,
-		# 'ppo_epochs': 5
-		})
-	config = wandb.config
-
-
 	for i in range(c["nb_experts"]):
 		path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
 
@@ -75,9 +57,6 @@ if __name__ == '__main__':
 
 		demos_filename = path+c["demo_path"]+c["demo_ext"]
 		rand_demos_filename = c["data_path"]+c["env_path"]+vanilla_path+c["rand_path"]+c["demo_path"]+c["demo_ext"]
-		
-		
-		# print(demos_filename)
 
 		# experts
 		expert_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
@@ -87,13 +66,12 @@ if __name__ == '__main__':
 		rand_policy = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
 		rand_policy.load_state_dict(torch.load(rand_filename, map_location=torch.device('cpu')))
 
-
 		if c["generate_demos"] :
-			generate_demos_1_expert(c["env_rad"]+c["env"], c["nb_demos"], expert_filename, demos_filename)
-			# generate_demos_1_expert(c["env_rad"]+c["env"], c["nb_demos"], rand_filename, rand_demos_filename)
+			generate_demos_1_expert(c["env_id"], c["nb_demos"], expert_filename, demos_filename)
+			# generate_demos_1_expert(c["env_id"], c["nb_demos"], rand_filename, rand_demos_filename)
 
 		# Load demonstrations & evaluate ppo
 		expert_trajectories = pickle.load(open(demos_filename, 'rb'))
-		print("eval expert = ", evaluate_ppo(expert_policy, config))
+		print("eval expert = ", evaluate_ppo(expert_policy, c["env_id"]))
 		rand_trajectories = pickle.load(open(rand_demos_filename, 'rb'))
-		print("eval rand = ", evaluate_ppo(rand_policy, config))
+		print("eval rand = ", evaluate_ppo(rand_policy, c["env_id"]))
