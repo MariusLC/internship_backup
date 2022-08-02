@@ -172,9 +172,9 @@ if __name__ == '__main__':
 		dataset.estimate_normalisation_points(c["normalization_non_eth_sett"], non_eth_expert, env_id, steps=10000)
 	
 	if config.test:
-		obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000/config.n_worker)
+		obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=1000//config.n_workers)
 	else :
-		obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=10000/config.n_worker)
+		obj_rew, vect_rew = estimate_vectorized_rew(env, agent_test, dataset, discriminator_list, config.gamma, config.normalization_eth_sett, config.normalization_non_eth_sett, env_steps=10000//config.n_workers)
 	obj_rew_norm_sum = obj_rew / sum(obj_rew)
 	obj_rew_norm_linalg = obj_rew / np.linalg.norm(obj_rew)
 	print("mean objective reward expert = ", obj_rew)

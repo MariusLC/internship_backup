@@ -150,7 +150,7 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
                 # save objective rewards into volume_buffer before normalizing it
                 volume_buffer.log_statistics_sum(dataset.log_returns_actions())
                 objective_logs_sum = dataset.log_returns_sum()
-                mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, non_eth_norm, wandb)
+                mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, config.non_eth_norm, wandb)
                 volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_actions())
             else :
                 # save objective rewards into volume_buffer before normalizing it
