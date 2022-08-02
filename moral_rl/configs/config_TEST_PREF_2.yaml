@@ -82,4 +82,5 @@ demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1
 # Peschl Values #
 #######
 env_steps: 8000000
+# env_steps: 16000000
 #### query_freq: 153 846 # env_steps_moral/(n_queries+2)

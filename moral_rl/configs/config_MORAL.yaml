@@ -48,7 +48,7 @@ non_eth_experts_weights: [1,0,0,0]
 test: False
 
 # PREFERENCES
-Q_on_actions: True
+Q_on_actions: False
 pref_giver_no_null: True
 temperature_mcmc : 50
 cov_range: 0.01
@@ -76,6 +76,7 @@ query_selection: "compare_basic_log_lik"
 #######
 # Peschl Values #
 #######
-env_steps: 8000000
-n_queries: 200 
+# env_steps: 8000000
+env_steps: 16000000
+n_queries: 200
 query_freq: 99 # not real value if real_params = True
