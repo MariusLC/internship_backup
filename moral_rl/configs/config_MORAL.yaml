@@ -27,7 +27,7 @@ ratio: [1, 3, 1]
 # ratio: [1, 1, 1, 1]
 # ratio: [1, 1, 1, 1, 1, 1, 1]
 # special_name_agent: "T3_marius_prior_conv01_norm_v6_v3"
-special_name_agent: "Q_on_ACTIONS_from_scratch_T3_marius_prior_conv01_norm_v6_v3"
+special_name_agent: "Q_on_ACTIONS_from_scratch_T40_w_propose_linalg_positive_conv001_norm_v6_v3_200Queries"
 
 # PPO
 batchsize_ppo: 12
@@ -45,15 +45,17 @@ eth_norm: "v6"
 non_eth_norm: "v3"
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 non_eth_experts_weights: [1,0,0,0]
-test: True
+test: False
 
 # PREFERENCES
 Q_on_actions: True
 pref_giver_no_null: True
-temperature_mcmc : 40
+temperature_mcmc : 50
 cov_range: 0.01
-prop_w_mode: "moral"
 nb_query_test: 1
+
+prop_w_mode: "normalized_linalg_positive"
+# prop_w_mode: "moral"
 
 posterior_mode : "basic_temperature"
 # posterior_mode : "basic"
@@ -75,6 +77,5 @@ query_selection: "compare_basic_log_lik"
 # Peschl Values #
 #######
 env_steps: 8000000
-n_queries: 50 
+n_queries: 200 
 query_freq: 99 # not real value if real_params = True
-
