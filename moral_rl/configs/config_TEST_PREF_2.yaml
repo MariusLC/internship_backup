@@ -38,7 +38,7 @@ n_best: 100
 n_queries: 200
 nb_query_test: 20
 pref_giver_no_null: True
-Q_on_actions: False
+Q_on_actions: True
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_MORAL"
@@ -59,7 +59,7 @@ mcmc_type: parallel
 # mcmc_log: final
 mcmc_log: active
 prop_w_mode: "moral"
-temperature_mcmc: 60
+temperature_mcmc: 200
 cov_range: 0.01
 nb_mcmc: 1
 dimension_pref: 3
