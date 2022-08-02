@@ -42,10 +42,10 @@ Q_on_actions: True
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_MORAL"
-# query_selection: "compare_basic_log_lik"
+query_selection: "compare_basic_log_lik"
 # query_selection: "random"
 # query_selection: "random_no_double_null"
-query_selection: "random_less_null"
+# query_selection: "random_less_null"
 
 # posterior_mode: "print"
 # posterior_mode: "moral"
