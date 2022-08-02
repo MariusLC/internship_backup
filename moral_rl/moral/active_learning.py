@@ -126,6 +126,7 @@ class PreferenceLearner:
 	def propose_w_normalized_linalg(w_curr, cov_range):
 		w_new = st.multivariate_normal(mean=w_curr, cov=cov_range).rvs()
 		w_new = w_new / np.linalg.norm(w_new)
+		w_new = w_new - 1e-15 # to ensure that norm < 1
 		return w_new
 
 	@staticmethod
@@ -133,6 +134,7 @@ class PreferenceLearner:
 		w_new = st.multivariate_normal(mean=w_curr, cov=cov_range).rvs()
 		w_new = abs(w_new)
 		w_new = w_new / np.linalg.norm(w_new)
+		w_new = w_new - 1e-15 # to ensure that norm < 1
 		return w_new
 		
 		
