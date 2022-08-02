@@ -38,14 +38,14 @@ n_best: 100
 n_queries: 200
 nb_query_test: 20
 pref_giver_no_null: True
-Q_on_actions: True
+Q_on_actions: False
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_MORAL"
-# query_selection: "compare_basic_log_lik"
+query_selection: "compare_basic_log_lik"
 # query_selection: "random"
 # query_selection: "random_no_double_null"
-query_selection: "random_less_null"
+# query_selection: "random_less_null"
 
 # posterior_mode: "print"
 # posterior_mode: "moral"
@@ -61,7 +61,7 @@ mcmc_type: parallel
 
 # mcmc_log: final
 mcmc_log: active
-temperature_mcmc: 200
+temperature_mcmc: 3
 cov_range: 0.01
 nb_mcmc: 1
 dimension_pref: 3
