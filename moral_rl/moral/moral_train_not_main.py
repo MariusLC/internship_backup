@@ -155,6 +155,7 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             else :
                 # save objective rewards into volume_buffer before normalizing it
                 volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+                objective_logs_sum = volume_buffer.objective_logs_sum
                 mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, config.non_eth_norm, wandb)
                 volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
 
@@ -162,9 +163,9 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             for i, vec in enumerate(mean_vectorized_rewards):
                 wandb.log({'vectorized_rew_mean ['+str(i)+']': vec}, step=t*config.n_workers)
                 wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vec}, step=t*config.n_workers)
-            
+
             # Log Objectives
-            obj_ret = np.array(volume_buffer.objective_logs_sum)
+            obj_ret = np.array(objective_logs_sum)
             obj_ret_logs = np.mean(obj_ret, axis=0)
             for i, ret in enumerate(obj_ret_logs):
                 wandb.log({'Obj_' + str(i): ret}, step=t*config.n_workers)
