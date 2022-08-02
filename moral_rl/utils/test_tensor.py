@@ -4,7 +4,7 @@
 import numpy as np
 # from envs.gym_wrapper import *
 
-# from tqdm import tqdm
+from tqdm import tqdm
 import torch
 # import matplotlib.pyplot as plt
 # import wandb
@@ -27,6 +27,7 @@ import itertools
 import random
 from drlhp.preference_model import *
 import time
+from moral.active_learning import *
 
 import matplotlib.pyplot as plt
 import wandb
@@ -143,9 +144,42 @@ if __name__ == '__main__':
 	# 	if i%2==0:
 	# 		time.sleep(30)
 
-	wandb.init(project='Test_print_wandb',
-		config={"test" : 3})
+	# wandb.init(project='Test_print_wandb',
+	# 	config={"test" : 3})
 
-	for i in range(10):
-		for j in range(10):
-			wandb.log({'test': j}, step=i)
+	# for i in range(10):
+	# 	for j in range(10):
+	# 		wandb.log({'test': j}, step=i)
+
+	size = 3
+	w = np.ones(size)/np.linalg.norm(np.ones(size))
+	print(w)
+	cov = 1
+
+	w_list_prior = []
+	w_list_linalg = []
+	w_list = []
+	for i in tqdm(range(10000)):
+		w_list_prior.append(PreferenceLearner.propose_w_in_prior_space(w, cov))
+		w_list_linalg.append(PreferenceLearner.propose_w_normalized_linalg_positive(w, cov))
+		w_list.append(PreferenceLearner.propose_w(w, cov))
+
+	w_list_prior = np.array(w_list_prior)
+	w_list_linalg = np.array(w_list_linalg)
+	w_list = np.array(w_list)
+
+	bins = np.arange(-1, 3, 0.01)
+	for i in range(size):
+		plt.hist(w_list[:,i], bins=bins, label='classic')
+		plt.hist(w_list_linalg[:,i], bins=bins, label='linalg')
+		plt.hist(w_list_prior[:,i], bins='auto', label='prior')
+		
+		plt.legend(prop={'size': 10})
+		plt.show()
+
+	# for i in range(len(w)):
+	# 	plt.hist(gaussian_samples[:,i], bins='auto', label='np')
+	# 	# plt.show()
+	# 	plt.hist(moral_samples[:,i], bins='auto', label='st')
+	# 	plt.legend(prop={'size': 10})
+	# 	plt.show()

@@ -57,7 +57,8 @@ class PreferenceLearner:
 		else:
 			return 0
 
-	def outside_prior_space(self, w):
+	@staticmethod
+	def outside_prior_space(w):
 		return not (np.linalg.norm(w) <=1 and np.all(np.array(w) >= 0))
 
 
@@ -108,7 +109,12 @@ class PreferenceLearner:
 		w_new = np.random.multivariate_normal(w_curr, np.ones((len(w_curr), len(w_curr)))*cov_range)
 		return w_new
 
-
+	@staticmethod
+	def propose_w_in_prior_space(w_curr, cov_range):
+		w_new = st.multivariate_normal(mean=w_curr, cov=cov_range).rvs()
+		while(PreferenceLearner.outside_prior_space(w_new)):
+			w_new = st.multivariate_normal(mean=w_curr, cov=cov_range).rvs()
+		return w_new
 
 	@staticmethod
 	def propose_w_normalized(w_curr, cov_range):

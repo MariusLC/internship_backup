@@ -69,6 +69,27 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
 
+	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
+	weight_eval_rand = []
+	for i in range(100):
+		weights = st.multivariate_normal(mean=np.ones(3)/np.linalg.norm(np.ones(3)), cov=0.01).rvs()
+		weight_eval_rand.append(preference_giver.evaluate_weights(config.n_best, weights, traj_test))
+	mean_weight_eval_rand = np.mean(weight_eval_rand)
+	median_weight_eval_rand = np.median(weight_eval_rand)
+	min_weight_eval_rand = min(weight_eval_rand)
+	max_weight_eval_rand = max(weight_eval_rand)
+	norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
+	print("mean_weight_eval_rand = ", mean_weight_eval_rand)
+	print("min_weight_eval_rand = ", min_weight_eval_rand)
+	print("max_weight_eval_rand = ", max_weight_eval_rand)
+	print("median_weight_eval_rand = ", median_weight_eval_rand)
+	print("norm_score_vs_rand = ", norm_score_vs_rand)
+	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+
 
 def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_norm, non_eth_norm, env_steps=1000):
 	states = env.reset()

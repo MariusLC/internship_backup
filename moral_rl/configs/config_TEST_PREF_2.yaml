@@ -59,7 +59,7 @@ mcmc_type: parallel
 # mcmc_log: final
 mcmc_log: active
 prop_w_mode: "moral"
-temperature_mcmc: 60
+temperature_mcmc: 200
 cov_range: 0.01
 nb_mcmc: 1
 dimension_pref: 3
