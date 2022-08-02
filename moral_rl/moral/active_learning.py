@@ -645,22 +645,35 @@ class VolumeBuffer:
 			else:
 				all_zero_index.append(i)
 
-		random_zero_pick = np.random.rand()
-		if random_zero_pick > 0.9: # a null vector and a non null vector
-			rand_idx = [np.random.choice(all_zero_index), np.random.choice(all_non_zero_index)]
+		if len(all_non_zero_index) == 0: # only null reward vectors
+			rand_idx = np.random.choice(all_zero_index, 2, replace=False)
 			new_returns_a = self.observed_logs_sum[rand_idx[0]]
 			new_returns_b = self.observed_logs_sum[rand_idx[1]]
 			logs_a = self.objective_logs_sum[rand_idx[0]]
 			logs_b = self.objective_logs_sum[rand_idx[1]]
-		else: # 2 different non null vectors
-			logs_a = np.array([0,0])
-			logs_b = np.array([0,0])
-			while(all(logs_a == logs_b)): 
-				rand_idx = np.random.choice(all_non_zero_index, 2, replace=False)
+		elif len(all_zero_index) == 0: # only null reward vectors
+			rand_idx = np.random.choice(all_non_zero_index, 2, replace=False)
+			new_returns_a = self.observed_logs_sum[rand_idx[0]]
+			new_returns_b = self.observed_logs_sum[rand_idx[1]]
+			logs_a = self.objective_logs_sum[rand_idx[0]]
+			logs_b = self.objective_logs_sum[rand_idx[1]]
+		else :
+			random_zero_pick = np.random.rand()
+			if random_zero_pick > 0.9: # a null vector and a non null vector
+				rand_idx = [np.random.choice(all_zero_index), np.random.choice(all_non_zero_index)]
 				new_returns_a = self.observed_logs_sum[rand_idx[0]]
 				new_returns_b = self.observed_logs_sum[rand_idx[1]]
 				logs_a = self.objective_logs_sum[rand_idx[0]]
 				logs_b = self.objective_logs_sum[rand_idx[1]]
+			else: # 2 different non null vectors
+				logs_a = np.array([0,0])
+				logs_b = np.array([0,0])
+				while(all(logs_a == logs_b)): 
+					rand_idx = np.random.choice(all_non_zero_index, 2, replace=False)
+					new_returns_a = self.observed_logs_sum[rand_idx[0]]
+					new_returns_b = self.observed_logs_sum[rand_idx[1]]
+					logs_a = self.objective_logs_sum[rand_idx[0]]
+					logs_b = self.objective_logs_sum[rand_idx[1]]
 
 		# Also return ground truth logs for automatic preferences
 		if self.auto_pref:

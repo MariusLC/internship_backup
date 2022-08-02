@@ -159,7 +159,7 @@ if __name__ == '__main__':
 	w_list_prior = []
 	w_list_linalg = []
 	w_list = []
-	for i in tqdm(range(10000)):
+	for i in tqdm(range(1000)):
 		w_list_prior.append(PreferenceLearner.propose_w_in_prior_space(w, cov))
 		w_list_linalg.append(PreferenceLearner.propose_w_normalized_linalg_positive(w, cov))
 		w_list.append(PreferenceLearner.propose_w(w, cov))
@@ -172,10 +172,14 @@ if __name__ == '__main__':
 	for i in range(size):
 		plt.hist(w_list[:,i], bins=bins, label='classic')
 		plt.hist(w_list_linalg[:,i], bins=bins, label='linalg')
-		plt.hist(w_list_prior[:,i], bins='auto', label='prior')
+		plt.hist(w_list_prior[:,i], bins=bins, label='prior')
 		
 		plt.legend(prop={'size': 10})
 		plt.show()
+
+	print("mean prior = ", np.mean(w_list_prior, axis=0))
+	print("mean linalg = ", np.mean(w_list_linalg, axis=0))
+	print("mean = ", np.mean(w_list, axis=0))
 
 	# for i in range(len(w)):
 	# 	plt.hist(gaussian_samples[:,i], bins='auto', label='np')
