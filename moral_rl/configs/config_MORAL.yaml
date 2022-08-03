@@ -48,7 +48,7 @@ non_eth_experts_weights: [1,0,0,0]
 test: False
 
 # PREFERENCES
-Q_on_actions: False
+Q_on_actions: True
 pref_giver_no_null: True
 temperature_mcmc : 50
 cov_range: 0.01
@@ -67,10 +67,10 @@ prior: "marius_2"
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_MORAL"
-query_selection: "compare_basic_log_lik"
+# query_selection: "compare_basic_log_lik"
 # query_selection: "random"
 # query_selection: "random_no_double_null"
-# query_selection: "random_less_null"
+query_selection: "random_less_null"
 
 
 #######
