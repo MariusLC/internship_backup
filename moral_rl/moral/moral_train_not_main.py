@@ -196,7 +196,7 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
                     volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc)
                 ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best() 
             volume_buffer.best_returns = (ret_a, ret_b)
-            volume_buffer.best_rewards = (observed_rew_a, observed_rew_b)
+            volume_buffer.best_observed_returns = (observed_rew_a, observed_rew_b)
             volume_buffer.best_delta = observed_rew_a - observed_rew_b
 
             # reset buffer ? but not best
