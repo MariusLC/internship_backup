@@ -566,6 +566,18 @@ class VolumeBuffer:
 	def log_statistics_sum(self, objective_logs_sum):
 		self.objective_logs_sum = objective_logs_sum
 
+	def log_statistics_sum_print(self, objective_logs_sum):
+		self.objective_logs_sum = objective_logs_sum
+
+		data = np.array(objective_logs_sum)
+		action_return_repartition = np.zeros(5)
+
+		rep = abs(np.sum(data, axis=0))
+		print("rep = ", rep)
+		action_return_repartition = np.concatenate(([len(data) - sum(rep)], rep))
+		print("action_return_repartition = ", action_return_repartition)
+
+
 	def log_rewards_2(self, observed_logs_sum):
 		self.observed_logs_sum = np.concatenate((self.observed_logs_sum, observed_logs_sum))
 

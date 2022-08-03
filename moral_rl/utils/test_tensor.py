@@ -151,44 +151,59 @@ if __name__ == '__main__':
 	# 	for j in range(10):
 	# 		wandb.log({'test': j}, step=i)
 
-	size = 3
-	w = np.ones(size)/np.linalg.norm(np.ones(size))
-	print(w)
-	cov = 1
+	# size = 3
+	# w = np.ones(size)/np.linalg.norm(np.ones(size))
+	# print(w)
+	# cov = 1
 
-	w_list_prior = []
-	w_list_linalg = []
-	w_list = []
-	for i in tqdm(range(10000)):
-		w_list_prior.append(PreferenceLearner.propose_w_in_prior_space(w, cov))
-		w_list_linalg.append(PreferenceLearner.propose_w_normalized_linalg_positive(w, cov))
-		w_list.append(PreferenceLearner.propose_w(w, cov))
+	# w_list_prior = []
+	# w_list_linalg = []
+	# w_list = []
+	# for i in tqdm(range(10000)):
+	# 	w_list_prior.append(PreferenceLearner.propose_w_in_prior_space(w, cov))
+	# 	w_list_linalg.append(PreferenceLearner.propose_w_normalized_linalg_positive(w, cov))
+	# 	w_list.append(PreferenceLearner.propose_w(w, cov))
 
-	w_list_prior = np.array(w_list_prior)
-	w_list_linalg = np.array(w_list_linalg)
-	w_list = np.array(w_list)
+	# w_list_prior = np.array(w_list_prior)
+	# w_list_linalg = np.array(w_list_linalg)
+	# w_list = np.array(w_list)
 
-	bins = np.arange(-1, 3, 0.01)
-	# for i in range(size):
-	# 	plt.hist(w_list[:,i], bins=bins, label='classic')
-	# 	plt.hist(w_list_linalg[:,i], bins=bins, label='linalg')
-	# 	plt.hist(w_list_prior[:,i], bins=bins, label='prior')
-	# 	plt.legend(prop={'size': 10})
-	# 	plt.show()
+	# bins = np.arange(-1, 3, 0.01)
+	# # for i in range(size):
+	# # 	plt.hist(w_list[:,i], bins=bins, label='classic')
+	# # 	plt.hist(w_list_linalg[:,i], bins=bins, label='linalg')
+	# # 	plt.hist(w_list_prior[:,i], bins=bins, label='prior')
+	# # 	plt.legend(prop={'size': 10})
+	# # 	plt.show()
 
-	# plt.hist([np.linalg.norm(i) for i in w_list], bins=bins, label='classic')
-	# plt.hist([np.linalg.norm(i) for i in w_list_linalg], bins=bins, label='linalg')
-	# plt.hist([np.linalg.norm(i) for i in w_list_prior], bins=bins, label='prior')
-	# plt.legend(prop={'size': 10})
-	# plt.show()
+	# # plt.hist([np.linalg.norm(i) for i in w_list], bins=bins, label='classic')
+	# # plt.hist([np.linalg.norm(i) for i in w_list_linalg], bins=bins, label='linalg')
+	# # plt.hist([np.linalg.norm(i) for i in w_list_prior], bins=bins, label='prior')
+	# # plt.legend(prop={'size': 10})
+	# # plt.show()
 
-	print("mean prior = ", np.mean(w_list_prior, axis=0))
-	print("mean linalg = ", np.mean(w_list_linalg, axis=0))
-	print("mean = ", np.mean(w_list, axis=0))
+	# print("mean prior = ", np.mean(w_list_prior, axis=0))
+	# print("mean linalg = ", np.mean(w_list_linalg, axis=0))
+	# print("mean = ", np.mean(w_list, axis=0))
 
-	l = [np.linalg.norm(i) for i in w_list_linalg]
-	# print(l)
-	print(np.count_nonzero(np.array(l)>1))
+	# l = [np.linalg.norm(i) for i in w_list_linalg]
+	# # print(l)
+	# print(np.count_nonzero(np.array(l)>1))
+
+
+	volume_buffer = VolumeBuffer(3)
+	objective_logs_sum = []
+	for i in range(200):
+		temp = np.zeros(4)
+		print(temp)
+		if np.random.rand() > 0.5:
+			temp[np.random.randint(4)] += 1
+		print(temp)
+		objective_logs_sum.append(temp)
+	objective_logs_sum = np.array(objective_logs_sum)
+	objective_logs_sum[:,3] *= -1
+	print(objective_logs_sum)
+	volume_buffer.log_statistics_sum_print(objective_logs_sum)
 
 	# for i in range(len(w)):
 	# 	plt.hist(gaussian_samples[:,i], bins='auto', label='np')
