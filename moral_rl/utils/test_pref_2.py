@@ -276,6 +276,10 @@ if __name__ == '__main__':
 			for k in range(c["nb_query_test"]):
 				volume_buffer.compare_delta_basic_log_lik(w_posterior_temp, config.temperature_mcmc)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+		elif c["query_selection"] == "compare_basic_log_lik_less_zeros":
+			for k in range(c["nb_query_test"]):
+				volume_buffer.compare_delta_basic_log_lik_less_zeros(w_posterior_temp, config.temperature_mcmc)
+			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
 		delta = observed_rew_a - observed_rew_b
 

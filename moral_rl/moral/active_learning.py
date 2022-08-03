@@ -802,6 +802,17 @@ class VolumeBuffer:
 			self.best_returns = (logs_a, logs_b)
 			# print("self.best_returns ", self.best_returns)
 
+	def compare_basic_log_lik_less_zeros(self, w_posterior, temperature, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
+		if len(new_returns_a) == 0:
+			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset_less_zeros_no_double()
+		delta = new_returns_a - new_returns_b
+		volume_delta = self.volume_removal_basic_log_lik(w_posterior, new_returns_a, new_returns_b, delta, temperature)
+		if volume_delta > self.best_volume:
+			self.best_volume = volume_delta
+			self.best_delta = delta
+			self.best_observed_returns = (new_returns_a, new_returns_b)
+			self.best_returns = (logs_a, logs_b)
+
 	def compare_delta_basic_log_lik(self, w_posterior, temperature, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
 		if len(new_returns_a) == 0:
 			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
