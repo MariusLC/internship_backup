@@ -22,7 +22,7 @@ def estimate_vectorized_rew_2(traj_test):
 	mean_vectorized_rewards /= len(traj_test)
 	return mean_returns, mean_vectorized_rewards
 
-def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, RATIO_NORMALIZED, traj_test, preference_giver):
+def run_mcmc(config, preference_learner, w_posterior_mean_uniform, RATIO_NORMALIZED, traj_test, preference_giver):
 	w_posterior_mean_temp = w_posterior_mean_uniform
 	if config.mcmc_type == "parallel":
 		for j in range(config.nb_mcmc):
@@ -72,18 +72,18 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, RATIO_NORM
 	distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 
 	for j in range(len(w_posterior_mean)):
-		wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*config.nb_mcmc)
-		wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
+		wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=0)
+		wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=0)
+	wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=0)
+	wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=0)
+	wandb.log({'distance_airl_to_ratio': distance_airl}, step=0)
 
 	# NEW WEIGHT QUALITY HEURISTIC
 	weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
 	weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
-	wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'weight_eval': weight_eval}, step=0)
+	wandb.log({'weight_eval TOP 10': weight_eval_10}, step=0)
+	wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=0)
 
 	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
 	weight_eval_rand = []
@@ -100,11 +100,11 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, RATIO_NORM
 	print("max_weight_eval_rand = ", max_weight_eval_rand)
 	print("median_weight_eval_rand = ", median_weight_eval_rand)
 	print("norm_score_vs_rand = ", norm_score_vs_rand)
-	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=0)
+	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=0)
+	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=0)
+	wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=0)
+	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=0)
 
 	return w_posterior_mean
 
@@ -198,8 +198,8 @@ if __name__ == '__main__':
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean = w_posterior.mean(axis=0)
 	# Log weight vector
-	for i in range(len(w_posterior_mean)):
-		wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=0)
+	# for i in range(len(w_posterior_mean)):
+	# 	wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=0)
 
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
@@ -280,7 +280,7 @@ if __name__ == '__main__':
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 	# Calculate new w_posterior with all preferences
-	w_posterior_mean = run_mcmc(config, preference_learner, w_posterior_mean, i, RATIO_NORMALIZED, traj_test, preference_giver)
+	w_posterior_mean = run_mcmc(config, preference_learner, w_posterior_mean, RATIO_NORMALIZED, traj_test, preference_giver)
 
 	# Reset PPO buffer
 	dataset.reset_trajectories()
@@ -323,6 +323,7 @@ if __name__ == '__main__':
 			# Log mean vectorized rewards
 			for i, vec in enumerate(mean_vectorized_rewards):
 				wandb.log({'vectorized_rew_mean ['+str(i)+']': vec}, step=t*config.n_workers)
+				wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=t*config.n_workers)
 				wandb.log({'weighted_rew_mean ['+str(i)+']': w_posterior_mean[i] * vec}, step=t*config.n_workers)
 
 			# Log Objectives
