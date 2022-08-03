@@ -106,6 +106,8 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, RATIO_NORM
 	wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
 
+	return w_posterior_mean
+
 
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -250,7 +252,7 @@ if __name__ == '__main__':
 			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset_less_zeros_no_double()
 		elif c["query_selection"] == "compare_EUS":
 			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_EUS(w_posterior, w_posterior_mean_uniform, preference_learner)
+				volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_MORAL":
 			for k in range(c["nb_query_test"]):
@@ -278,7 +280,7 @@ if __name__ == '__main__':
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 	# Calculate new w_posterior with all preferences
-	run_mcmc(config, preference_learner, w_posterior_mean, i, RATIO_NORMALIZED, traj_test, preference_giver)
+	w_posterior_mean = run_mcmc(config, preference_learner, w_posterior_mean, i, RATIO_NORMALIZED, traj_test, preference_giver)
 
 	# Reset PPO buffer
 	dataset.reset_trajectories()
