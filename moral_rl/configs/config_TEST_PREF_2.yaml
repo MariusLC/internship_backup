@@ -39,7 +39,7 @@ n_best: 100
 n_queries: 200
 nb_query_test: 20
 pref_giver_no_null: True
-Q_on_actions: False
+Q_on_actions: True
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_MORAL"
@@ -66,7 +66,7 @@ prior: "marius_2"
 
 # mcmc_log: final
 mcmc_log: active
-temperature_mcmc: 3
+temperature_mcmc: 10
 cov_range: 0.01
 nb_mcmc: 1
 dimension_pref: 3

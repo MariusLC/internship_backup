@@ -90,6 +90,8 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
 
+	return w_posterior_mean, w_posterior
+
 
 def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_norm, non_eth_norm, env_steps=1000):
 	states = env.reset()
@@ -208,6 +210,8 @@ if __name__ == '__main__':
 
 	w_posterior = preference_learner.sample_w_prior(preference_learner.n_iter)
 	w_posterior_mean_uniform = w_posterior.mean(axis=0)
+	w_posterior_temp = w_posterior
+	w_posterior_mean_temp = w_posterior_mean_uniform
 
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
@@ -262,15 +266,15 @@ if __name__ == '__main__':
 			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset_less_zeros_no_double()
 		elif c["query_selection"] == "compare_EUS":
 			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_EUS(w_posterior, w_posterior_mean_uniform, preference_learner)
+				volume_buffer.compare_EUS(w_posterior, w_posterior_mean_temp, preference_learner)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_MORAL":
 			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_MORAL(w_posterior)
+				volume_buffer.compare_MORAL(w_posterior_temp)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_basic_log_lik":
 			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc)
+				volume_buffer.compare_delta_basic_log_lik(w_posterior_temp, config.temperature_mcmc)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
 		delta = observed_rew_a - observed_rew_b
@@ -293,11 +297,11 @@ if __name__ == '__main__':
 		preference_learner.log_preference(delta, preference)
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
-		w_posterior_mean_temp = w_posterior_mean_uniform
+		# w_posterior_mean_temp = w_posterior_mean_uniform
 		if config.mcmc_log == "active":
-			run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver)
+			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver)
 		elif config.mcmc_log == "final" and i == c["n_queries"]-1:
-			run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver)
+			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver)
 
 		# # Reset PPO buffer
 		# dataset.reset_trajectories()
