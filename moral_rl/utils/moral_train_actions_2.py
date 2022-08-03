@@ -199,7 +199,7 @@ if __name__ == '__main__':
 	w_posterior_mean = w_posterior.mean(axis=0)
 	# Log weight vector
 	# for i in range(len(w_posterior_mean)):
-	# 	wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=0)
+		# wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=0)
 
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
