@@ -75,19 +75,23 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 
 	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
 	weight_eval_rand = []
+	weights_list = []
 	for j in range(100):
 		weights = np.random.uniform(0.0, 1.0, 3)
+		weights_list.append(weights)
 		# weights = st.multivariate_normal(mean=np.ones(3)/np.linalg.norm(np.ones(3)), cov=0.01).rvs()
 		# weight_eval_rand.append(preference_giver.evaluate_weights(config.n_best, weights, traj_test))
 		weight_eval_rand.append(preference_giver.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max))
 	mean_weight_eval_rand = np.mean(weight_eval_rand)
 	median_weight_eval_rand = np.median(weight_eval_rand)
 	min_weight_eval_rand = min(weight_eval_rand)
+	min_w = weights_list[np.argmin(np.array(weight_eval_rand))]
 	max_weight_eval_rand = max(weight_eval_rand)
+	max_w = weights_list[np.argmax(np.array(weight_eval_rand))]
 	norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
 	print("mean_weight_eval_rand = ", mean_weight_eval_rand)
-	print("min_weight_eval_rand = ", min_weight_eval_rand)
-	print("max_weight_eval_rand = ", max_weight_eval_rand)
+	print("min_weight_eval_rand = "+str(min_weight_eval_rand)+", w = "+str(min_w))
+	print("max_weight_eval_rand = "+str(max_weight_eval_rand)+", w = "+str(max_w))
 	print("median_weight_eval_rand = ", median_weight_eval_rand)
 	print("norm_score_vs_rand = ", norm_score_vs_rand)
 	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
