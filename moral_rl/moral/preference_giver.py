@@ -451,7 +451,7 @@ class StaticPreferenceGiverv3(ABC):
 		trajectories.sort(key=lambda t: self.evaluate_traj(t), reverse=True)
 		best = trajectories[:n_best]
 		mean_entropy_eval_max = 0
-		print("top_10_best_eval = ")
+		print("top_10_worst_eval = ")
 		for traj in best:
 			vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
 			dot = np.dot(vec_rew, w)
@@ -481,7 +481,7 @@ class PreferenceGiverv3_DOT(StaticPreferenceGiverv3):
 	def evaluate_ret(self, ret):
 		ret_copy = np.array(ret.copy())[:self.d]+1e-10
 		print("ret_copy = ", ret_copy)
-		res = -self.ratio_normalized * ret_copy
+		res = - np.array(self.ratio_normalized * ret_copy)
 		print("res = ", res)
 		print("dot = ", -np.dot(self.ratio_normalized, ret_copy))
 		return -np.dot(self.ratio_normalized, ret_copy) # minus because we want evaluate_ret to be a minimization
