@@ -133,6 +133,9 @@ if __name__ == '__main__':
 		generators_filenames.append(path+c["expe_path"]+c["model_ext"])
 		discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
 
+    if c["real_params"]:
+        env_steps = int(c["env_steps"]/c["n_workers"])
+
 	volume_buffer = VolumeBuffer(len(c["ratio"]))
 
 	# Create Environment
@@ -297,7 +300,7 @@ if __name__ == '__main__':
 	# set the batch_size for phase 2
 	dataset.batch_size = config.batchsize_ppo_phase_2
 
-	for t in tqdm(range(config.env_steps)):
+	for t in tqdm(range(env_steps)):
 
 		# Environment interaction
 		actions, log_probs = ppo.act(states_tensor)
