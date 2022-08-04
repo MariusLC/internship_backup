@@ -133,8 +133,9 @@ if __name__ == '__main__':
 		generators_filenames.append(path+c["expe_path"]+c["model_ext"])
 		discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
 
-    if c["real_params"]:
-        env_steps = int(c["env_steps"]/c["n_workers"])
+	env_steps = c["env_steps"]
+	if c["real_params"]:
+		env_steps = int(c["env_steps"]/c["n_workers"])
 
 	volume_buffer = VolumeBuffer(len(c["ratio"]))
 
