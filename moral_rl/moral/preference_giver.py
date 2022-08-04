@@ -480,6 +480,10 @@ class PreferenceGiverv3_DOT(StaticPreferenceGiverv3):
 
 	def evaluate_ret(self, ret):
 		ret_copy = np.array(ret.copy())[:self.d]+1e-10
+		print("ret_copy = ", ret_copy)
+		res = -self.ratio_normalized * ret_copy
+		print("res = ", res)
+		print("dot = ", -np.dot(self.ratio_normalized, ret_copy))
 		return -np.dot(self.ratio_normalized, ret_copy) # minus because we want evaluate_ret to be a minimization
 
 
