@@ -39,14 +39,14 @@ n_best: 100
 n_queries: 200
 nb_query_test: 20
 pref_giver_no_null: True
-Q_on_actions: False
+Q_on_actions: True
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_MORAL"
-query_selection: "compare_basic_log_lik"
+# query_selection: "compare_basic_log_lik"
 # query_selection: "random"
 # query_selection: "random_no_double_null"
-# query_selection: "random_less_null"
+query_selection: "random_less_null"
 # query_selection: "compare_basic_log_lik_less_zeros"
 
 # posterior_mode: "print"
@@ -72,7 +72,7 @@ cov_range: 0.01
 nb_mcmc: 1
 dimension_pref: 3
 
-test: False
+test: True
 n_workers: 12
 batchsize_ppo: 120
 gamma: 0.999
