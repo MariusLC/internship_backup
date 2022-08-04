@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import scipy.stats as st
+from abc import *
 
 
 def check_pareto_dom(ret_a, ret_b):
@@ -325,54 +326,41 @@ class EthicalParetoThresholdGiverv3:
 			else :
 				return [0.5, 0.5]
 
-class PreferenceGiverv3_no_null:
+
+
+
+
+class StaticPreferenceGiverv3(ABC):
 	def __init__(self, ratio, pbrl=False):
 		self.ratio = ratio
 		self.d = len(ratio)
 		self.ratio_normalized = []
 		self.pbrl = pbrl
-
 		ratio_sum = sum(ratio)
-
 		for elem in ratio:
 			self.ratio_normalized.append(elem/ratio_sum)
 
-		self.entropy_vec_null = 10
+	@abstractmethod
+	def evaluate_ret(self, ret):
+		pass
 
 	def query_pair(self, ret_a, ret_b):
-		ret_a_copy = np.array(ret_a.copy())[:self.d]+1e-10
-		ret_b_copy = np.array(ret_b.copy())[:self.d]+1e-10
-		ret_a_normalized = ret_a_copy/sum(ret_a_copy)
-		ret_b_normalized = ret_b_copy/sum(ret_b_copy)
-		if check_not_null(ret_a):
-			kl_a = st.entropy(ret_a_normalized, self.ratio_normalized)
-		else:
-			kl_a = self.entropy_vec_null
-		if check_not_null(ret_b):
-			kl_b = st.entropy(ret_b_normalized, self.ratio_normalized)
-		else:
-			kl_b = self.entropy_vec_null
-		if kl_a < kl_b:
+		score_a = self.evaluate_ret(ret_a)
+		score_b = self.evaluate_ret(ret_b)
+		if score_a < score_b:
 			preference = 1
-		elif kl_b < kl_a:
+		elif score_b < score_a:
 			preference = -1
 		else:
 			preference = 1 if np.random.rand() < 0.5 else -1
-		print("ret_a_normalized = ",ret_a_normalized)
-		print("ret_b_normalized = ",ret_b_normalized)
-		print("kl_a = ",kl_a)
-		print("kl_b = ",kl_b)
+		print("score_a = ",score_a)
+		print("score_b = ",score_b)
 		print("preference = ",preference)
 		return preference
 
 	def evaluate_traj(self, traj):
-		ret = np.array(traj["returns"]).sum(axis=0)[:self.d]+1e-10
-		ret_normalized = ret/sum(ret)
-		if check_not_null(ret):
-			kl = st.entropy(ret_normalized, self.ratio_normalized)
-		else :
-			kl = self.entropy_vec_null
-		return kl
+		ret = np.array(traj["returns"]).sum(axis=0)
+		return self.evaluate_ret(ret)
 
 	def evaluate_weights(self, n_best, w, trajectories):
 		trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
@@ -486,183 +474,43 @@ class PreferenceGiverv3_no_null:
 
 
 
+class PreferenceGiverv3_DOT(StaticPreferenceGiverv3):
+	def __init__(self, ratio, pbrl=False):
+		super().__init__(ratio, pbrl)
+
+	def evaluate_ret(self, ret):
+		ret_copy = np.array(ret.copy())[:self.d]+1e-10
+		return -np.dot(self.ratio_normalized, ret_copy) # minus because we want evaluate_ret to be a minimization
+
+
+
+class PreferenceGiverv3_no_null(StaticPreferenceGiverv3):
+	def __init__(self, ratio, pbrl=False):
+		super().__init__(ratio, pbrl)
+		self.entropy_vec_null = 10
+
+	def evaluate_ret(self, ret):
+		ret_copy = np.array(ret.copy())[:self.d]+1e-10
+		ret_normalized = ret_copy/sum(ret_copy)
+		if check_not_null(ret):
+			print("ret_normalized = ", ret_normalized)
+			score = st.entropy(ret_normalized, self.ratio_normalized)
+		else:
+			print("ret_normalized = ", ret)
+			score = self.entropy_vec_null
+		return score
+
+
+
 class PreferenceGiverv3:
 	def __init__(self, ratio, pbrl=False):
-		self.ratio = ratio
-		self.d = len(ratio)
-		self.ratio_normalized = []
-		self.pbrl = pbrl
+		super().__init__(ratio, pbrl)
 
-		ratio_sum = sum(ratio)
-
-		for elem in ratio:
-			self.ratio_normalized.append(elem/ratio_sum)
-
-	# def query_pair(self, ret_a, ret_b):
-	# 	# print("query_pair = "+str(ret_a)+" , "+str(ret_b))
-	# 	# print("ratio = ", self.ratio_normalized)
-
-	# 	if self.pbrl:
-	# 		ret_a_copy = ret_a.copy()[:-1]
-	# 		ret_b_copy = ret_b.copy()[:-1]
-	# 	else:
-	# 		ret_a_copy = ret_a.copy()
-	# 		ret_b_copy = ret_b.copy()
-
-	# 	# print("ret_a_copy = ", ret_a_copy)
-
-	# 	ret_a_normalized = []
-	# 	ret_b_normalized = []
-
-	# 	for i in range(self.d):
-	# 		# To avoid numerical instabilities in KL
-	# 		ret_a_copy[i] += 1e-5
-	# 		ret_b_copy[i] += 1e-5
-
-	# 	ret_a_sum = sum(ret_a_copy)
-	# 	ret_b_sum = sum(ret_b_copy)
-
-	# 	for i in range(self.d):
-	# 		ret_a_normalized.append(ret_a_copy[i]/ret_a_sum)
-	# 		ret_b_normalized.append(ret_b_copy[i]/ret_b_sum)
-
-	# 	# scipy.stats.entropy(pk, qk=None, base=None, axis=0) = S = sum(pk * log(pk / qk), axis=axis)
-	# 	# print("ret_a_normalized = ", ret_a_normalized)
-	# 	# print("ret_b_normalized = ", ret_b_normalized)
-	# 	# print("self.ratio_normalized = ", self.ratio_normalized)
-	# 	# print("ret_a_normalized = ", ret_a_normalized)
-	# 	kl_a = st.entropy(ret_a_normalized, self.ratio_normalized)
-	# 	kl_b = st.entropy(ret_b_normalized, self.ratio_normalized)
-	# 	print("kl_a = ", kl_a)
-	# 	print("kl_b = ", kl_b)
-
-	# 	if self.pbrl:
-	# 		print(kl_a)
-	# 		print(kl_b)
-
-	# 		if ret_a[-1] < ret_b[-1]:
-	# 			return [0, 1]
-	# 		elif ret_a[-1] > ret_b[-1]:
-	# 			return [1, 0]
-	# 		else:
-	# 			if np.isclose(kl_a, kl_b, rtol=1e-5):
-	# 				preference = [0.5, 0.5]
-	# 			elif kl_a < kl_b:
-	# 				preference = [1, 0]
-	# 			else:
-	# 				preference = [0, 1]
-	# 			return preference
-	# 	else:
-	# 		if kl_a < kl_b:
-	# 			preference = 1
-	# 		elif kl_b < kl_a:
-	# 			preference = -1
-	# 		else:
-	# 			preference = 1 if np.random.rand() < 0.5 else -1
-	# 		return preference
-
-	def query_pair(self, ret_a, ret_b):
-		ret_a_copy = np.array(ret_a.copy())[:self.d]+1e-10
-		ret_b_copy = np.array(ret_b.copy())[:self.d]+1e-10
-		ret_a_normalized = ret_a_copy/sum(ret_a_copy)
-		ret_b_normalized = ret_b_copy/sum(ret_b_copy)
-		kl_a = st.entropy(ret_a_normalized, self.ratio_normalized)
-		kl_b = st.entropy(ret_b_normalized, self.ratio_normalized)
-		if kl_a < kl_b:
-			preference = 1
-		elif kl_b < kl_a:
-			preference = -1
-		else:
-			preference = 1 if np.random.rand() < 0.5 else -1
-		print("ret_a_normalized = ",ret_a_normalized)
-		print("ret_b_normalized = ",ret_b_normalized)
-		print("kl_a = ",kl_a)
-		print("kl_b = ",kl_b)
-		print("preference = ",preference)
-		return preference
-
-	def evaluate_traj(self, traj):
-		ret = np.array(traj["returns"]).sum(axis=0)[:self.d]
-		ret_normalized = (ret+1e-5)/sum(ret)
-		kl = st.entropy(ret_normalized, self.ratio_normalized)
-		return kl
-
-	def evaluate_weights(self, n_best, w, trajectories):
-		trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
-		best = trajectories[:n_best]
-		mean_entropy = 0
-		for traj in best:
-			mean_entropy += self.evaluate_traj(traj)
-		mean_entropy /= n_best
-		return mean_entropy
-
-	def evaluate_weights_print(self, n_best, w, trajectories):
-		# Sorted by weighted rew
-		trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
-		best = trajectories[:n_best]
-		mean_entropy = 0
-		print("top_10_best_rew = ")
-		for traj in best:
-			vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
-			dot = np.dot(vec_rew, w)
-			vec_ret = np.array(traj["returns"]).sum(axis=0)
-			evaluation = self.evaluate_traj(traj)
-			print(str(round(dot, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
-			mean_entropy += evaluation
-		mean_entropy /= n_best
-
-		# Sorted by normalized weighted rew
-		trajectories.sort(key=lambda t: fct_norm(t,w), reverse=True)
-		best = trajectories[:n_best]
-		mean_entropy_norm = 0
-		print("top_10_best_rew norm = ")
-		for traj in best:
-			vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
-			dot = np.dot(vec_rew, w)
-			dot_norm = fct_norm(traj, w)
-			vec_ret = np.array(traj["returns"]).sum(axis=0)
-			evaluation = self.evaluate_traj(traj)
-			print(str(round(dot, 3))+" , "+str(round(dot_norm, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
-			mean_entropy_norm += evaluation
-		mean_entropy_norm /= n_best
-
-		# Sorted by evaluation min
-		trajectories.sort(key=lambda t: self.evaluate_traj(t))
-		best = trajectories[:n_best]
-		mean_entropy_eval = 0
-		print("top_10_best_eval = ")
-		for traj in best:
-			vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
-			dot = np.dot(vec_rew, w)
-			vec_ret = np.array(traj["returns"]).sum(axis=0)
-			evaluation = self.evaluate_traj(traj)
-			print(str(round(dot, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
-			mean_entropy_eval += evaluation
-		mean_entropy_eval /= n_best
-
-		# Sorted by evaluation max
-		trajectories.sort(key=lambda t: self.evaluate_traj(t), reverse=True)
-		best = trajectories[:n_best]
-		mean_entropy_eval_max = 0
-		print("top_10_best_eval = ")
-		for traj in best:
-			vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
-			dot = np.dot(vec_rew, w)
-			vec_ret = np.array(traj["returns"]).sum(axis=0)
-			evaluation = self.evaluate_traj(traj)
-			print(str(round(dot, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
-			mean_entropy_eval_max += evaluation
-		mean_entropy_eval_max /= n_best
-
-		normalized_mean_entropy = (mean_entropy - mean_entropy_eval)/(mean_entropy_eval_max-mean_entropy_eval)
-		normalized_mean_entropy_norm = (mean_entropy_norm - mean_entropy_eval)/(mean_entropy_eval_max-mean_entropy_eval)
-		print("entropy best rew = ", mean_entropy)
-		print("normalized entropy best rew = ", normalized_mean_entropy)
-		print("entropy best norm rew  = ", mean_entropy_norm)
-		print("normalized entropy best norm rew  = ", normalized_mean_entropy_norm)
-		print("mean_entropy_eval = ", mean_entropy_eval)
-		print("mean_entropy_eval_max = ", mean_entropy_eval_max)
-		return normalized_mean_entropy, normalized_mean_entropy_norm
+	def evaluate_ret(self, ret):
+		ret_copy = np.array(ret.copy())[:self.d]+1e-10
+		ret_normalized = ret_copy/sum(ret_copy)
+		score = st.entropy(ret_normalized, self.ratio_normalized)
+		return score
 
 
 

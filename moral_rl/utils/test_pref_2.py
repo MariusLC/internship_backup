@@ -222,10 +222,11 @@ if __name__ == '__main__':
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
 
-	if config.pref_giver_no_null:
-		preference_giver = PreferenceGiverv3_no_null(config.ratio)
-	else :
-		preference_giver = PreferenceGiverv3(config.ratio)
+	# if config.pref_giver_no_null:
+	# 	preference_giver = PreferenceGiverv3_no_null(config.ratio)
+	# else :
+	# 	preference_giver = PreferenceGiverv3(config.ratio)
+	preference_giver = PreferenceGiverv3_DOT(config.ratio)
 
 	train_ready = False
 	while not train_ready:
@@ -262,6 +263,8 @@ if __name__ == '__main__':
 		volume_buffer.log_statistics_sum(dataset.log_returns_sum())
 		mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
 		volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
+
+	# mean_airl_rew = 
 
 	for i in range(c["n_queries"]):
 		if c["query_selection"] == "random":
