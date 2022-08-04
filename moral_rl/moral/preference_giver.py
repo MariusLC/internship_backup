@@ -383,7 +383,27 @@ class PreferenceGiverv3_no_null:
 		mean_entropy /= n_best
 		return mean_entropy
 
-	def normalized_evaluate_weights(self, n_best, w, trajectories):
+	def calculate_mean_entropy_eval_min(self, n_best, w, trajectories):
+		# Sorted by evaluation min
+		trajectories.sort(key=lambda t: self.evaluate_traj(t))
+		best = trajectories[:n_best]
+		mean_entropy_eval_min = 0
+		for traj in best:
+			mean_entropy_eval_min += self.evaluate_traj(traj)
+		mean_entropy_eval_min /= n_best
+		return mean_entropy_eval_min
+
+	def calculate_mean_entropy_eval_max(self, n_best, w, trajectories):
+		# Sorted by evaluation min
+		trajectories.sort(key=lambda t: self.evaluate_traj(t), reverse=True)
+		best = trajectories[:n_best]
+		mean_entropy_eval_max = 0
+		for traj in best:
+			mean_entropy_eval_max += self.evaluate_traj(traj)
+		mean_entropy_eval_max /= n_best
+		return mean_entropy_eval_max
+
+	def normalized_evaluate_weights(self, n_best, w, trajectories, LB, UB):
 		# Sorted by weighted rew
 		trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
 		best = trajectories[:n_best]
@@ -392,23 +412,7 @@ class PreferenceGiverv3_no_null:
 			mean_entropy += self.evaluate_traj(traj)
 		mean_entropy /= n_best
 
-		# Sorted by evaluation min
-		trajectories.sort(key=lambda t: self.evaluate_traj(t))
-		best = trajectories[:n_best]
-		mean_entropy_eval_min = 0
-		for traj in best:
-			mean_entropy_eval_min += self.evaluate_traj(traj)
-		mean_entropy_eval_min /= n_best
-
-		# Sorted by evaluation max
-		trajectories.sort(key=lambda t: self.evaluate_traj(t), reverse=True)
-		best = trajectories[:n_best]
-		mean_entropy_eval_max = 0
-		for traj in best:
-			mean_entropy_eval_max += self.evaluate_traj(traj)
-		mean_entropy_eval_max /= n_best
-
-		normalized_mean_entropy = (mean_entropy - mean_entropy_eval_min)/(mean_entropy_eval_max-mean_entropy_eval_min)
+		normalized_mean_entropy = (mean_entropy - LB)/(UB - LB)
 		return normalized_mean_entropy
 
 	def evaluate_weights_print(self, n_best, w, trajectories):
