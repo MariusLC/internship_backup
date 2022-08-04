@@ -418,20 +418,20 @@ class StaticPreferenceGiverv3(ABC):
 			mean_entropy += evaluation
 		mean_entropy /= n_best
 
-		# Sorted by normalized weighted rew
-		trajectories.sort(key=lambda t: fct_norm(t,w), reverse=True)
-		best = trajectories[:n_best]
-		mean_entropy_norm = 0
-		print("top_10_best_rew norm = ")
-		for traj in best:
-			vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
-			dot = np.dot(vec_rew, w)
-			dot_norm = fct_norm(traj, w)
-			vec_ret = np.array(traj["returns"]).sum(axis=0)
-			evaluation = self.evaluate_traj(traj)
-			print(str(round(dot, 3))+" , "+str(round(dot_norm, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
-			mean_entropy_norm += evaluation
-		mean_entropy_norm /= n_best
+		# # Sorted by normalized weighted rew
+		# trajectories.sort(key=lambda t: fct_norm(t,w), reverse=True)
+		# best = trajectories[:n_best]
+		# mean_entropy_norm = 0
+		# print("top_10_best_rew norm = ")
+		# for traj in best:
+		# 	vec_rew = np.array(traj["vectorized_rewards"]).sum(axis=0)
+		# 	dot = np.dot(vec_rew, w)
+		# 	dot_norm = fct_norm(traj, w)
+		# 	vec_ret = np.array(traj["returns"]).sum(axis=0)
+		# 	evaluation = self.evaluate_traj(traj)
+		# 	print(str(round(dot, 3))+" , "+str(round(dot_norm, 3))+" , "+str(round(evaluation, 3))+" , "+str(list(vec_rew.round(3)))+" , "+str(list(vec_ret.round(3))))
+		# 	mean_entropy_norm += evaluation
+		# mean_entropy_norm /= n_best
 
 		# Sorted by evaluation min
 		trajectories.sort(key=lambda t: self.evaluate_traj(t))
@@ -480,7 +480,7 @@ class PreferenceGiverv3_DOT(StaticPreferenceGiverv3):
 
 	def evaluate_ret(self, ret):
 		ret_copy = np.array(ret.copy())[:self.d]+1e-10
-		res = - np.array(self.ratio_normalized * ret_copy)
+		# res = - np.array(self.ratio_normalized * ret_copy)
 		return -np.dot(self.ratio_normalized, ret_copy) # minus because we want evaluate_ret to be a minimization
 
 
