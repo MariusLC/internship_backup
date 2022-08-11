@@ -518,7 +518,7 @@ class PreferenceGiverv3_no_null(StaticPreferenceGiverv3):
 		else:
 			print("ret_normalized = ", ret)
 			score = self.entropy_vec_null
-		return score
+		return np.round(score, 15)
 
 
 
