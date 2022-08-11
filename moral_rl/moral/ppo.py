@@ -306,6 +306,8 @@ class TrajectoryDataset:
                 non_eth_norm_fct = self.normalize_v4
             elif non_eth_norm == "v5": # division par le reward de la meilleure trajectoire parmi toutes celles d'un expert de la tâche
                 non_eth_norm_fct = self.normalize_v5
+            elif non_eth_norm == "v6": # no norm
+                non_eth_norm_fct = self.normalize_v6
             self.compute_utopia()
             self.compute_normalization_non_eth(non_eth_norm_fct)
 
@@ -396,6 +398,8 @@ class TrajectoryDataset:
                 non_eth_norm_fct = self.normalize_v4
             elif non_eth_norm == "v5": # division par le reward de la meilleure trajectoire parmi toutes celles d'un expert de la tâche
                 non_eth_norm_fct = self.normalize_v5
+            elif non_eth_norm == "v6": # no norm
+                non_eth_norm_fct = self.normalize_v6
             self.compute_utopia()
             self.compute_normalization_non_eth(non_eth_norm_fct)
 
@@ -427,6 +431,8 @@ class TrajectoryDataset:
                 non_eth_norm_fct = self.normalize_v4
             elif non_eth_norm == "v5": # division par le reward de la meilleure trajectoire parmi toutes celles d'un expert de la tâche
                 non_eth_norm_fct = self.normalize_v5
+            elif non_eth_norm == "v6": # no norm
+                non_eth_norm_fct = self.normalize_v6
             self.compute_utopia()
             self.compute_normalization_non_eth(non_eth_norm_fct)
 
