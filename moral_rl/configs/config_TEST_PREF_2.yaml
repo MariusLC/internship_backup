@@ -67,7 +67,7 @@ prior: "marius_2"
 
 # mcmc_log: final
 mcmc_log: active
-temperature_mcmc: 1
+temperature_mcmc: 10
 cov_range: 0.01
 nb_mcmc: 1
 dimension_pref: 3
