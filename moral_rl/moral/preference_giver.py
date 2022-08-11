@@ -344,13 +344,9 @@ class StaticPreferenceGiverv3(ABC):
 	def evaluate_ret(self, ret):
 		pass
 
-	@abstractmethod
-	def evaluate_ret_q(self, ret):
-		pass
-
 	def query_pair(self, ret_a, ret_b):
-		score_a = self.evaluate_ret_q(ret_a)
-		score_b = self.evaluate_ret_q(ret_b)
+		score_a = self.evaluate_ret(ret_a)
+		score_b = self.evaluate_ret(ret_b)
 		if score_a < score_b:
 			preference = 1
 		elif score_b < score_a:
@@ -485,7 +481,7 @@ class PreferenceGiverv3_DOT(StaticPreferenceGiverv3):
 	def evaluate_ret(self, ret):
 		ret_copy = np.array(ret.copy())[:self.d]+1e-10
 		# res = - np.array(self.ratio_normalized * ret_copy)
-		return -np.dot(self.ratio_normalized, ret_copy) # minus because we want evaluate_ret to be a minimization
+		return np.round(-np.dot(self.ratio_normalized, ret_copy), 15) # minus because we want evaluate_ret to be a minimization
 
 
 
@@ -495,28 +491,11 @@ class PreferenceGiverv3_no_null(StaticPreferenceGiverv3):
 		self.entropy_vec_null = 10
 
 	def evaluate_ret(self, ret):
-		# print("ret = ", ret)
 		ret_copy = np.array(ret.copy())[:self.d]+1e-10
-		# print("ret_copy = ", ret_copy)
 		ret_normalized = ret_copy/sum(ret_copy)
 		if check_not_null(ret):
-			# print("ret_normalized = ", ret_normalized)
 			score = st.entropy(ret_normalized, self.ratio_normalized)
 		else:
-			# print("ret_normalized = ", ret)
-			score = self.entropy_vec_null
-		return np.round(score, 15)
-
-	def evaluate_ret_q(self, ret):
-		print("ret = ", ret)
-		ret_copy = np.array(ret.copy())[:self.d]+1e-10
-		print("ret_copy = ", ret_copy)
-		ret_normalized = ret_copy/sum(ret_copy)
-		if check_not_null(ret):
-			print("ret_normalized = ", ret_normalized)
-			score = st.entropy(ret_normalized, self.ratio_normalized)
-		else:
-			print("ret_normalized = ", ret)
 			score = self.entropy_vec_null
 		return np.round(score, 15)
 
@@ -530,7 +509,7 @@ class PreferenceGiverv3:
 		ret_copy = np.array(ret.copy())[:self.d]+1e-10
 		ret_normalized = ret_copy/sum(ret_copy)
 		score = st.entropy(ret_normalized, self.ratio_normalized)
-		return score
+		return np.round(score, 15)
 
 
 
