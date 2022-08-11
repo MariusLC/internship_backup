@@ -206,6 +206,7 @@ class TrajectoryDataset:
         returns = []
         for i, tau in enumerate(self.trajectories):
             for r in tau['returns']:
+                # print("log_returns_actions = ", r)
                 returns.append(r)
         return returns
 
@@ -213,6 +214,7 @@ class TrajectoryDataset:
         returns = []
         for i, tau in enumerate(self.trajectories):
             for r in tau['vectorized_rewards']:
+                # print("log_vectorized_rew_actions = ", r)
                 returns.append(r)
         return returns
     

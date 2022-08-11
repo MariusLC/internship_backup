@@ -861,14 +861,13 @@ class VolumeBuffer:
 		preference_learner.pop_preference()
 		preference_learner.pop_returns()
 
-		# 2nd mcmc (a>b)
+		# 2nd mcmc (a<b)
 		preference_learner.log_preference(delta, -1)
 		preference_learner.log_returns(new_returns_a, new_returns_b)
 		w_posterior_inf = preference_learner.mcmc_vanilla(w_posterior_mean)
 		# w_posterior = preference_learner.mcmc_test(w_posterior_mean, posterior_mode="moral", prop_w_mode="basic_temperature")
 		w_posterior_mean_inf = w_posterior_inf.mean(axis=0)
 		w_posterior_mean_inf = w_posterior_mean_inf/np.linalg.norm(w_posterior_mean_inf)
-		
 		EUS_inf = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_inf)
 		preference_learner.pop_preference()
 		preference_learner.pop_returns()

@@ -229,6 +229,8 @@ if __name__ == '__main__':
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
 
+	print("RATIO_NORMALIZED = ", RATIO_NORMALIZED)
+
 	if config.pref_giver_no_null:
 		preference_giver = PreferenceGiverv3_no_null(config.ratio)
 	else :
