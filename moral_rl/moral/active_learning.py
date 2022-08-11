@@ -372,6 +372,9 @@ class PreferenceLearner:
 		mean_prob_w_new_log_lik = mean_prob_w_new_log_lik / nb_steps
 		mean_prob_w_new_log_prior = mean_prob_w_new_log_prior / nb_steps
 
+		posterior = np.array(w_arr)[self.warmup:]
+		std_posterior = np.std(posterior, axis=0)
+
 		if step != None:
 			# print("step")
 			wandb.log({"nb new w outside prior space": self.cpt_prior_new_w}, step=step)
@@ -383,6 +386,11 @@ class PreferenceLearner:
 			wandb.log({"mean_prob_w_new_log_lik": mean_prob_w_new_log_lik}, step=step)
 			wandb.log({"mean_prob_w_new_log_prior": mean_prob_w_new_log_prior}, step=step)
 
+			# STD
+			for i, std in enumerate(std_posterior):
+				wandb.log({"std_posterior["+str(i)+"]": std}, step=step)
+			wandb.log({"mean_std_posterior": np.mean(std_posterior)}, step=step)
+
 		self.cpt_pior = 0
 		self.cpt_nb_steps = 0
 		self.cpt_prob_supp = 0
@@ -390,7 +398,7 @@ class PreferenceLearner:
 		self.cpt_prior_and_accepted = 0
 		self.cpt_prior_new_w = 0
 
-		return np.array(w_arr)[self.warmup:]
+		return posterior
 
 
 	def mcmc_print(self, w_init='mode', prop_w_mode="moral", posterior_mode="moral", step = None):

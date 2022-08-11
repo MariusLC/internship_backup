@@ -69,7 +69,7 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
 	# weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
 	# weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
-	print("mean_weight_eval = ", mean_weight_eval)
+	print("weight_eval = ", weight_eval)
 	print("UB = ", mean_entropy_eval_max)
 	print("LB = ", mean_entropy_eval_min)
 	wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
@@ -229,11 +229,11 @@ if __name__ == '__main__':
 	RATIO_NORMALIZED = c["ratio"]/np.sum(c["ratio"])
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
 
-	# if config.pref_giver_no_null:
-	# 	preference_giver = PreferenceGiverv3_no_null(config.ratio)
-	# else :
-	# 	preference_giver = PreferenceGiverv3(config.ratio)
-	preference_giver = PreferenceGiverv3_DOT(config.ratio)
+	if config.pref_giver_no_null:
+		preference_giver = PreferenceGiverv3_no_null(config.ratio)
+	else :
+		preference_giver = PreferenceGiverv3(config.ratio)
+	# preference_giver = PreferenceGiverv3_DOT(config.ratio)
 
 	train_ready = False
 	while not train_ready:
