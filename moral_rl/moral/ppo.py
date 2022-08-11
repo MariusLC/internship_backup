@@ -239,6 +239,9 @@ class TrajectoryDataset:
         normalization_v5 = value/(abs(self.utopia_point_expert_max_1_traj))
         return normalization_v5
 
+    def normalize_v6(self, value, traj_size): 
+        return value
+
     def estimate_utopia_point(self, expert_policy, env_id, steps=10000):
         env = GymWrapper(env_id)
         states = env.reset()
