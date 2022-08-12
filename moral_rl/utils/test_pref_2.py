@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
 	# get an agent to act on the environment
 	agent_test = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions)
-	agent_test.load_state_dict(torch.load(c["agent_test_name"], map_location=torch.device('cpu')))
+	# agent_test.load_state_dict(torch.load(c["agent_test_name"], map_location=torch.device('cpu')))
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
 
 	#Expert i
