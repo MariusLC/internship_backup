@@ -27,7 +27,7 @@ ratio: [1, 1, 1]
 # ratio: [1, 1, 1, 1]
 # ratio: [1, 1, 1, 1, 1, 1, 1]
 # special_name_agent: "T3_marius_prior_conv01_norm_v6_v3"
-special_name_agent: "Q_on_ACTIONS_from_scratch_T50_w_propose_linalg_positive_conv001_norm_v6_v3_200Queries_less_pos_select"
+special_name_agent: "Q_on_ACTIONS_from_scratch_T50_w_propose_linalg_positive_conv001_norm_v6_v3_50Queries_less_pos_select"
 
 # PPO
 batchsize_ppo: 12

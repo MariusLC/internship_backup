@@ -381,6 +381,7 @@ class PreferenceLearner:
 			wandb.log({"nb accepted oustide prior space": self.cpt_prior_and_accepted}, step=step)
 			wandb.log({"nb new w inside prior space": nb_steps - self.cpt_prior_new_w}, step=step)
 			wandb.log({"nb accepted": self.cpt_new_acc}, step=step)
+			wandb.log({"ratio accepted": self.cpt_new_acc/(self.warmup + self.n_iter)}, step=step)
 			wandb.log({"nb accepted without prob sup": self.cpt_prob_supp}, step=step)
 			wandb.log({"mean_prob_w_new": mean_prob_w_new}, step=step)
 			wandb.log({"mean_prob_w_new_log_lik": mean_prob_w_new_log_lik}, step=step)
