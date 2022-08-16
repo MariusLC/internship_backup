@@ -845,7 +845,17 @@ class VolumeBuffer:
 			self.best_returns = (logs_a, logs_b)
 
 
-	def compare_EUS(self, w_posterior, w_posterior_mean, preference_learner, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
+	def compare_EUS(self, w_posterior, w_posterior_mean, prop_w_mode, posterior_mode, preference_learner, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
+		
+		### PARAMS
+		n_iter = 1000
+		warmup = 100
+		real_n_iter = preference_learner.n_iter
+		real_warmup = preference_learner.warmup
+		##
+		preference_learner.n_iter = n_iter
+		preference_learner.warmup = warmup
+
 		if len(new_returns_a) == 0:
 			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
 		delta = new_returns_a - new_returns_b
@@ -854,8 +864,8 @@ class VolumeBuffer:
 		# 1rst mcmc (a>b)
 		preference_learner.log_preference(delta, 1)
 		preference_learner.log_returns(new_returns_a, new_returns_b)
-		w_posterior_sup = preference_learner.mcmc_vanilla(w_posterior_mean)
-		# w_posterior = preference_learner.mcmc_test(w_posterior_mean, posterior_mode="moral", prop_w_mode="basic_temperature")
+		# w_posterior_sup = preference_learner.mcmc_vanilla(w_posterior_mean)
+		w_posterior_sup = preference_learner.mcmc_test(w_posterior_mean, posterior_mode, prop_w_mode)
 		w_posterior_mean_sup = w_posterior_sup.mean(axis=0)
 		w_posterior_mean_sup = w_posterior_mean_sup/np.linalg.norm(w_posterior_mean_sup)
 		EUS_sup = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_sup)
@@ -865,8 +875,8 @@ class VolumeBuffer:
 		# 2nd mcmc (a<b)
 		preference_learner.log_preference(delta, -1)
 		preference_learner.log_returns(new_returns_a, new_returns_b)
-		w_posterior_inf = preference_learner.mcmc_vanilla(w_posterior_mean)
-		# w_posterior = preference_learner.mcmc_test(w_posterior_mean, posterior_mode="moral", prop_w_mode="basic_temperature")
+		# w_posterior_inf = preference_learner.mcmc_vanilla(w_posterior_mean)
+		w_posterior_inf = preference_learner.mcmc_test(w_posterior_mean, posterior_mode, prop_w_mode)
 		w_posterior_mean_inf = w_posterior_inf.mean(axis=0)
 		w_posterior_mean_inf = w_posterior_mean_inf/np.linalg.norm(w_posterior_mean_inf)
 		EUS_inf = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_inf)
@@ -889,6 +899,9 @@ class VolumeBuffer:
 			self.best_delta = delta
 			self.best_observed_returns = (new_returns_a, new_returns_b)
 			self.best_returns = (logs_a, logs_b)
+
+		preference_learner.n_iter = real_n_iter
+		preference_learner.warmup = real_warmup
 
 
 
