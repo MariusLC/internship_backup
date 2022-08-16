@@ -288,9 +288,17 @@ if __name__ == '__main__':
 			for k in range(c["nb_query_test"]):
 				volume_buffer.compare_EUS(w_posterior, w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], preference_learner)
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+		elif c["query_selection"] == "compare_EUS_less_zeros":
+			for k in range(c["nb_query_test"]):
+				volume_buffer.compare_EUS(w_posterior, w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], preference_learner, sample_mode="less_zeros")
+			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_MORAL":
 			for k in range(c["nb_query_test"]):
 				volume_buffer.compare_MORAL(w_posterior_temp)
+			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+		elif c["query_selection"] == "compare_MORAL_less_zeros":
+			for k in range(c["nb_query_test"]):
+				volume_buffer.compare_MORAL(w_posterior_temp, sample_mode="less_zeros")
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_basic_log_lik":
 			for k in range(c["nb_query_test"]):
@@ -298,7 +306,7 @@ if __name__ == '__main__':
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 		elif c["query_selection"] == "compare_basic_log_lik_less_zeros":
 			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_basic_log_lik_less_zeros(w_posterior_temp, config.temperature_mcmc)
+				volume_buffer.compare_basic_log_lik(w_posterior_temp, config.temperature_mcmc, sample_mode="less_zeros")
 			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
 		delta = observed_rew_a - observed_rew_b

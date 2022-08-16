@@ -811,9 +811,24 @@ class VolumeBuffer:
 			self.best_returns = (logs_a, logs_b)
 			# print("self.best_returns ", self.best_returns)
 
-	def compare_basic_log_lik_less_zeros(self, w_posterior, temperature, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
+	# def compare_basic_log_lik_less_zeros(self, w_posterior, temperature, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
+	# 	if len(new_returns_a) == 0:
+	# 		new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset_less_zeros_no_double()
+	# 	delta = new_returns_a - new_returns_b
+	# 	volume_delta = self.volume_removal_basic_log_lik(w_posterior, new_returns_a, new_returns_b, delta, temperature)
+	# 	if volume_delta > self.best_volume:
+	# 		self.best_volume = volume_delta
+	# 		self.best_delta = delta
+	# 		self.best_observed_returns = (new_returns_a, new_returns_b)
+	# 		self.best_returns = (logs_a, logs_b)
+
+	def compare_delta_basic_log_lik(self, w_posterior, temperature, sample_mode="basic", new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
 		if len(new_returns_a) == 0:
-			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset_less_zeros_no_double()
+			if sample_mode == "basic":
+				new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
+			if sample_mode == "less_zeros":
+				new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset_less_zeros_no_double()
+			# new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
 		delta = new_returns_a - new_returns_b
 		volume_delta = self.volume_removal_basic_log_lik(w_posterior, new_returns_a, new_returns_b, delta, temperature)
 		if volume_delta > self.best_volume:
@@ -822,20 +837,12 @@ class VolumeBuffer:
 			self.best_observed_returns = (new_returns_a, new_returns_b)
 			self.best_returns = (logs_a, logs_b)
 
-	def compare_delta_basic_log_lik(self, w_posterior, temperature, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
+	def compare_MORAL(self, w_posterior, sample_mode="basic", new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
 		if len(new_returns_a) == 0:
-			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
-		delta = new_returns_a - new_returns_b
-		volume_delta = self.volume_removal_basic_log_lik(w_posterior, new_returns_a, new_returns_b, delta, temperature)
-		if volume_delta > self.best_volume:
-			self.best_volume = volume_delta
-			self.best_delta = delta
-			self.best_observed_returns = (new_returns_a, new_returns_b)
-			self.best_returns = (logs_a, logs_b)
-
-	def compare_MORAL(self, w_posterior, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
-		if len(new_returns_a) == 0:
-			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
+			if sample_mode == "basic":
+				new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
+			if sample_mode == "less_zeros":
+				new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset_less_zeros_no_double()
 		delta = new_returns_a - new_returns_b
 		volume_delta = self.volume_removal(w_posterior, delta)
 		if volume_delta > self.best_volume:
@@ -845,7 +852,7 @@ class VolumeBuffer:
 			self.best_returns = (logs_a, logs_b)
 
 
-	def compare_EUS(self, w_posterior, w_posterior_mean, prop_w_mode, posterior_mode, preference_learner, new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
+	def compare_EUS(self, w_posterior, w_posterior_mean, prop_w_mode, posterior_mode, preference_learner, sample_mode="basic", new_returns_a=[], new_returns_b=[], logs_a=[], logs_b=[]):
 		
 		### PARAMS
 		n_iter = 1000
@@ -857,7 +864,10 @@ class VolumeBuffer:
 		preference_learner.warmup = warmup
 
 		if len(new_returns_a) == 0:
-			new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
+			if sample_mode == "basic":
+				new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset()
+			if sample_mode == "less_zeros":
+				new_returns_a, new_returns_b, logs_a, logs_b = self.sample_return_pair_no_batch_reset_less_zeros_no_double()
 		delta = new_returns_a - new_returns_b
 		# np.array(new_returns_a), np.array(new_returns_b), logs_a, logs_b
 

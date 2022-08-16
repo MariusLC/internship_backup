@@ -245,19 +245,35 @@ if __name__ == '__main__':
 		# observed_rewards = dataset.log_vectorized_rew_sum()
 
 		if c["query_selection"] == "random":
-			observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_v2()
-		elif c["query_selection"] == "compare_EUS":
-			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_EUS(w_posterior, w_posterior_mean, preference_learner)
-			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
-		elif c["query_selection"] == "compare_MORAL":
-			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_MORAL(w_posterior)
-			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
-		elif c["query_selection"] == "compare_basic_log_lik":
-			for k in range(c["nb_query_test"]):
-				volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc)
-			ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+            observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset()
+        elif c["query_selection"] == "random_no_double_null":
+            observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset_no_double_zeros()
+        elif c["query_selection"] == "random_less_null":
+            observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset_less_zeros_no_double()
+        elif c["query_selection"] == "compare_EUS":
+            for k in range(c["nb_query_test"]):
+                volume_buffer.compare_EUS(w_posterior, w_posterior_mean, c["prop_w_mode"], c["posterior_mode"], preference_learner)
+            ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+        elif c["query_selection"] == "compare_EUS_less_zeros":
+            for k in range(c["nb_query_test"]):
+                volume_buffer.compare_EUS(w_posterior, w_posterior_mean, c["prop_w_mode"], c["posterior_mode"], preference_learner, sample_mode="less_zeros")
+            ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+        elif c["query_selection"] == "compare_MORAL":
+            for k in range(c["nb_query_test"]):
+                volume_buffer.compare_MORAL(w_posterior)
+            ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+        elif c["query_selection"] == "compare_MORAL_less_zeros":
+            for k in range(c["nb_query_test"]):
+                volume_buffer.compare_MORAL(w_posterior, sample_mode="less_zeros")
+            ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+        elif c["query_selection"] == "compare_basic_log_lik":
+            for k in range(c["nb_query_test"]):
+                volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc)
+            ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+        elif c["query_selection"] == "compare_basic_log_lik_less_zeros":
+            for k in range(c["nb_query_test"]):
+                volume_buffer.compare_basic_log_lik(w_posterior, config.temperature_mcmc, sample_mode="less_zeros")
+        ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
 
 		# ret_a = objective_returns[0]
 		# ret_b = objective_returns[1]

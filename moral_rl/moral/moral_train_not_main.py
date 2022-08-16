@@ -177,24 +177,37 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg)
 
             # rew_a, rew_b, logs_a, logs_b = volume_buffer.sample_return_pair_v2()
-            if config.query_selection == "random":
+            if c["query_selection"] == "random":
                 observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset()
-            elif config.query_selection == "random_no_double_null":
+            elif c["query_selection"] == "random_no_double_null":
                 observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset_no_double_zeros()
-            elif config.query_selection == "random_less_null":
+            elif c["query_selection"] == "random_less_null":
                 observed_rew_a, observed_rew_b, ret_a, ret_b = volume_buffer.sample_return_pair_no_batch_reset_less_zeros_no_double()
-            elif config.query_selection == "compare_EUS":
+            elif c["query_selection"] == "compare_EUS":
                 for k in range(c["nb_query_test"]):
-                    volume_buffer.compare_EUS(w_posterior, w_posterior_mean_uniform, preference_learner)
+                    volume_buffer.compare_EUS(w_posterior, w_posterior_mean, c["prop_w_mode"], c["posterior_mode"], preference_learner)
                 ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
-            elif config.query_selection == "compare_MORAL":
+            elif c["query_selection"] == "compare_EUS_less_zeros":
+                for k in range(c["nb_query_test"]):
+                    volume_buffer.compare_EUS(w_posterior, w_posterior_mean, c["prop_w_mode"], c["posterior_mode"], preference_learner, sample_mode="less_zeros")
+                ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+            elif c["query_selection"] == "compare_MORAL":
                 for k in range(c["nb_query_test"]):
                     volume_buffer.compare_MORAL(w_posterior)
                 ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
-            elif config.query_selection == "compare_basic_log_lik":
+            elif c["query_selection"] == "compare_MORAL_less_zeros":
+                for k in range(c["nb_query_test"]):
+                    volume_buffer.compare_MORAL(w_posterior, sample_mode="less_zeros")
+                ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+            elif c["query_selection"] == "compare_basic_log_lik":
                 for k in range(c["nb_query_test"]):
                     volume_buffer.compare_delta_basic_log_lik(w_posterior, config.temperature_mcmc)
-                ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best() 
+                ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+            elif c["query_selection"] == "compare_basic_log_lik_less_zeros":
+                for k in range(c["nb_query_test"]):
+                    volume_buffer.compare_basic_log_lik(w_posterior, config.temperature_mcmc, sample_mode="less_zeros")
+            ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
+            
             volume_buffer.best_returns = (ret_a, ret_b)
             volume_buffer.best_observed_returns = (observed_rew_a, observed_rew_b)
             volume_buffer.best_delta = observed_rew_a - observed_rew_b
