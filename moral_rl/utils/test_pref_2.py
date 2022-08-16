@@ -112,6 +112,7 @@ def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_
 	for t in tqdm(range(env_steps)):
 		actions, log_probs = agent.act(states_tensor)
 		next_states, rewards, done, info = env.step(actions)
+		print("rewards = ",rewards)
 
 		airl_state = torch.tensor(states).to(device).float()
 		airl_next_state = torch.tensor(next_states).to(device).float()
@@ -131,12 +132,13 @@ def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_
 		states_tensor = torch.tensor(states).float().to(device)
 
 	mean_returns = np.array(dataset.log_returns_sum()).mean(axis=0)
+	print("\n\nmean_returns = ", mean_returns)
 	w = [0.5 for j in range(len(discriminator_list)+1)]
 	mean_vectorized_rewards = dataset.compute_scalarized_rewards(w, non_eth_norm, None) # wandb
 	# volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
 
 	dataset.reset_trajectories()
-
+	print("\n\nmean_returns = ", mean_returns)
 	return mean_returns, mean_vectorized_rewards
 
 
@@ -181,7 +183,7 @@ if __name__ == '__main__':
 
 	# get an agent to act on the environment
 	agent_test = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions)
-	# agent_test.load_state_dict(torch.load(c["agent_test_name"], map_location=torch.device('cpu')))
+	agent_test.load_state_dict(torch.load(c["agent_test_name"], map_location=torch.device('cpu')))
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
 
 	#Expert i

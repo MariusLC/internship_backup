@@ -2,6 +2,8 @@
 env_id: "randomized_v3"
 agent_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
 # agent_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3.pt"
-nb_steps: 1000
+nb_steps: 10000
+
+generate_demos: False
 
 gene_bool: False
