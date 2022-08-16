@@ -868,7 +868,7 @@ class VolumeBuffer:
 		w_posterior_sup = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode, posterior_mode)
 		w_posterior_mean_sup = w_posterior_sup.mean(axis=0)
 		w_posterior_mean_sup = w_posterior_mean_sup/np.linalg.norm(w_posterior_mean_sup)
-		EUS_sup = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_sup)
+		EUS_sup, log_lik_sup, pior_sup = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_sup)
 		preference_learner.pop_preference()
 		preference_learner.pop_returns()
 
@@ -879,7 +879,7 @@ class VolumeBuffer:
 		w_posterior_inf = preference_learner.mcmc_test(w_posterior_mean, prop_w_mode, posterior_mode)
 		w_posterior_mean_inf = w_posterior_inf.mean(axis=0)
 		w_posterior_mean_inf = w_posterior_mean_inf/np.linalg.norm(w_posterior_mean_inf)
-		EUS_inf = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_inf)
+		EUS_inf, log_lik_inf, pior_inf = preference_learner.posterior_log_prob(preference_learner.deltas, preference_learner.prefs, w_posterior_mean_inf)
 		preference_learner.pop_preference()
 		preference_learner.pop_returns()
 
