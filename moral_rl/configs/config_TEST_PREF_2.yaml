@@ -56,8 +56,8 @@ query_selection: "random_less_null"
 # posterior_mode: "basic"
 posterior_mode: "basic_temperature"
 
-# prop_w_mode: "moral"
-prop_w_mode: "normalized_linalg_positive"
+prop_w_mode: "moral"
+# prop_w_mode: "normalized_linalg_positive"
 
 # mcmc_type: successive
 mcmc_type: parallel
