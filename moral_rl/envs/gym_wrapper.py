@@ -104,6 +104,8 @@ class GymWrapper(gym.Env):
 
     def step(self, action):
         obs, reward, _ = self.game.play(action)
+        print(obs.board)
+        print(obs._board)
         return self._obs_to_np_array(obs), reward, self.game.game_over, self.game.the_plot
 
     def step_demo(self, action):
