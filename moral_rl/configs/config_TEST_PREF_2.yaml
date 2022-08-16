@@ -44,11 +44,11 @@ pref_giver_no_null: True
 Q_on_actions: True
 
 # query_selection: "compare_EUS"
-# query_selection: "compare_MORAL"
+query_selection: "compare_MORAL"
 # query_selection: "compare_basic_log_lik"
 # query_selection: "random"
 # query_selection: "random_no_double_null"
-query_selection: "random_less_null"
+# query_selection: "random_less_null"
 # query_selection: "compare_basic_log_lik_less_zeros"
 
 # posterior_mode: "print"
@@ -69,7 +69,7 @@ prior: "marius_2"
 
 # mcmc_log: final
 mcmc_log: active
-temperature_mcmc: 100
+temperature_mcmc: 50
 # cov_range: 1
 cov_range: 0.01
 nb_mcmc: 1
