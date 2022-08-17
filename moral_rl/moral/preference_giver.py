@@ -383,6 +383,32 @@ class StaticPreferenceGiverv3(ABC):
 		normalized_mean_entropy = (mean_entropy - LB)/(UB - LB)
 		return normalized_mean_entropy
 
+	def evaluate_quality_params(self, config, traj_test):
+		# NEW WEIGHT QUALITY HEURISTIC
+		mean_entropy_eval_max = self.calculate_mean_entropy_eval_max(config.n_best, traj_test)
+		mean_entropy_eval_min = self.calculate_mean_entropy_eval_min(config.n_best, traj_test)
+		print("UB = ", mean_entropy_eval_max)
+		print("LB = ", mean_entropy_eval_min)
+		# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
+		weight_eval_rand = []
+		weights_list = []
+		for j in range(1000):
+			weights = np.random.uniform(0.0, 1.0, 3)
+			# weights = weights/np.linalg.norm(weights) - 1e-15 # to ensure that norm < 1
+			weights_list.append(weights)
+			weight_eval_rand.append(self.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max))
+		mean_weight_eval_rand = np.mean(weight_eval_rand)
+		median_weight_eval_rand = np.median(weight_eval_rand)
+		min_weight_eval_rand = min(weight_eval_rand)
+		min_w = weights_list[np.argmin(np.array(weight_eval_rand))]
+		max_weight_eval_rand = max(weight_eval_rand)
+		max_w = weights_list[np.argmax(np.array(weight_eval_rand))]
+		print("mean_weight_eval_rand = ", mean_weight_eval_rand)
+		print("min_weight_eval_rand = "+str(min_weight_eval_rand)+", w = "+str(min_w))
+		print("max_weight_eval_rand = "+str(max_weight_eval_rand)+", w = "+str(max_w))
+		print("median_weight_eval_rand = ", median_weight_eval_rand)
+		return mean_entropy_eval_min, mean_entropy_eval_max, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand
+
 	def calculate_mean_entropy_eval_min(self, n_best, trajectories):
 		# Sorted by evaluation min
 		trajectories.sort(key=lambda t: self.evaluate_traj(t))

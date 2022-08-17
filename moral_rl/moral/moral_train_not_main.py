@@ -123,6 +123,26 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             for i in range(len(w_posterior_mean)):
                 wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=t*config.n_workers)
 
+            LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = preference_giver.evaluate_quality_params(config, traj_test)
+
+            # NEW WEIGHT QUALITY HEURISTIC
+            weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
+            weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
+            print("weight_eval = ", weight_eval)
+            print("UB = ", UB)
+            print("LB = ", LB)
+            wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
+
+            # SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
+            norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
+            print("norm_score_vs_rand = ", norm_score_vs_rand)
+            wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+
             volume_buffer.reset()
 
         # Environment interaction

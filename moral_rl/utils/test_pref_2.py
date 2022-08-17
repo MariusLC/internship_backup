@@ -108,36 +108,6 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 
 	return w_posterior_mean, w_posterior
 
-def evaluate_quality_params(config, traj_test, preference_giver):
-	# NEW WEIGHT QUALITY HEURISTIC
-	mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, traj_test)
-	mean_entropy_eval_min = preference_giver.calculate_mean_entropy_eval_min(config.n_best, traj_test)
-	print("UB = ", mean_entropy_eval_max)
-	print("LB = ", mean_entropy_eval_min)
-
-	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
-	weight_eval_rand = []
-	weights_list = []
-
-	for j in range(1000):
-		weights = np.random.uniform(0.0, 1.0, 3)
-		# weights = weights/np.linalg.norm(weights) - 1e-15 # to ensure that norm < 1
-		weights_list.append(weights)
-		weight_eval_rand.append(preference_giver.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max))
-	mean_weight_eval_rand = np.mean(weight_eval_rand)
-	median_weight_eval_rand = np.median(weight_eval_rand)
-	min_weight_eval_rand = min(weight_eval_rand)
-	min_w = weights_list[np.argmin(np.array(weight_eval_rand))]
-	max_weight_eval_rand = max(weight_eval_rand)
-	max_w = weights_list[np.argmax(np.array(weight_eval_rand))]
-	print("mean_weight_eval_rand = ", mean_weight_eval_rand)
-	print("min_weight_eval_rand = "+str(min_weight_eval_rand)+", w = "+str(min_w))
-	print("max_weight_eval_rand = "+str(max_weight_eval_rand)+", w = "+str(max_w))
-	print("median_weight_eval_rand = ", median_weight_eval_rand)
-
-	return mean_entropy_eval_min, mean_entropy_eval_max, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand
-
-
 
 def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_norm, non_eth_norm, env_steps=1000):
 	states = env.reset()
@@ -217,6 +187,8 @@ if __name__ == '__main__':
 	# get an agent to act on the environment
 	agent_test = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions)
 	agent_test.load_state_dict(torch.load(c["agent_test_name"], map_location=torch.device('cpu')))
+
+	# Traj test for Quality estimation
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
 
 	#Expert i
@@ -272,7 +244,7 @@ if __name__ == '__main__':
 		preference_giver = PreferenceGiverv3(config.ratio)
 	# preference_giver = PreferenceGiverv3_DOT(config.ratio)
 
-	LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = evaluate_quality_params(config, traj_test, preference_giver)
+	LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = preference_giver.evaluate_quality_params(config, traj_test)
 
 	train_ready = False
 	while not train_ready:
