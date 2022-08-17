@@ -115,7 +115,7 @@ def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_
 	for t in tqdm(range(env_steps)):
 		actions, log_probs = agent.act(states_tensor)
 		next_states, rewards, done, info = env.step(actions)
-		print("rewards = ",rewards)
+		# print("rewards = ",rewards)
 
 		airl_state = torch.tensor(states).to(device).float()
 		airl_next_state = torch.tensor(next_states).to(device).float()
@@ -190,6 +190,8 @@ if __name__ == '__main__':
 
 	# Traj test for Quality estimation
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
+	# print(traj_test[0])
+	print(traj_test[0].keys())
 
 	#Expert i
 	discriminator_list = []

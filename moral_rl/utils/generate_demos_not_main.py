@@ -96,12 +96,6 @@ def generate_demos_1_moral_agent(env_id, nb_demos, n_workers, gamma, expert_file
 
 def generate_demos_1_expert(env_id, nb_demos, expert_filename, demos_filename):
 
-    # max_steps = 0
-    # if env_id == 'randomized_v2':
-    #     max_steps = max_steps_v2
-    # else :
-    #     max_steps = max_steps_v3
-
     # Initialize Environment
     env = GymWrapper(env_id)
     states = env.reset()
@@ -121,7 +115,7 @@ def generate_demos_1_expert(env_id, nb_demos, expert_filename, demos_filename):
     ppo.load_state_dict(torch.load(expert_filename, map_location=torch.device('cpu')))
 
 
-    for t in tqdm(range((max_steps-1)*nb_demos)):
+    for t in tqdm(range(nb_demos)):
         actions, log_probs = ppo.act(states_tensor)
         next_states, reward, done, info = env.step(actions)
         episode['states'].append(states)
@@ -132,6 +126,47 @@ def generate_demos_1_expert(env_id, nb_demos, expert_filename, demos_filename):
             next_states = env.reset()
             dataset.append(episode)
             episode = {'states': [], 'actions': []}
+
+        # Prepare state input for next time step
+        states = next_states.copy()
+        states_tensor = torch.tensor(states).float().to(device)
+
+    # pickle.dump(dataset, open(demos_filename, 'wb'))
+    save_demos(dataset, demos_filename)
+
+def generate_demos_1_expert_with_rewards(env_id, nb_demos, expert_filename, demos_filename):
+
+    # Initialize Environment
+    env = GymWrapper(env_id)
+    states = env.reset()
+    states_tensor = torch.tensor(states).float().to(device)
+    dataset = []
+    episode = {'states': [], 'actions': [], 'returns': []}
+    episode_cnt = 0
+
+    # Fetch Shapes
+    n_actions = env.action_space.n
+    obs_shape = env.observation_space.shape
+    state_shape = obs_shape[:-1]
+    in_channels = obs_shape[-1]
+
+    # Load Pretrained PPO
+    ppo = PPO(state_shape=state_shape, n_actions=n_actions, in_channels=in_channels).to(device)
+    ppo.load_state_dict(torch.load(expert_filename, map_location=torch.device('cpu')))
+
+
+    for t in tqdm(range(nb_demos)):
+        actions, log_probs = ppo.act(states_tensor)
+        next_states, reward, done, info = env.step(actions)
+        episode['states'].append(states)
+        # Note: Actions currently append as arrays and not integers!
+        episode['actions'].append(actions)
+        episode['returns'].append(reward)
+
+        if done:
+            next_states = env.reset()
+            dataset.append(episode)
+            episode = {'states': [], 'actions': [], 'returns': []}
 
         # Prepare state input for next time step
         states = next_states.copy()
