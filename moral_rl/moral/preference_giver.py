@@ -383,7 +383,7 @@ class StaticPreferenceGiverv3(ABC):
 		normalized_mean_entropy = (mean_entropy - LB)/(UB - LB)
 		return normalized_mean_entropy
 
-	def calculate_mean_entropy_eval_min(self, n_best, w, trajectories):
+	def calculate_mean_entropy_eval_min(self, n_best, trajectories):
 		# Sorted by evaluation min
 		trajectories.sort(key=lambda t: self.evaluate_traj(t))
 		best = trajectories[:n_best]
@@ -393,7 +393,7 @@ class StaticPreferenceGiverv3(ABC):
 		mean_entropy_eval_min /= n_best
 		return mean_entropy_eval_min
 
-	def calculate_mean_entropy_eval_max(self, n_best, w, trajectories):
+	def calculate_mean_entropy_eval_max(self, n_best, trajectories):
 		# Sorted by evaluation min
 		trajectories.sort(key=lambda t: self.evaluate_traj(t), reverse=True)
 		best = trajectories[:n_best]

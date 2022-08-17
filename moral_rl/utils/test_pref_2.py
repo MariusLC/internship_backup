@@ -12,7 +12,7 @@ from tqdm import tqdm
 import pickle
 from moral.preference_giver import *
 
-def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver):
+def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand):
 	w_posterior_mean_temp = w_posterior_mean_uniform
 	if config.mcmc_type == "parallel":
 		for j in range(config.nb_mcmc):
@@ -63,27 +63,66 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
 
 	# NEW WEIGHT QUALITY HEURISTIC
-	mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, w_posterior_mean, traj_test)
-	mean_entropy_eval_min = preference_giver.calculate_mean_entropy_eval_min(config.n_best, w_posterior_mean, traj_test)
-	weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, mean_entropy_eval_min, mean_entropy_eval_max)
+	# mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, traj_test)
+	# mean_entropy_eval_min = preference_giver.calculate_mean_entropy_eval_min(config.n_best, traj_test)
+	weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
 	weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
 	# weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
 	# weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
 	print("weight_eval = ", weight_eval)
-	print("UB = ", mean_entropy_eval_max)
-	print("LB = ", mean_entropy_eval_min)
+	print("UB = ", UB)
+	print("LB = ", LB)
 	wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
 
 	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
+
+	# weight_eval_rand = []
+	# weights_list = []
+	# for j in range(100):
+	# 	weights = np.random.uniform(0.0, 1.0, 3)
+	# 	weights_list.append(weights)
+	# 	# weights = st.multivariate_normal(mean=np.ones(3)/np.linalg.norm(np.ones(3)), cov=0.01).rvs()
+	# 	# weight_eval_rand.append(preference_giver.evaluate_weights(config.n_best, weights, traj_test))
+	# 	weight_eval_rand.append(preference_giver.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max))
+	# mean_weight_eval_rand = np.mean(weight_eval_rand)
+	# median_weight_eval_rand = np.median(weight_eval_rand)
+	# min_weight_eval_rand = min(weight_eval_rand)
+	# min_w = weights_list[np.argmin(np.array(weight_eval_rand))]
+	# max_weight_eval_rand = max(weight_eval_rand)
+	# max_w = weights_list[np.argmax(np.array(weight_eval_rand))]
+	# print("mean_weight_eval_rand = ", mean_weight_eval_rand)
+	# print("min_weight_eval_rand = "+str(min_weight_eval_rand)+", w = "+str(min_w))
+	# print("max_weight_eval_rand = "+str(max_weight_eval_rand)+", w = "+str(max_w))
+	# print("median_weight_eval_rand = ", median_weight_eval_rand)
+
+	norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
+	print("norm_score_vs_rand = ", norm_score_vs_rand)
+
+	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	# wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+
+	return w_posterior_mean, w_posterior
+
+def evaluate_quality_params(config, traj_test, preference_giver):
+	# NEW WEIGHT QUALITY HEURISTIC
+	mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, traj_test)
+	mean_entropy_eval_min = preference_giver.calculate_mean_entropy_eval_min(config.n_best, traj_test)
+	print("UB = ", mean_entropy_eval_max)
+	print("LB = ", mean_entropy_eval_min)
+
+	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
 	weight_eval_rand = []
 	weights_list = []
-	for j in range(100):
+
+	for j in range(1000):
 		weights = np.random.uniform(0.0, 1.0, 3)
+		# weights = weights/np.linalg.norm(weights) - 1e-15 # to ensure that norm < 1
 		weights_list.append(weights)
-		# weights = st.multivariate_normal(mean=np.ones(3)/np.linalg.norm(np.ones(3)), cov=0.01).rvs()
-		# weight_eval_rand.append(preference_giver.evaluate_weights(config.n_best, weights, traj_test))
 		weight_eval_rand.append(preference_giver.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max))
 	mean_weight_eval_rand = np.mean(weight_eval_rand)
 	median_weight_eval_rand = np.median(weight_eval_rand)
@@ -91,19 +130,13 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	min_w = weights_list[np.argmin(np.array(weight_eval_rand))]
 	max_weight_eval_rand = max(weight_eval_rand)
 	max_w = weights_list[np.argmax(np.array(weight_eval_rand))]
-	norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
 	print("mean_weight_eval_rand = ", mean_weight_eval_rand)
 	print("min_weight_eval_rand = "+str(min_weight_eval_rand)+", w = "+str(min_w))
 	print("max_weight_eval_rand = "+str(max_weight_eval_rand)+", w = "+str(max_w))
 	print("median_weight_eval_rand = ", median_weight_eval_rand)
-	print("norm_score_vs_rand = ", norm_score_vs_rand)
-	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
 
-	return w_posterior_mean, w_posterior
+	return mean_entropy_eval_min, mean_entropy_eval_max, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand
+
 
 
 def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_norm, non_eth_norm, env_steps=1000):
@@ -239,6 +272,8 @@ if __name__ == '__main__':
 		preference_giver = PreferenceGiverv3(config.ratio)
 	# preference_giver = PreferenceGiverv3_DOT(config.ratio)
 
+	LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = evaluate_quality_params(config, traj_test, preference_giver)
+
 	train_ready = False
 	while not train_ready:
 		# Environment interaction
@@ -331,9 +366,9 @@ if __name__ == '__main__':
 
 		# w_posterior_mean_temp = w_posterior_mean_uniform
 		if config.mcmc_log == "active":
-			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver)
+			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand)
 		elif config.mcmc_log == "final" and i == c["n_queries"]-1:
-			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver)
+			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand)
 
 		# # Reset PPO buffer
 		# dataset.reset_trajectories()
