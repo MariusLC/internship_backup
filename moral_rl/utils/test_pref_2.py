@@ -191,9 +191,17 @@ if __name__ == '__main__':
 	# Traj test for Quality estimation
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
 	# print(traj_test[0])
-	print(traj_test[0].keys())
+	# print(traj_test[0].keys())
 	print(traj_test[0]["returns"])
 	print(np.array(traj_test[0]["returns"]).sum(axis=0))
+
+	# print(os.listdir(c["batch_path"]))
+	# traj_test = []
+	# for file in os.listdir(c["batch_path"]):
+	# 	print(file)
+	# 	traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
+	# 	print(len(traj_test))
+	# print(len(traj_test))
 
 	#Expert i
 	discriminator_list = []

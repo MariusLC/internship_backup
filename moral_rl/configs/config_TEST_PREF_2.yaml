@@ -88,6 +88,8 @@ agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131
 # demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk"
 demos_filename: "generated_data/v3/rand/demonstrations.pk"
 
+batch_path: "generated_data/v3/demo_batch"
+
 
 #######
 # Peschl Values #

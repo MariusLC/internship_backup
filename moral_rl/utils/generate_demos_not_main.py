@@ -12,6 +12,7 @@ from envs.gym_wrapper import *
 from moral.ppo import * 
 # from moral.moral_train_not_main import *
 from moral.airl import *
+import sys
 
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -154,8 +155,11 @@ def generate_demos_1_expert_with_rewards(env_id, nb_demos, expert_filename, demo
     ppo = PPO(state_shape=state_shape, n_actions=n_actions, in_channels=in_channels).to(device)
     ppo.load_state_dict(torch.load(expert_filename, map_location=torch.device('cpu')))
 
+    while len(dataset) < nb_demos:
+        # print("demo ", len(dataset))
+        sys.stdout.write("Demo %d \r" % (len(dataset)) )
+        sys.stdout.flush()
 
-    for t in tqdm(range(nb_demos)):
         actions, log_probs = ppo.act(states_tensor)
         next_states, reward, done, info = env.step(actions)
         episode['states'].append(states)
