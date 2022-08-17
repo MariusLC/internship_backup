@@ -192,6 +192,8 @@ if __name__ == '__main__':
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
 	# print(traj_test[0])
 	print(traj_test[0].keys())
+	print(traj_test[0]["returns"])
+	print(np.array(traj_test[0]["returns"]).sum(axis=0))
 
 	#Expert i
 	discriminator_list = []

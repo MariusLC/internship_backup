@@ -5,6 +5,10 @@ from envs.gym_wrapper import *
 import numpy as np
 
 
+def evaluate_from_demos(demos):
+    res = np.array([np.array(demo["returns"]).sum(axis=0) for demo in demos])
+    return res.mean(axis=0), res.std(axis=0)
+
 def evaluate_ppo(ppo, env_id, n_eval=1000):
     """
     :param ppo: Trained policy
@@ -21,7 +25,7 @@ def evaluate_ppo(ppo, env_id, n_eval=1000):
 
     actions_chosen = np.zeros(10)
 
-    for t in range(n_eval):
+    for t in tqdm(range(n_eval)):
         actions, log_probs = ppo.act(states_tensor)
         next_states, reward, done, info = env.step(actions)
         obj_logs.append(reward)
@@ -61,7 +65,7 @@ def evaluate_ppo_discrim(ppo, discrim, config, n_eval=1000):
     discrim_logs = []
     discrim_returns = []
 
-    for t in range(n_eval):
+    for t in tqdm(range(n_eval)):
         actions, log_probs = ppo.act(states_tensor)
         next_states, reward, done, info = env.step(actions)
         obj_logs.append(reward)
