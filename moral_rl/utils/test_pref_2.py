@@ -254,9 +254,9 @@ if __name__ == '__main__':
 			args = discriminator_list[i].estimate_normalisation_points(c["normalization_eth_sett"], rand_agent, generator_list[i], env_id, c["gamma"], steps=10000)
 		discriminator_list[i].set_eval()
 
-	# traj_test = evaluate_airl_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
-	# print(len(traj_test))
-	# print(traj_test[0].keys())
+	traj_test = evaluate_airl_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+	print(len(traj_test))
+	print(traj_test[0].keys())
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
 	if config.test:
