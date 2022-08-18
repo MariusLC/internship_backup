@@ -55,3 +55,11 @@ du cluster au pc :
 	cp -r generated_data/v3/moral_agents/ ~/Documents/backup/moral_rl/generated_data/v3/
 
 	cp "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk" "~/Documents/backup/moral_rl/generated_data/v3/moral_agents/"
+
+
+
+du cluster vers pc portable :
+	scp -r -p chemin/vers/dossier/source user@serveur2:chemin/vers/dossier/destination
+
+	#### CA FONCTIONNE :
+	scp -r -p lechapelier@gate.lip6.fr:\net\big\lechapelier\internship_backup\moral_rl\generated_data\v3\rand C:\Users\mariu\Desktop\Travail\StageM2\internship_backup\moral_rl\generated_data\v3
