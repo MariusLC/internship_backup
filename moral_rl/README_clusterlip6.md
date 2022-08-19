@@ -65,3 +65,11 @@ du cluster vers pc portable :
 	scp -r -p lechapelier@gate.lip6.fr:\net\big\lechapelier\internship_backup\moral_rl\generated_data\v3\rand C:\Users\mariu\Desktop\Travail\StageM2\internship_backup\moral_rl\generated_data\v3
 
 	scp -r -p lechapelier@gate.lip6.fr:\net\big\lechapelier\internship_backup\moral_rl\generated_data\v3\demo_batch C:\Users\mariu\Desktop\Travail\StageM2\internship_backup\moral_rl\generated_data\v3
+
+
+Comment copier des fichiers qui ont des espaces dans le nom ?
+	exemple : [0, 1, 0, 1].pk
+
+	cp "[0, 1, 0, 1].pk" "copy/to_copy.pk"
+
+	scp -p lechapelier@gate.lip6.fr:\net\big\lechapelier\internship_backup\moral_rl\generated_data\v3\copy\to_copy.pk C:\Users\mariu\Desktop\Travail\StageM2\internship_backup\moral_rl\generated_data\v3\moral_agents\to_copy.pk
