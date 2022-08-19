@@ -391,11 +391,13 @@ class StaticPreferenceGiverv3(ABC):
 		print("LB = ", mean_entropy_eval_min)
 		# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
 		weight_eval_rand = []
+		weight_eval_rand_not_norm = []
 		weights_list = []
 		for j in range(1000):
 			weights = np.random.uniform(0.0, 1.0, 3)
 			# weights = weights/np.linalg.norm(weights) - 1e-15 # to ensure that norm < 1
 			weights_list.append(weights)
+			weight_eval_rand_not_norm.append(self.evaluate_weights(config.n_best, weights, traj_test,))
 			weight_eval_rand.append(self.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max))
 		mean_weight_eval_rand = np.mean(weight_eval_rand)
 		median_weight_eval_rand = np.median(weight_eval_rand)
@@ -407,6 +409,13 @@ class StaticPreferenceGiverv3(ABC):
 		print("min_weight_eval_rand = "+str(min_weight_eval_rand)+", w = "+str(min_w))
 		print("max_weight_eval_rand = "+str(max_weight_eval_rand)+", w = "+str(max_w))
 		print("median_weight_eval_rand = ", median_weight_eval_rand)
+
+		min_weight_eval_rand_not_norm = min(weight_eval_rand_not_norm)
+		min_w_not_norm = weights_list[np.argmin(np.array(weight_eval_rand_not_norm))]
+		max_weight_eval_rand_not_norm = max(weight_eval_rand_not_norm)
+		max_w_not_norm = weights_list[np.argmax(np.array(weight_eval_rand_not_norm))]
+		print("min_weight_eval_rand_not_norm = "+str(min_weight_eval_rand_not_norm)+", w = "+str(min_w_not_norm))
+		print("max_weight_eval_rand_not_norm = "+str(max_weight_eval_rand_not_norm)+", w = "+str(max_w_not_norm))
 		return mean_entropy_eval_min, mean_entropy_eval_max, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand
 
 	def calculate_mean_entropy_eval_min(self, n_best, trajectories):
@@ -420,7 +429,7 @@ class StaticPreferenceGiverv3(ABC):
 		return mean_entropy_eval_min
 
 	def calculate_mean_entropy_eval_max(self, n_best, trajectories):
-		# Sorted by evaluation min
+		# Sorted by evaluation max
 		trajectories.sort(key=lambda t: self.evaluate_traj(t), reverse=True)
 		best = trajectories[:n_best]
 		mean_entropy_eval_max = 0
@@ -517,13 +526,16 @@ class PreferenceGiverv3_no_null(StaticPreferenceGiverv3):
 		self.entropy_vec_null = 10
 
 	def evaluate_ret(self, ret):
-		print("eval ret : ", ret)
 		ret_copy = np.array(ret.copy())[:self.d]+1e-10
 		ret_normalized = ret_copy/sum(ret_copy)
 		if check_not_null(ret):
 			score = st.entropy(ret_normalized, self.ratio_normalized)
 		else:
 			score = self.entropy_vec_null
+
+		# print("eval ret : " +str(score)+ " for ret = " + str(ret))
+		if score < 0 :
+			print("negative entropy : " + str(score) + " for ret = ", ret_copy)
 		return np.round(score, 15)
 
 
