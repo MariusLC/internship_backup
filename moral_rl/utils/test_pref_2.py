@@ -166,8 +166,17 @@ def evaluate_airl_batch(traj_test, discriminator_list, gamma, non_eth_norm, eth_
 			airl_rewards_array = np.array(airl_rewards_list)
 			# print("airl_rewards_array = ", airl_rewards_array)
 			new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
-			# print("new_airl_rewards = ", new_airl_rewards)
+
+
 			batch_full = dataset.write_tuple_norm([states], [actions], [None], [rewards], new_airl_rewards, [i==len(traj["states"])-2], [0.0])
+		print("\nnew_airl_rewards = ", np.array(dataset.trajectories[-1]["airl_rewards"]).sum(axis=0))
+		print("old_airl_rewards = ", np.array(traj["airl_rewards"][:-1]).sum(axis=0))
+		print("len new_airl_rewards = ", len(dataset.trajectories[-1]["airl_rewards"]))
+		print("len old_airl_rewards = ", len(traj["airl_rewards"]))
+		print("new action 0 = ", dataset.trajectories[-1]["actions"][0])
+		print("old action 0 = ", traj["actions"][0])
+		# print("new_airl_rewards = ", np.array(dataset.trajectories[-1]["returns"]).sum(axis=0))
+		# print("old_airl_rewards = ", np.array(traj["returns"]).sum(axis=0))
 
 	dataset.compute_only_vectorized_rewards(non_eth_norm)
 	return dataset.trajectories
@@ -222,7 +231,7 @@ if __name__ == '__main__':
 
 	# Traj test for Quality estimation
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
-	
+
 	# print(len(traj_test))
 	# print(traj_test[0].keys())
 	# # print(traj_test[0]["returns"])
@@ -244,6 +253,7 @@ if __name__ == '__main__':
 	non_eth_expert = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
 	non_eth_expert.load_state_dict(torch.load(non_eth_expert_filename, map_location=torch.device('cpu')))
 	for i in range(c["nb_experts"]):
+		print("Expert = ", i)
 		discriminator_list.append(Discriminator(state_shape=state_shape, in_channels=in_channels).to(device))
 		discriminator_list[i].load_state_dict(torch.load(discriminators_filenames[i], map_location=torch.device('cpu')))
 		generator_list.append(PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device))

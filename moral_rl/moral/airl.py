@@ -216,6 +216,8 @@ class Discriminator(nn.Module):
                 return (advantage - self.min_trajectory_generator/self.traj_size)/(self.utopia_point - self.min_trajectory_generator)
             elif eth_norm == "v6":
                 return (advantage - self.min_trajectory_random_agent/self.traj_size)/(self.utopia_point - self.min_trajectory_random_agent)
+            elif eth_norm == "v7":
+                return (advantage - self.mean_trajectory_random_agent/self.traj_size)/(self.utopia_point - self.mean_trajectory_random_agent)
         else:
             return advantage
 
@@ -351,33 +353,33 @@ class Discriminator(nn.Module):
 
 
         print("utopia_point = ", self.utopia_point)
-        print("normalized_utopia_point = ", self.normalized_utopia_point)
-        print("min_trajectory_generator = ", min_trajectory_generator)
-        print("max_trajectory_generator = ", max_trajectory_generator)
-        print("min_action_generator = ", min_action_generator)
-        print("max_action_generator = ", max_action_generator)
-        print("traj_size = ", traj_size)
+        # print("normalized_utopia_point = ", self.normalized_utopia_point)
+        # print("min_trajectory_generator = ", min_trajectory_generator)
+        # print("max_trajectory_generator = ", max_trajectory_generator)
+        # print("min_action_generator = ", min_action_generator)
+        # print("max_action_generator = ", max_action_generator)
+        # print("traj_size = ", traj_size)
 
-        print("mean rew over 1 traj = ", estimated_returns[0])
-        print("norm v0 (div utopia_point) = ", estimated_returns[0]/abs(self.utopia_point))
-        print("norm v1 (actions values [0,1] bounded) = ", (estimated_returns[0] - traj_size*self.min_action_generator)/(self.max_action_generator - self.min_action_generator))
-        print("norm v2 (v1 / normed UP) = ", ((estimated_returns[0] - traj_size*self.min_action_generator)/(self.max_action_generator - self.min_action_generator))/abs(self.normalized_utopia_point))
-        print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (estimated_returns[0] - self.min_trajectory_generator)/(self.max_trajectory_generator - self.min_trajectory_generator))
-        print("norm v4 (no norm) = ", estimated_returns[0])
-        print("norm v5 (traj values [0,1] bounded, with UP) = ", (estimated_returns[0] - self.min_trajectory_generator)/(self.utopia_point - self.min_trajectory_generator))
+        # print("mean rew over 1 traj = ", estimated_returns[0])
+        # print("norm v0 (div utopia_point) = ", estimated_returns[0]/abs(self.utopia_point))
+        # print("norm v1 (actions values [0,1] bounded) = ", (estimated_returns[0] - traj_size*self.min_action_generator)/(self.max_action_generator - self.min_action_generator))
+        # print("norm v2 (v1 / normed UP) = ", ((estimated_returns[0] - traj_size*self.min_action_generator)/(self.max_action_generator - self.min_action_generator))/abs(self.normalized_utopia_point))
+        # print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (estimated_returns[0] - self.min_trajectory_generator)/(self.max_trajectory_generator - self.min_trajectory_generator))
+        # print("norm v4 (no norm) = ", estimated_returns[0])
+        # print("norm v5 (traj values [0,1] bounded, with UP) = ", (estimated_returns[0] - self.min_trajectory_generator)/(self.utopia_point - self.min_trajectory_generator))
         if self.min_trajectory_random_agent != None :
             print("norm v6 (traj values [0,1] bounded, with UP and min with rand agent) = ", (estimated_returns[0] - self.min_trajectory_random_agent)/(self.utopia_point - self.min_trajectory_random_agent))
 
-        v_act = (estimated_returns[0]/traj_size) + 1e-1
-        print("rew 1 act = ", v_act)
-        print("norm v0 (div utopia_point) = ", v_act/abs(self.utopia_point))
-        print("norm v1 (actions values [0,1] bounded) = ", (v_act - self.min_action_generator)/(self.max_action_generator - self.min_action_generator))
-        print("norm v2 (v1 / normed UP) = ", ((v_act - self.min_action_generator)/(self.max_action_generator - self.min_action_generator))/abs(self.normalized_utopia_point))
-        print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (v_act - self.min_trajectory_generator)/(self.max_trajectory_generator - self.min_trajectory_generator))
-        print("norm v4 (no norm) = ", v_act)
-        print("norm v5 (traj values [0,1] bounded, with UP) = ", (v_act - self.min_trajectory_generator)/(self.utopia_point - self.min_trajectory_generator))
-        if self.min_trajectory_random_agent != None :
-            print("norm v6 (traj values [0,1] bounded, with UP and min with rand agent) = ", (v_act - self.min_trajectory_random_agent)/(self.utopia_point - self.min_trajectory_random_agent))
+        # v_act = (estimated_returns[0]/traj_size) + 1e-1
+        # # print("rew 1 act = ", v_act)
+        # # print("norm v0 (div utopia_point) = ", v_act/abs(self.utopia_point))
+        # # print("norm v1 (actions values [0,1] bounded) = ", (v_act - self.min_action_generator)/(self.max_action_generator - self.min_action_generator))
+        # # print("norm v2 (v1 / normed UP) = ", ((v_act - self.min_action_generator)/(self.max_action_generator - self.min_action_generator))/abs(self.normalized_utopia_point))
+        # # print("norm v3 (traj values [0,1] bounded, with max_1_traj) = ", (v_act - self.min_trajectory_generator)/(self.max_trajectory_generator - self.min_trajectory_generator))
+        # # print("norm v4 (no norm) = ", v_act)
+        # # print("norm v5 (traj values [0,1] bounded, with UP) = ", (v_act - self.min_trajectory_generator)/(self.utopia_point - self.min_trajectory_generator))
+        # if self.min_trajectory_random_agent != None :
+        #     print("norm v6 (traj values [0,1] bounded, with UP and min with rand agent) = ", (v_act - self.min_trajectory_random_agent)/(self.utopia_point - self.min_trajectory_random_agent))
 
 
 
@@ -397,6 +399,7 @@ class Discriminator(nn.Module):
 
         min_action_random_agent = math.inf
         min_trajectory_random_agent = math.inf
+        mean_trajectory_random_agent = []
         for t in range(steps):
             actions, log_probs = rand_agent.act(states_tensor)
             next_states, rewards, done, info = env.step(actions)
@@ -412,20 +415,25 @@ class Discriminator(nn.Module):
 
             if done:
                 min_trajectory_random_agent = min(min_trajectory_random_agent, running_returns)
+                mean_trajectory_random_agent.append(running_returns)
                 running_returns = 0
              
             states = next_states.copy()
             states_tensor = torch.tensor(states).float().to(device)
 
+        self.mean_trajectory_random_agent = mean(mean_trajectory_random_agent)
         self.min_trajectory_random_agent = min_trajectory_random_agent
         self.min_action_random_agent = min_action_random_agent
 
         print("min_action_random_agent = ", self.min_action_random_agent)
         print("min_trajectory_random_agent = ", self.min_trajectory_random_agent)
+        print("mean_trajectory_random_agent = ", self.mean_trajectory_random_agent)
         return self.min_action_random_agent, self.min_trajectory_random_agent
 
     def estimate_normalisation_points(self, eth_norm, rand_agent, imitation_policy, env_id, gamma, steps=10000):
         if eth_norm == "v6":
+            self.estimate_nadir_point(rand_agent, env_id, gamma, steps)
+        elif eth_norm == "v7":
             self.estimate_nadir_point(rand_agent, env_id, gamma, steps)
         self.estimate_utopia_all(imitation_policy, env_id, gamma, steps)
 
