@@ -517,6 +517,7 @@ class PreferenceGiverv3_no_null(StaticPreferenceGiverv3):
 		self.entropy_vec_null = 10
 
 	def evaluate_ret(self, ret):
+		print("eval ret : ", ret)
 		ret_copy = np.array(ret.copy())[:self.d]+1e-10
 		ret_normalized = ret_copy/sum(ret_copy)
 		if check_not_null(ret):

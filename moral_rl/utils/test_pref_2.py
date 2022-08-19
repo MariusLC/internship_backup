@@ -238,13 +238,13 @@ if __name__ == '__main__':
 	# print(np.array(traj_test[0]["returns"]).sum(axis=0))
 	# traj_test = traj_test[:100]
 
-	print(os.listdir(c["batch_path"]))
-	traj_test = []
-	for file in os.listdir(c["batch_path"]):
-		print(file)
-		traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
-		print(len(traj_test))
-	print(len(traj_test))
+	# print(os.listdir(c["batch_path"]))
+	# traj_test = []
+	# for file in os.listdir(c["batch_path"]):
+	# 	print(file)
+	# 	traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
+	# 	print(len(traj_test))
+	# print(len(traj_test))
 
 	#Expert i
 	discriminator_list = []

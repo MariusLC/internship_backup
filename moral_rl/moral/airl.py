@@ -425,7 +425,7 @@ class Discriminator(nn.Module):
         self.min_trajectory_random_agent = min_trajectory_random_agent
         self.min_action_random_agent = min_action_random_agent
 
-        print("min_action_random_agent = ", self.min_action_random_agent)
+        # print("min_action_random_agent = ", self.min_action_random_agent)
         print("min_trajectory_random_agent = ", self.min_trajectory_random_agent)
         print("mean_trajectory_random_agent = ", self.mean_trajectory_random_agent)
         return self.min_action_random_agent, self.min_trajectory_random_agent

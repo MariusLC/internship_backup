@@ -407,8 +407,8 @@ class TrajectoryDataset:
         for i in range(len(self.trajectories)):
             mean_vectorized_rewards_1_traj = [0 for i in range(len(self.trajectories[0]["airl_rewards"][0])+1)]
             for j in range(len(self.trajectories[i]["states"])):
-                print("array a = ", [self.trajectories[i]["returns"][j][0]])
-                print("array b = ", self.trajectories[i]["airl_rewards"][j])
+                # print("array a = ", [self.trajectories[i]["returns"][j][0]])
+                # print("array b = ", self.trajectories[i]["airl_rewards"][j])
                 self.trajectories[i]["vectorized_rewards"].append(np.concatenate(([self.trajectories[i]["returns"][j][0]], self.trajectories[i]["airl_rewards"][j]))) # np array ?
                 mean_vectorized_rewards_1_traj += self.trajectories[i]["vectorized_rewards"][-1]
             
