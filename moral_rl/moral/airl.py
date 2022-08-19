@@ -421,7 +421,7 @@ class Discriminator(nn.Module):
             states = next_states.copy()
             states_tensor = torch.tensor(states).float().to(device)
 
-        self.mean_trajectory_random_agent = mean(mean_trajectory_random_agent)
+        self.mean_trajectory_random_agent = np.mean(mean_trajectory_random_agent)
         self.min_trajectory_random_agent = min_trajectory_random_agent
         self.min_action_random_agent = min_action_random_agent
 

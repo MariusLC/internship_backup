@@ -170,11 +170,11 @@ def evaluate_airl_batch(traj_test, discriminator_list, gamma, non_eth_norm, eth_
 
 			batch_full = dataset.write_tuple_norm([states], [actions], [None], [rewards], new_airl_rewards, [i==len(traj["states"])-2], [0.0])
 		print("\nnew_airl_rewards = ", np.array(dataset.trajectories[-1]["airl_rewards"]).sum(axis=0))
-		print("old_airl_rewards = ", np.array(traj["airl_rewards"][:-1]).sum(axis=0))
 		print("len new_airl_rewards = ", len(dataset.trajectories[-1]["airl_rewards"]))
-		print("len old_airl_rewards = ", len(traj["airl_rewards"]))
 		print("new action 0 = ", dataset.trajectories[-1]["actions"][0])
-		print("old action 0 = ", traj["actions"][0])
+		# print("old_airl_rewards = ", np.array(traj["airl_rewards"][:-1]).sum(axis=0))
+		# print("len old_airl_rewards = ", len(traj["airl_rewards"]))
+		# print("old action 0 = ", traj["actions"][0])
 		# print("new_airl_rewards = ", np.array(dataset.trajectories[-1]["returns"]).sum(axis=0))
 		# print("old_airl_rewards = ", np.array(traj["returns"]).sum(axis=0))
 

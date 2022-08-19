@@ -31,7 +31,7 @@ experts_weights: [[0,1,0,1],[0,0,1,1]]
 ratio: [1, 1, 1]
 # ratio: [1, 1, 1, 1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
-normalization_eth_sett: "v7"
+normalization_eth_sett: "v6"
 normalization_non_eth_sett: "v3"
 # normalization_eth_sett: "v1"
 # normalization_non_eth_sett: "v6"
@@ -85,8 +85,8 @@ gamma: 0.999
 agent_test_name: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
 
 
-demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk"
-# demos_filename: "generated_data/v3/rand/demonstrations.pk"
+# demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk"
+demos_filename: "generated_data/v3/rand/demonstrations.pk"
 
 batch_path: "generated_data/v3/demo_batch"
 
