@@ -533,3 +533,6 @@ def update_discriminator(discriminator, optimizer, gamma, expert_trajectories, p
     optimizer.step()
 
     return loss.item(), torch.mean(predicted_fake).item(), torch.mean(predicted_expert).item()
+
+
+

@@ -11,6 +11,7 @@ from moral.active_learning import *
 from tqdm import tqdm
 import pickle
 from moral.preference_giver import *
+from moral.moral_train_not_main import *
 
 def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand):
 	w_posterior_mean_temp = w_posterior_mean_uniform
@@ -144,46 +145,6 @@ def estimate_vectorized_rew(env, agent, dataset, discriminator_list, gamma, eth_
 	print("\n\nmean_returns = ", mean_returns)
 	return mean_returns, mean_vectorized_rewards
 
-def evaluate_airl_batch(traj_test, discriminator_list, gamma, non_eth_norm, eth_norm, non_eth_expert, env_id):
-	dataset = TrajectoryDataset(batch_size=len(traj_test), n_workers=1)
-	# dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, env_id, steps=10000)
-	dataset.estimate_normalisation_points(non_eth_norm, non_eth_expert, env_id, steps=1000)
-	for _, traj in tqdm(enumerate(traj_test)):
-		for i in range(len(traj["states"])-1):
-			actions = traj["actions"][i]
-			states = traj["states"][i]
-			next_states = traj["states"][i+1]
-			rewards = traj["returns"][i]
-
-			# Fetch AIRL rewards
-			airl_state = torch.tensor(states).to(device).float()
-			airl_next_state = torch.tensor(next_states).to(device).float()
-
-			airl_rewards_list = []
-			for d in discriminator_list:
-				airl_rewards_list.append(d.forward(airl_state, airl_next_state, gamma, eth_norm).squeeze(1).detach().cpu().numpy())
-
-			airl_rewards_array = np.array(airl_rewards_list)
-			# print("airl_rewards_array = ", airl_rewards_array)
-			new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
-
-
-			batch_full = dataset.write_tuple_norm([states], [actions], [None], [rewards], new_airl_rewards, [i==len(traj["states"])-2], [0.0])
-		print("\nnew_airl_rewards = ", np.array(dataset.trajectories[-1]["airl_rewards"]).sum(axis=0))
-		print("len new_airl_rewards = ", len(dataset.trajectories[-1]["airl_rewards"]))
-		print("new action 0 = ", dataset.trajectories[-1]["actions"][0])
-		# print("old_airl_rewards = ", np.array(traj["airl_rewards"][:-1]).sum(axis=0))
-		# print("len old_airl_rewards = ", len(traj["airl_rewards"]))
-		# print("old action 0 = ", traj["actions"][0])
-		# print("new_airl_rewards = ", np.array(dataset.trajectories[-1]["returns"]).sum(axis=0))
-		# print("old_airl_rewards = ", np.array(traj["returns"]).sum(axis=0))
-
-	dataset.compute_only_vectorized_rewards(non_eth_norm)
-	return dataset.trajectories
-
-
-	
-
 
 
 # Use GPU if available
@@ -264,12 +225,12 @@ if __name__ == '__main__':
 			args = discriminator_list[i].estimate_normalisation_points(c["normalization_eth_sett"], rand_agent, generator_list[i], env_id, c["gamma"], steps=10000)
 		discriminator_list[i].set_eval()
 
-	traj_test = evaluate_airl_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+	traj_test = evaluate_airl_from_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
 	print(len(traj_test))
 	print(traj_test[0].keys())
 
 	# If len(traj_test) < 2000 then UB and LB will be to close to each other
-	assert len(traj_test) > 2000
+	assert len(traj_test) >= 2000
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
 	if config.test:

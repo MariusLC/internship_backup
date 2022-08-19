@@ -63,3 +63,5 @@ du cluster vers pc portable :
 
 	#### CA FONCTIONNE :
 	scp -r -p lechapelier@gate.lip6.fr:\net\big\lechapelier\internship_backup\moral_rl\generated_data\v3\rand C:\Users\mariu\Desktop\Travail\StageM2\internship_backup\moral_rl\generated_data\v3
+
+	scp -r -p lechapelier@gate.lip6.fr:\net\big\lechapelier\internship_backup\moral_rl\generated_data\v3\demo_batch C:\Users\mariu\Desktop\Travail\StageM2\internship_backup\moral_rl\generated_data\v3
