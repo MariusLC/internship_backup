@@ -216,12 +216,12 @@ if __name__ == '__main__':
 	# print(np.array(traj_test[0]["returns"]).sum(axis=0))
 	# traj_test = traj_test[:100]
 	print(os.listdir(c["batch_path"]))
-    traj_test = []
-    for file in os.listdir(c["batch_path"]):
-        traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
-        print(str(file) + " with " + str(len(traj_test)) + " trajectories")
-    print("The batch contains "+str(len(traj_test))+" trajectories")
-    traj_test = evaluate_airl_from_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+	traj_test = []
+	for file in os.listdir(c["batch_path"]):
+		traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
+		print(str(file) + " with " + str(len(traj_test)) + " trajectories")
+	print("The batch contains "+str(len(traj_test))+" trajectories")
+	traj_test = evaluate_airl_from_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
 	# If len(traj_test) < 2000 then UB and LB will be to close to each other
 	assert len(traj_test) >= 2000
 
