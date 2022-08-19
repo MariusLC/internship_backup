@@ -238,13 +238,13 @@ if __name__ == '__main__':
 	# print(np.array(traj_test[0]["returns"]).sum(axis=0))
 	# traj_test = traj_test[:100]
 
-	# print(os.listdir(c["batch_path"]))
-	# traj_test = []
-	# for file in os.listdir(c["batch_path"]):
-	# 	print(file)
-	# 	traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
-	# 	print(len(traj_test))
-	# print(len(traj_test))
+	print(os.listdir(c["batch_path"]))
+	traj_test = []
+	for file in os.listdir(c["batch_path"]):
+		print(file)
+		traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
+		print(len(traj_test))
+	print(len(traj_test))
 
 	#Expert i
 	discriminator_list = []
@@ -264,9 +264,9 @@ if __name__ == '__main__':
 			args = discriminator_list[i].estimate_normalisation_points(c["normalization_eth_sett"], rand_agent, generator_list[i], env_id, c["gamma"], steps=10000)
 		discriminator_list[i].set_eval()
 
-	# traj_test = evaluate_airl_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
-	# print(len(traj_test))
-	# print(traj_test[0].keys())
+	traj_test = evaluate_airl_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+	print(len(traj_test))
+	print(traj_test[0].keys())
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
 	if config.test:
