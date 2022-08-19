@@ -156,11 +156,16 @@ CONFIG_FILENAME = "config_TEST_PREF_2.yaml"
 
 if __name__ == '__main__':
 
+
 	c = load_config(CONFIG_PATH, CONFIG_FILENAME)
 
 	wandb.init(project='Test_preferences_2',
 		config=c)
 	config=wandb.config
+
+	traj_test = pickle.load(open(config.demos_filename, 'rb'))
+	print(len(traj_test))
+	assert len(traj_test) >= 2000
 
 	generators_filenames = []
 	discriminators_filenames = []
