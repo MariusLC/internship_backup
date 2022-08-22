@@ -233,7 +233,7 @@ if __name__ == '__main__':
 
 	# TRAJECTORIES BATCH FOR QUALITY ESTIMATION
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
-	print("There is "+str(len(batch_demo))+" expert trajectories")
+	print("There is "+str(len(traj_test))+" expert trajectories")
 	# print(len(traj_test))
 	# print(traj_test[0].keys())
 	# # print(traj_test[0]["returns"])
