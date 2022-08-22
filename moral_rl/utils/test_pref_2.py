@@ -13,7 +13,7 @@ import pickle
 from moral.preference_giver import *
 from moral.moral_train_not_main import *
 
-def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand):
+def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch):
 	w_posterior_mean_temp = w_posterior_mean_uniform
 	if config.mcmc_type == "parallel":
 		for j in range(config.nb_mcmc):
@@ -77,6 +77,21 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
 
+
+	# NEW WEIGHT QUALITY HEURISTIC BATCH DEMO
+	# mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, batch_demo)
+	# mean_entropy_eval_min = preference_giver.calculate_mean_entropy_eval_min(config.n_best, batch_demo)
+	weight_eval_batch = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, batch_demo, LB_batch, UB_batch)
+	weight_eval_10_batch, weight_eval_10_norm_batch = preference_giver.evaluate_weights_print(10, w_posterior_mean, batch_demo)
+	# weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, batch_demo)
+	# weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, batch_demo)
+	print("weight_eval_batch = ", weight_eval_batch)
+	print("UB_batch = ", UB_batch)
+	print("LB_batch = ", LB_batch)
+	wandb.log({'weight_eval_batch': weight_eval_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'weight_eval_batch TOP 10': weight_eval_10_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'weight_eval_batch norm TOP 10': weight_eval_10_norm_batch}, step=(i+1)*config.nb_mcmc)
+
 	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
 
 	# weight_eval_rand = []
@@ -97,15 +112,22 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	# print("min_weight_eval_rand = "+str(min_weight_eval_rand)+", w = "+str(min_w))
 	# print("max_weight_eval_rand = "+str(max_weight_eval_rand)+", w = "+str(max_w))
 	# print("median_weight_eval_rand = ", median_weight_eval_rand)
-
 	norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
 	print("norm_score_vs_rand = ", norm_score_vs_rand)
-
 	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	# wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+
+	# BATCH DEMO
+	norm_score_vs_rand_batch = (weight_eval_batch - min_weight_eval_rand_batch) / (max_weight_eval_rand_batch - min_weight_eval_rand_batch)
+	print("norm_score_vs_rand_batch = ", norm_score_vs_rand_batch)
+	wandb.log({'mean_weight_eval_rand_batch': mean_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'min_weight_eval_rand_batch': min_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'max_weight_eval_rand_batch': max_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+	# wandb.log({'median_weight_eval_rand_batch': median_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'norm_score_vs_rand_batch': norm_score_vs_rand_batch}, step=(i+1)*config.nb_mcmc)
 
 	return w_posterior_mean, w_posterior
 
@@ -211,22 +233,27 @@ if __name__ == '__main__':
 
 	# TRAJECTORIES BATCH FOR QUALITY ESTIMATION
 	traj_test = pickle.load(open(config.demos_filename, 'rb'))
-	print(len(traj_test))
+	print("There is "+str(len(batch_demo))+" expert trajectories")
+	# print(len(traj_test))
 	# print(traj_test[0].keys())
 	# # print(traj_test[0]["returns"])
 	# print(np.array(traj_test[0]["returns"]).sum(axis=0))
 	# traj_test = traj_test[:100]
 
-	# print(os.listdir(c["batch_path"]))
-	# traj_test = []
-	# for file in os.listdir(c["batch_path"]):
-	# 	traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
-	# 	print(str(file) + " with " + str(len(traj_test)) + " trajectories")
-	# print("The batch contains "+str(len(traj_test))+" trajectories")
+	print(os.listdir(c["batch_path"]))
+	batch_demo = []
+	for file in os.listdir(c["batch_path"]):
+		batch_demo.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
+		print(str(file) + " with " + str(len(batch_demo)) + " trajectories")
+	print("The batch contains "+str(len(batch_demo))+" trajectories")
 
 	# If len(traj_test) < 2000 then UB and LB will be to close to each other
 	assert len(traj_test) >= 2000
 	traj_test = evaluate_airl_from_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+
+	# If len(batch_demo) < 2000 then UB and LB will be to close to each other
+	assert len(batch_demo) >= 2000
+	batch_demo = evaluate_airl_from_batch(batch_demo, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
 	
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
@@ -266,6 +293,7 @@ if __name__ == '__main__':
 	# preference_giver = PreferenceGiverv3_DOT(config.ratio)
 
 	LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = preference_giver.evaluate_quality_params(config, traj_test)
+	LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch = preference_giver.evaluate_quality_params(config, batch_demo)
 
 	train_ready = False
 	while not train_ready:
