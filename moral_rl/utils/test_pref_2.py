@@ -387,9 +387,9 @@ if __name__ == '__main__':
 
 		# w_posterior_mean_temp = w_posterior_mean_uniform
 		if config.mcmc_log == "active":
-			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand)
+			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch)
 		elif config.mcmc_log == "final" and i == c["n_queries"]-1:
-			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand)
+			w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch)
 
 		# # Reset PPO buffer
 		# dataset.reset_trajectories()
