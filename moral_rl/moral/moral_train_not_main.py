@@ -104,21 +104,18 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
     #############
     # TRAJECTORIES BATCH FOR QUALITY ESTIMATION
     #############
-    # traj_test = pickle.load(open(config.demos_filename, 'rb'))
-    # print(len(traj_test))
-    # print(traj_test[0].keys())
-    # # print(traj_test[0]["returns"])
-    # print(np.array(traj_test[0]["returns"]).sum(axis=0))
-    # traj_test = traj_test[:100]
+
     print(os.listdir(c["batch_path"]))
-    traj_test = []
+    batch_demo = []
     for file in os.listdir(c["batch_path"]):
-        traj_test.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
-        print(str(file) + " with " + str(len(traj_test)) + " trajectories")
-    print("The batch contains "+str(len(traj_test))+" trajectories")
-    traj_test = evaluate_airl_from_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+        batch_demo.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
+        print(str(file) + " with " + str(len(batch_demo)) + " trajectories")
+    print("The batch contains "+str(len(batch_demo))+" trajectories")
+
     # If len(traj_test) < 2000 then UB and LB will be to close to each other
     assert len(traj_test) >= 2000
+    traj_test = evaluate_airl_from_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+
 
 
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
