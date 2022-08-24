@@ -65,7 +65,9 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
         reinit=True)
     config = wandb.config
 
-    # Create Environment
+    ###############
+    # INIT ENV
+    ###############
     vec_env = VecEnv(config.env_id, config.n_workers)
     states = vec_env.reset()
     states_tensor = torch.tensor(states).float().to(device)
@@ -76,19 +78,21 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
     state_shape = obs_shape[:-1]
     in_channels = obs_shape[-1]
 
-    # Initialize Models
+    ###############
+    # INIT AGENT
+    ###############
     print('Initializing and Normalizing Rewards...')
     ppo = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
     optimizer = torch.optim.Adam(ppo.parameters(), lr=config.lr_ppo)
 
-    # Expert i
+    ###############
+    # INIT AIRL DISCRIMINATORS & GENERATORS, EVALUATE NORMALISATION POINTS
+    ###############
     discriminator_list = []
     generator_list = []
-
     rand_agent = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
     non_eth_expert = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
     non_eth_expert.load_state_dict(torch.load(non_eth_expert_filename, map_location=torch.device('cpu')))
-
     for i in range(nb_experts):
         discriminator_list.append(Discriminator(state_shape=state_shape, in_channels=in_channels).to(device))
         discriminator_list[i].load_state_dict(torch.load(discriminators_filenames[i], map_location=torch.device('cpu')))
@@ -104,7 +108,6 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
     #############
     # TRAJECTORIES BATCH FOR QUALITY ESTIMATION
     #############
-
     print(os.listdir(c["batch_path"]))
     batch_demo = []
     for file in os.listdir(c["batch_path"]):
@@ -112,19 +115,31 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
         print(str(file) + " with " + str(len(batch_demo)) + " trajectories")
     print("The batch contains "+str(len(batch_demo))+" trajectories")
 
-    # If len(traj_test) < 2000 then UB and LB will be to close to each other
-    assert len(traj_test) >= 2000
-    traj_test = evaluate_airl_from_batch(traj_test, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+    # If len(batch_demo) < 2000 then UB and LB will be to close to each other
+    assert len(batch_demo) >= 2000
+    batch_demo = evaluate_airl_from_batch(batch_demo, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
 
 
+    ###############
+    # INIT DATASETS
+    ###############
 
+    # PPO DATASET
     dataset = TrajectoryDataset(batch_size=config.batchsize_ppo, n_workers=config.n_workers)
     if config.test:
         dataset.estimate_normalisation_points(config.non_eth_norm, non_eth_expert, config.env_id, steps=1000) # tests
     else :
         dataset.estimate_normalisation_points(config.non_eth_norm, non_eth_expert, config.env_id, steps=10000)
 
-    # Active Learning
+    # EVALUATE PREF LEARNING DATASET
+    current_policy_demo_batch = TrajectoryDataset(batch_size=2000, n_workers=config.n_workers)
+    current_policy_demo_batch.utopia_point_expert = dataset.utopia_point_expert
+    current_policy_demo_batch.utopia_point_expert_max_1_traj = dataset.utopia_point_expert_max_1_traj
+
+
+    ###############
+    # INIT PREF LEARNER
+    ###############
     if config.test:
         preference_learner = PreferenceLearner(d=len(config.experts_weights)+1, n_iter=1000, warmup=100, temperature=config.temperature_mcmc, cov_range=config.cov_range, prior=config.prior) # tests
     else :
@@ -136,16 +151,103 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
     for i in range(len(w_posterior_mean)):
         wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=0)
 
+    ###############
+    # INIT VOLUME BUFFER & PREF GIVER
+    ###############
     volume_buffer = VolumeBuffer(len(config.ratio))
     if config.pref_giver_no_null:
         preference_giver = PreferenceGiverv3_no_null(config.ratio)
     else :
         preference_giver = PreferenceGiverv3(config.ratio)
 
+    ###############
+    # EVALUATE PARAMS DEMO_BATCH FOR PREFERENCE LEARNING QUALITY EVALUATION
+    ###############
+    LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch = preference_giver.evaluate_quality_params(config, batch_demo)
+
+    ###############
+    # START LEARNING
+    ###############
     for t in tqdm(range(env_steps)):
 
         # Query User
         if t % query_freq == 0 and t > 0:
+            ################
+            # BEFORE ASKING A QUESTION, EVALUATE PREF LEARNING
+            ################ 
+            # Reset Environment
+            states = vec_env.reset()
+            states_tensor = torch.tensor(states).float().to(device)
+            train_ready_current_policy_demo_batch = False
+            while not train_ready_current_policy_demo_batch:
+
+                # Environment interaction
+                actions_DB, log_probs_DB = ppo.act(states_tensor_DB)
+                next_states_DB, rewards_DB, done_DB, info_DB = vec_env.step(actions_DB)
+
+                # Fetch AIRL rewards
+                airl_state_DB = torch.tensor(states_DB).to(device).float()
+                airl_next_state_DB = torch.tensor(next_states_DB).to(device).float()
+
+                airl_rewards_list_DB = []
+                for j in range(nb_experts):
+                    airl_rewards_list_DB.append(discriminator_list[j].forward(airl_state_DB, airl_next_state_DB, config.gamma, config.eth_norm).squeeze(1).detach().cpu().numpy() * [0 if i else 1 for i in done_DB])
+
+                airl_rewards_array_DB = np.array(airl_rewards_list_DB)
+                new_airl_rewards_DB = [airl_rewards_array_DB[:,i] for i in range(len(airl_rewards_list_DB[0]))]
+                train_ready_current_policy_demo_batch = current_policy_demo_batch.write_tuple_norm(states_DB, actions_DB, None, rewards_DB, new_airl_rewards_DB, done_DB, log_probs_DB)
+
+                # Prepare state input for next time step
+                states_DB = next_states_DB.copy()
+                states_tensor_DB = torch.tensor(states_DB).float().to(device)
+
+            mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, config.non_eth_norm, wandb)
+            current_policy_trajectories = current_policy_demo_batch.trajectories
+
+            # NEW WEIGHT QUALITY HEURISTIC
+            LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = preference_giver.evaluate_quality_params(config, current_policy_trajectories)
+            weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
+            weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
+            print("weight_eval = ", weight_eval)
+            print("UB = ", UB)
+            print("LB = ", LB)
+            wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
+            # SCORE VS RANDOM WEIGHTS
+            norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
+            print("norm_score_vs_rand = ", norm_score_vs_rand)
+            wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+
+            # Reset PPO buffer
+            current_policy_demo_batch.reset_trajectories()
+
+
+            # NEW WEIGHT QUALITY HEURISTIC BATCH DEMO
+            weight_eval_batch = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, batch_demo, LB_batch, UB_batch)
+            weight_eval_10_batch, weight_eval_10_norm_batch = preference_giver.evaluate_weights_print(10, w_posterior_mean, batch_demo)
+            print("weight_eval_batch = ", weight_eval_batch)
+            print("UB_batch = ", UB_batch)
+            print("LB_batch = ", LB_batch)
+            wandb.log({'weight_eval_batch': weight_eval_batch}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'weight_eval_batch TOP 10': weight_eval_10_batch}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'weight_eval_batch norm TOP 10': weight_eval_10_norm_batch}, step=(i+1)*config.nb_mcmc)
+            # SCORE VS RANDOM WEIGHTS BATCH DEMO
+            norm_score_vs_rand_batch = (weight_eval_batch - min_weight_eval_rand_batch) / (max_weight_eval_rand_batch - min_weight_eval_rand_batch)
+            print("norm_score_vs_rand_batch = ", norm_score_vs_rand_batch)
+            wandb.log({'mean_weight_eval_rand_batch': mean_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'min_weight_eval_rand_batch': min_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'max_weight_eval_rand_batch': max_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+            wandb.log({'norm_score_vs_rand_batch': norm_score_vs_rand_batch}, step=(i+1)*config.nb_mcmc)
+
+
+
+            #############
+            # ASK A QUESTION
+            #############
             ret_a, ret_b, observed_rew_a, observed_rew_b = volume_buffer.get_best()
             # best_delta = volume_buffer.best_delta
             best_delta = observed_rew_a-observed_rew_b
@@ -173,27 +275,11 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             for i in range(len(w_posterior_mean)):
                 wandb.log({'w_posterior_mean ['+str(i)+']': w_posterior_mean[i]}, step=t*config.n_workers)
 
-            LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = preference_giver.evaluate_quality_params(config, traj_test)
-
-            # NEW WEIGHT QUALITY HEURISTIC
-            weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
-            weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
-            print("weight_eval = ", weight_eval)
-            print("UB = ", UB)
-            print("LB = ", LB)
-            wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
-
-            # SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
-            norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
-            print("norm_score_vs_rand = ", norm_score_vs_rand)
-            wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
-
+            # reset everything to clean start again
             volume_buffer.reset()
+            dataset.reset_trajectories()
+            states = vec_env.reset()
+            states_tensor = torch.tensor(states).float().to(device)
 
         # Environment interaction
         actions, log_probs = ppo.act(states_tensor)

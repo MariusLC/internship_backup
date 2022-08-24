@@ -63,6 +63,7 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
 
+
 	# NEW WEIGHT QUALITY HEURISTIC
 	# mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, traj_test)
 	# mean_entropy_eval_min = preference_giver.calculate_mean_entropy_eval_min(config.n_best, traj_test)
