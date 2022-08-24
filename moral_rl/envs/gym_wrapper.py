@@ -5,6 +5,7 @@ import envs.randomized_v1_test
 import envs.randomized_v4
 import envs.randomized_v3_test
 import envs.randomized_v3_test_discrim_eval
+import envs.randomized_v5
 from pycolab import rendering
 from typing import Callable
 import gym
