@@ -15,6 +15,6 @@ if __name__ == '__main__':
     if c["vanilla"]:
         vanilla_path = c["vanilla_path"]
 
-    expert_filename = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"])+"/"+c["expe_path"]+c["special_name"]+c["model_ext"]
+    expert_filename = c["data_path"]+c["env_path"]+vanilla_path+str(c["expert_weights"])+"/"+c["expe_path"]+c["special_name"]+c["model_ext"]
     # print(expert_filename)
     ppo_train_1_expert(c, expert_filename)
