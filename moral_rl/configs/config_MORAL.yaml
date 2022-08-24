@@ -13,9 +13,12 @@ demo_ext: ".pk"
 model_name: "ppo_"
 
 # Editable parameters
-env: "v3"
+env: "v5"
 env_rad: "randomized_"
-env_id: "randomized_v3"
+env_id: "randomized_v5"
+# env: "v3"
+# env_rad: "randomized_"
+# env_id: "randomized_v3"
 nb_experts: 2
 # experts_weights: [[0,1]]
 experts_weights: [[0,1,0,1],[0,0,1,1]]

@@ -58,6 +58,11 @@ class GymWrapper(gym.Env):
             self.width = 16
             self.height = 16
             self.num_actions = 9
+        elif env_id == 'randomized_v5':
+            self.layers = ('#', 'P', 'F', 'C', 'S', 'V')
+            self.width = 16
+            self.height = 16
+            self.num_actions = 9
             
 
         self.game = None
@@ -98,6 +103,8 @@ class GymWrapper(gym.Env):
         elif self.env_id == 'randomized_v3_test_discrim_eval':
             self.game = envs.randomized_v3_test_discrim_eval.make_game()
             # self.game = envs.randomized_v3_test_discrim_eval.make_game(rand_reset=True, dico_pos=None)
+        elif self.env_id == 'randomized_v5':
+            self.game = envs.randomized_v5.make_game()
 
         obs, _, _ = self.game.its_showtime()
         return self._obs_to_np_array(obs)
@@ -278,6 +285,11 @@ class GymWrapper_demo(GymWrapper):
             self.width = 16
             self.height = 16
             self.num_actions = 9
+        elif env_id == 'randomized_v5':
+            self.layers = ('#', 'P', 'F', 'C', 'S', 'V')
+            self.width = 16
+            self.height = 16
+            self.num_actions = 9
             
 
         self.game = None
@@ -315,6 +327,8 @@ class GymWrapper_demo(GymWrapper):
         elif self.env_id == 'randomized_v3_test_discrim_eval':
             self.game = envs.randomized_v3_test_discrim_eval.make_game()
             # self.game = envs.randomized_v3_test_discrim_eval.make_game(rand_reset=True, dico_pos=None)
+        elif self.env_id == 'randomized_v5':
+            self.game = envs.randomized_v5.make_game()
             
 
         # obs, _, _ = self.game.its_showtime()

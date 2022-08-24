@@ -1,7 +1,8 @@
 #Paths
 vanilla: False
 data_path: "generated_data/"
-env_path: "v3/"
+env_path: "v5/"
+# env_path: "v3/"
 vanilla_path: "Peschl/"
 expe_path: "expert"
 demo_path: "demonstrations"
@@ -25,10 +26,13 @@ epsilon: 0.1
 ppo_epochs: 5
 
 # Editable parameters
-env: "v3"
+# env: "v3"
+# env_rad: "randomized_"
+# env_id: "randomized_v3"
+env: "v5"
 env_rad: "randomized_"
-env_id: "randomized_v3"
-expert_weights: [0,1,1,0]
+env_id: "randomized_v5"
+expert_weights: [0,1,0,1]
 
 #######
 # Peschl Values #
