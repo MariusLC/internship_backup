@@ -77,6 +77,7 @@ query_selection: "compare_basic_log_lik"
 # query_selection: "compare_basic_log_lik_less_zeros"
 
 batch_path: "generated_data/v3/demo_batch"
+n_best: 100
 
 
 #######
