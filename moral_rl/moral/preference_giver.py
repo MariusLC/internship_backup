@@ -433,6 +433,11 @@ class StaticPreferenceGiverv3(ABC):
 			### 2nd quality heuristic
 			weight_nb_inv_rand.append(self.evaluate_weights_inversions(config.n_best, weights, traj_test))
 
+		print("len(weights_list) = ", weights_list)
+		print("len(weight_eval_rand) = ", weight_eval_rand)
+		print("argmin = ", np.argmin(np.array(weight_eval_rand)))
+
+
 		### 1rst quality heuristic
 		mean_weight_eval_rand = np.mean(weight_eval_rand)
 		median_weight_eval_rand = np.median(weight_eval_rand)
