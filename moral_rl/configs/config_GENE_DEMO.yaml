@@ -18,14 +18,16 @@ model_name: "ppo_"
 direct_filename: True
 moral_agent: False # True if moral_agent, False if PPO basic agent
 
-agent_filename: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
+agent_filename: "generated_data/v5/[0, 0, 1, 1]/expert.pt"
+# agent_filename: "generated_data/v3/moral_agents/[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pt"
 # agent_filename: "generated_data/v3/rand/expert.pt"
 # agent_filename: "generated_data/v3/[1, 0, 0, 0]/expert.pt"
 # agent_filename: "generated_data/v3/[0, 1, 0, 1]/expert.pt"
 # agent_filename: "generated_data/v3/[0, 0, 1, 1]/expert.pt"
 
+demos_filename: "generated_data/v5/[0, 0, 1, 1]/demonstrations.pk"
 # demos_filename: "generated_data/v3/rand/demonstrations.pk"
-demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk"
+# demos_filename: "generated_data/v3/moral_agents/DEMOS_[[0, 1, 0, 1], [0, 0, 1, 1]]131_new_norm_v6_v3_after_queries_fixed.pk"
 
 # demos_filename: "generated_data/v3/demo_batch/[[0, 1, 0, 1], [0, 0, 1, 1]]131.pk"
 # demos_filename: "generated_data/v3/demo_batch/rand.pk"
