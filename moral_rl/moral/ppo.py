@@ -156,7 +156,7 @@ class TrajectoryDataset:
                 self.returns_min_traj = min(self.returns_min_traj, returns_arr.sum(axis=0)[0])
                 self.returns_max_traj = max(self.returns_max_traj, returns_arr.sum(axis=0)[0])
 
-        print("nb traj = ", len(self.trajectories))
+        # print("nb traj = ", len(self.trajectories))
         if len(self.trajectories) >= self.batch_size:
             return True
         else:
