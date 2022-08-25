@@ -373,15 +373,42 @@ class StaticPreferenceGiverv3(ABC):
 
 	def normalized_evaluate_weights(self, n_best, w, trajectories, LB, UB):
 		# Sorted by weighted rew
-		trajectories.sort(key=lambda t: np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w), reverse=True)
-		best = trajectories[:n_best]
-		mean_entropy = 0
-		for traj in best:
-			mean_entropy += self.evaluate_traj(traj)
-		mean_entropy /= n_best
+		score = self.evaluate_weights(n_best, w, trajectories)
+		normalized_mean_entropy = (score - LB)/(UB - LB)
+		return score, normalized_mean_entropy
 
-		normalized_mean_entropy = (mean_entropy - LB)/(UB - LB)
-		return normalized_mean_entropy
+	def evaluate_weights_inversions(self, n_best, w, trajectories):
+		eval_expert = np.array([self.evaluate_traj(t) for t in trajectories])
+		eval_approx = np.array([np.dot(np.array(t["vectorized_rewards"]).sum(axis=0), w) for t in trajectories])
+		# print("eval_expert = ", eval_expert)
+		# print("eval_approx = ", eval_approx)
+		# Get expert order
+		sort_expert = np.argsort(eval_expert)
+		# print("sort_expert = ", sort_expert)
+		# sort both arrays wrt expert order
+		eval_expert = eval_expert[sort_expert]
+		eval_approx = eval_approx[sort_expert]
+		# np.take_along_axis(eval_expert, sort_expert, axis=0)
+		# np.take_along_axis(eval_approx, sort_expert, axis=0)
+		# print("eval_expert = ", eval_expert)
+		# print("eval_approx = ", eval_approx)
+		# Get approx order (inversed to have max first)
+		sort_approx = np.argsort(eval_approx)[::-1]
+		# print("sort_approx = ", sort_approx)
+		# count inversions number in that approx order
+		inv = sort_approx
+		inv_count = 0
+		for i in range(len(inv)):
+			for j in range(i + 1, len(inv)):
+				if (inv[i] > inv[j]):
+					inv_count += 1
+		return inv_count
+
+	def normalize_evaluate_weights_inversions(self, n_best, w, trajectories, LB, UB):
+		# Sorted by weighted rew
+		score = self.evaluate_weights_inversions(n_best, w, trajectories)
+		normalized_score = (score - LB)/(UB - LB)
+		return score, normalized_score
 
 	def evaluate_quality_params(self, config, traj_test):
 		# NEW WEIGHT QUALITY HEURISTIC
@@ -393,12 +420,20 @@ class StaticPreferenceGiverv3(ABC):
 		weight_eval_rand = []
 		weight_eval_rand_not_norm = []
 		weights_list = []
+		weight_nb_inv_rand = []
 		for j in range(1000):
 			weights = np.random.uniform(0.0, 1.0, 3)
 			# weights = weights/np.linalg.norm(weights) - 1e-15 # to ensure that norm < 1
 			weights_list.append(weights)
-			weight_eval_rand_not_norm.append(self.evaluate_weights(config.n_best, weights, traj_test,))
+
+			### 1rst quality heuristic
+			weight_eval_rand_not_norm.append(self.evaluate_weights(config.n_best, weights, traj_test))
 			weight_eval_rand.append(self.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max))
+			
+			### 2nd quality heuristic
+			weight_nb_inv_rand.append(self.evaluate_weights_inversions(config.n_best, weights, traj_test))
+
+		### 1rst quality heuristic
 		mean_weight_eval_rand = np.mean(weight_eval_rand)
 		median_weight_eval_rand = np.median(weight_eval_rand)
 		min_weight_eval_rand = min(weight_eval_rand)
@@ -416,7 +451,20 @@ class StaticPreferenceGiverv3(ABC):
 		max_w_not_norm = weights_list[np.argmax(np.array(weight_eval_rand_not_norm))]
 		print("min_weight_eval_rand_not_norm = "+str(min_weight_eval_rand_not_norm)+", w = "+str(min_w_not_norm))
 		print("max_weight_eval_rand_not_norm = "+str(max_weight_eval_rand_not_norm)+", w = "+str(max_w_not_norm))
-		return mean_entropy_eval_min, mean_entropy_eval_max, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand
+		
+		### 2nd quality heuristic
+		mean_nb_inv_rand = np.mean(weight_nb_inv_rand)
+		median_nb_inv_rand = np.median(weight_nb_inv_rand)
+		min_nb_inv_rand = min(weight_nb_inv_rand)
+		min_w = weights_list[np.argmin(np.array(weight_nb_inv_rand))]
+		max_nb_inv_rand = max(weight_nb_inv_rand)
+		max_w = weights_list[np.argmax(np.array(weight_nb_inv_rand))]
+		print("mean_nb_inv_rand = ", weight_nb_inv_rand)
+		print("min_nb_inv_rand = "+str(min_nb_inv_rand)+", w = "+str(min_w))
+		print("max_nb_inv_rand = "+str(max_nb_inv_rand)+", w = "+str(max_w))
+		print("median_nb_inv_rand = ", median_nb_inv_rand)
+
+		return mean_entropy_eval_min, mean_entropy_eval_max, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, mean_nb_inv_rand, min_nb_inv_rand, max_nb_inv_rand
 
 	def calculate_mean_entropy_eval_min(self, n_best, trajectories):
 		# Sorted by evaluation min

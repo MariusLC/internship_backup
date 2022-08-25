@@ -190,7 +190,12 @@ class Discriminator(nn.Module):
 
         # f function in the Fu2018 paper : f = Q(s,a) - V(s) = (g(s)+gamma*h(s')) - h(s)
         # advantage = how much an action is a good or bad decision in a certain state 
+        # print(reward)
+        # print(gamma)
+        # print(value_next_state)
+        # print(value_state)
         advantage = reward + gamma*value_next_state - value_state
+        # print("advantage = ", advantage)
 
         # pourquoi diviser en fonction du point d'utopie si eval = true ?
         # plus le point d'utopie est proche de 0, plus la valeur si dessous est grande ..
@@ -215,6 +220,13 @@ class Discriminator(nn.Module):
             elif eth_norm == "v5":
                 return (advantage - self.min_trajectory_generator/self.traj_size)/(self.utopia_point - self.min_trajectory_generator)
             elif eth_norm == "v6":
+                # print("\n v6 ")
+                # print(advantage)
+                # print(self.min_trajectory_random_agent)
+                # print(self.traj_size)
+                # print(self.utopia_point)
+                # a = (advantage - self.min_trajectory_random_agent/self.traj_size)/(self.utopia_point - self.min_trajectory_random_agent)
+                # print("res = ", a)
                 return (advantage - self.min_trajectory_random_agent/self.traj_size)/(self.utopia_point - self.min_trajectory_random_agent)
             elif eth_norm == "v7":
                 return (advantage - self.mean_trajectory_random_agent/self.traj_size)/(self.utopia_point - self.mean_trajectory_random_agent)
