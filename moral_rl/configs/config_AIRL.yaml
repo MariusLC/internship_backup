@@ -29,7 +29,7 @@ ppo_epochs: 5
 env: "v5"
 env_rad: "randomized_"
 env_id: "randomized_v5"
-expert_weights: [0,0,1,1]
+expert_weights: [0,1,0,1]
 
 #######
 # Peschl Values #
