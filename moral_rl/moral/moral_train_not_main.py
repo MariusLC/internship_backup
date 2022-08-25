@@ -175,66 +175,73 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             ################
             # BEFORE ASKING A QUESTION, EVALUATE PREF LEARNING
             ################ 
-            # Reset Environment
-            states = vec_env.reset()
-            states_tensor = torch.tensor(states).float().to(device)
-            train_ready_current_policy_demo_batch = False
-            while not train_ready_current_policy_demo_batch:
 
-                # Environment interaction
-                actions_DB, log_probs_DB = ppo.act(states_tensor_DB)
-                next_states_DB, rewards_DB, done_DB, info_DB = vec_env.step(actions_DB)
+            # ######
+            # # CURRENT POLICY TRAJECTORIES
+            # ######
+            # # Reset Environment
+            # states = vec_env.reset()
+            # states_tensor = torch.tensor(states).float().to(device)
+            # train_ready_current_policy_demo_batch = False
+            # while not train_ready_current_policy_demo_batch:
 
-                # Fetch AIRL rewards
-                airl_state_DB = torch.tensor(states_DB).to(device).float()
-                airl_next_state_DB = torch.tensor(next_states_DB).to(device).float()
+            #     # Environment interaction
+            #     actions_DB, log_probs_DB = ppo.act(states_tensor_DB)
+            #     next_states_DB, rewards_DB, done_DB, info_DB = vec_env.step(actions_DB)
 
-                airl_rewards_list_DB = []
-                for j in range(nb_experts):
-                    airl_rewards_list_DB.append(discriminator_list[j].forward(airl_state_DB, airl_next_state_DB, config.gamma, config.eth_norm).squeeze(1).detach().cpu().numpy() * [0 if i else 1 for i in done_DB])
+            #     # Fetch AIRL rewards
+            #     airl_state_DB = torch.tensor(states_DB).to(device).float()
+            #     airl_next_state_DB = torch.tensor(next_states_DB).to(device).float()
 
-                airl_rewards_array_DB = np.array(airl_rewards_list_DB)
-                new_airl_rewards_DB = [airl_rewards_array_DB[:,i] for i in range(len(airl_rewards_list_DB[0]))]
-                train_ready_current_policy_demo_batch = current_policy_demo_batch.write_tuple_norm(states_DB, actions_DB, None, rewards_DB, new_airl_rewards_DB, done_DB, log_probs_DB)
+            #     airl_rewards_list_DB = []
+            #     for j in range(nb_experts):
+            #         airl_rewards_list_DB.append(discriminator_list[j].forward(airl_state_DB, airl_next_state_DB, config.gamma, config.eth_norm).squeeze(1).detach().cpu().numpy() * [0 if i else 1 for i in done_DB])
 
-                # Prepare state input for next time step
-                states_DB = next_states_DB.copy()
-                states_tensor_DB = torch.tensor(states_DB).float().to(device)
+            #     airl_rewards_array_DB = np.array(airl_rewards_list_DB)
+            #     new_airl_rewards_DB = [airl_rewards_array_DB[:,i] for i in range(len(airl_rewards_list_DB[0]))]
+            #     train_ready_current_policy_demo_batch = current_policy_demo_batch.write_tuple_norm(states_DB, actions_DB, None, rewards_DB, new_airl_rewards_DB, done_DB, log_probs_DB)
 
-            mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, config.non_eth_norm, wandb)
-            current_policy_trajectories = current_policy_demo_batch.trajectories
+            #     # Prepare state input for next time step
+            #     states_DB = next_states_DB.copy()
+            #     states_tensor_DB = torch.tensor(states_DB).float().to(device)
 
-            # QUALITY HEURISTIC = NB INVERSIONS, CURRENT POLICY TRAJECTORIES
-            nb_inv = preference_giver.evaluate_weights_inversions(n_best, w_posterior_mean, current_policy_trajectories)
-            print("nb_inv = ", nb_inv)
-            wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
-            # SCORE VS RANDOM WEIGHTS
-            nb_inv_vs_rand = (nb_inv - LB_batch_inv)/(UB_batch_inv - LB_batch_inv)
-            print("nb_inv_vs_rand = ", nb_inv_vs_rand)
-            wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
+            # mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, config.non_eth_norm, wandb)
+            # current_policy_trajectories = current_policy_demo_batch.trajectories
 
-            # QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
-            LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = preference_giver.evaluate_quality_params(config, current_policy_trajectories)
-            weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
-            weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
-            print("weight_eval = ", weight_eval)
-            print("UB = ", UB)
-            print("LB = ", LB)
-            wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
-            # SCORE VS RANDOM WEIGHTS
-            norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
-            print("norm_score_vs_rand = ", norm_score_vs_rand)
-            wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-            wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+            # # QUALITY HEURISTIC = NB INVERSIONS, CURRENT POLICY TRAJECTORIES
+            # nb_inv = preference_giver.evaluate_weights_inversions(n_best, w_posterior_mean, current_policy_trajectories)
+            # print("nb_inv = ", nb_inv)
+            # wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
+            # # SCORE VS RANDOM WEIGHTS
+            # nb_inv_vs_rand = (nb_inv - LB_batch_inv)/(UB_batch_inv - LB_batch_inv)
+            # print("nb_inv_vs_rand = ", nb_inv_vs_rand)
+            # wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
 
-            # Reset PPO buffer
-            current_policy_demo_batch.reset_trajectories()
+            # # QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
+            # LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = preference_giver.evaluate_quality_params(config, current_policy_trajectories)
+            # weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
+            # weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
+            # print("weight_eval = ", weight_eval)
+            # print("UB = ", UB)
+            # print("LB = ", LB)
+            # wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
+            # wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
+            # wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
+            # # SCORE VS RANDOM WEIGHTS
+            # norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
+            # print("norm_score_vs_rand = ", norm_score_vs_rand)
+            # wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            # wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            # wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+            # wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+
+            # # Reset PPO buffer
+            # current_policy_demo_batch.reset_trajectories()
 
 
+            ######
+            # BATCH DEMO
+            ######
             # QUALITY HEURISTIC = NB INVERSIONS, BATCH DEMO
             nb_inv = preference_giver.evaluate_weights_inversions(n_best, w_posterior_mean, batch_demo)
             print("nb_inv = ", nb_inv)

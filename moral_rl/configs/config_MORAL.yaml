@@ -70,10 +70,10 @@ prior: "marius_2"
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_MORAL"
-# query_selection: "compare_basic_log_lik"
+query_selection: "compare_basic_log_lik"
 # query_selection: "random"
 # query_selection: "random_no_double_null"
-query_selection: "random_less_null"
+# query_selection: "random_less_null"
 # query_selection: "compare_basic_log_lik_less_zeros"
 
 batch_path: "generated_data/v3/demo_batch"
