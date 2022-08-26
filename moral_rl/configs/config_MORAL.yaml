@@ -48,6 +48,7 @@ eth_norm: "v6"
 non_eth_norm: "v3"
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 non_eth_experts_weights: [1,0,0,0]
+rand: "rand/"
 test: True
 
 # PREFERENCES
@@ -56,6 +57,12 @@ pref_giver_no_null: True
 temperature_mcmc : 10
 cov_range: 0.01
 nb_query_test: 1
+nb_mcmc: 1
+dimension_pref: 3
+
+# mcmc_type: successive
+mcmc_type: parallel
+# mcmc_type: concat
 
 prop_w_mode: "normalized_linalg_positive"
 # prop_w_mode: "moral"
