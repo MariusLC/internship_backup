@@ -427,14 +427,16 @@ class StaticPreferenceGiverv3(ABC):
 			weights_list.append(weights)
 
 			### 1rst quality heuristic
-			weight_eval_rand_not_norm.append(self.evaluate_weights(config.n_best, weights, traj_test))
-			weight_eval_rand.append(self.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max))
+			w, w_norm = self.normalized_evaluate_weights(config.n_best, weights, traj_test, mean_entropy_eval_min, mean_entropy_eval_max)
+			weight_eval_rand_not_norm.append(w)
+			weight_eval_rand.append(w_norm)
 			
 			### 2nd quality heuristic
 			weight_nb_inv_rand.append(self.evaluate_weights_inversions(config.n_best, weights, traj_test))
 
 		print("len(weights_list) = ", len(weights_list))
 		print("len(weight_eval_rand) = ", len(weight_eval_rand))
+		print("shape(weight_eval_rand) = ", weight_eval_rand.shape)
 		print("argmin = ", np.argmin(np.array(weight_eval_rand)))
 
 
