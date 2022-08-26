@@ -163,7 +163,7 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
     ###############
     # EVALUATE PARAMS DEMO_BATCH FOR PREFERENCE LEARNING QUALITY EVALUATION
     ###############
-    LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, mean_inv, LB_batch_inv, UB_batch_inv = preference_giver.evaluate_quality_params(config, batch_demo)
+    LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, mean_inv_batch, LB_batch_inv, UB_batch_inv = preference_giver.evaluate_quality_params(config, batch_demo)
 
     ###############
     # START LEARNING
@@ -218,7 +218,7 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
 
             # QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
-            LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand = preference_giver.evaluate_quality_params(config, current_policy_trajectories)
+            LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, mean_inv, LB_inv, UB_inv = preference_giver.evaluate_quality_params(config, current_policy_trajectories)
             weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
             weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
             print("weight_eval = ", weight_eval)
