@@ -209,7 +209,7 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             current_policy_trajectories = current_policy_demo_batch.trajectories
 
             # QUALITY HEURISTIC = NB INVERSIONS, CURRENT POLICY TRAJECTORIES
-            nb_inv = preference_giver.evaluate_weights_inversions(n_best, w_posterior_mean, current_policy_trajectories)
+            nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, current_policy_trajectories)
             print("nb_inv = ", nb_inv)
             wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
             # SCORE VS RANDOM WEIGHTS
@@ -243,7 +243,7 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
             # BATCH DEMO
             ######
             # QUALITY HEURISTIC = NB INVERSIONS, BATCH DEMO
-            nb_inv = preference_giver.evaluate_weights_inversions(n_best, w_posterior_mean, batch_demo)
+            nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, batch_demo)
             print("nb_inv = ", nb_inv)
             wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
             # SCORE VS RANDOM WEIGHTS
