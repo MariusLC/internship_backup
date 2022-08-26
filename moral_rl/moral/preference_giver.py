@@ -436,7 +436,7 @@ class StaticPreferenceGiverv3(ABC):
 
 		print("len(weights_list) = ", len(weights_list))
 		print("len(weight_eval_rand) = ", len(weight_eval_rand))
-		print("shape(weight_eval_rand) = ", weight_eval_rand.shape)
+		print("shape(weight_eval_rand) = ", np.array(weight_eval_rand).shape)
 		print("argmin = ", np.argmin(np.array(weight_eval_rand)))
 
 
