@@ -64,16 +64,16 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
 
 	######
-    # CURRENT POLICY TRAJECTORIES
-    ######
+	# CURRENT POLICY TRAJECTORIES
+	######
 	# QUALITY HEURISTIC = NB INVERSIONS, CURRENT POLICY TRAJECTORIES
-    nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, traj_test)
-    print("nb_inv = ", nb_inv)
-    wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
-    # SCORE VS RANDOM WEIGHTS
-    nb_inv_vs_rand = (nb_inv - LB_inv)/(UB_inv - LB_batch_inv)
-    print("nb_inv_vs_rand = ", nb_inv_vs_rand)
-    wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
+	nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, traj_test)
+	print("nb_inv = ", nb_inv)
+	wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
+	# SCORE VS RANDOM WEIGHTS
+	nb_inv_vs_rand = (nb_inv - LB_inv)/(UB_inv - LB_batch_inv)
+	print("nb_inv_vs_rand = ", nb_inv_vs_rand)
+	wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
 
 	# QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
 	# mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, traj_test)
@@ -100,16 +100,16 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 
 
 	######
-    # BATCH DEMO
-    ######
-    # QUALITY HEURISTIC = NB INVERSIONS, BATCH DEMO
-    nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, batch_demo)
-    print("nb_inv = ", nb_inv)
-    wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
-    # SCORE VS RANDOM WEIGHTS
-    nb_inv_vs_rand = (nb_inv - LB_batch_inv)/(UB_batch_inv - LB_batch_inv)
-    print("nb_inv_vs_rand = ", nb_inv_vs_rand)
-    wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
+	# BATCH DEMO
+	######
+	# QUALITY HEURISTIC = NB INVERSIONS, BATCH DEMO
+	nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, batch_demo)
+	print("nb_inv = ", nb_inv)
+	wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
+	# SCORE VS RANDOM WEIGHTS
+	nb_inv_vs_rand = (nb_inv - LB_batch_inv)/(UB_batch_inv - LB_batch_inv)
+	print("nb_inv_vs_rand = ", nb_inv_vs_rand)
+	wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
 
 	# QUALITY HEURISTIC = SUM SCORE, BATCH DEMO
 	# mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, batch_demo)
@@ -297,10 +297,10 @@ if __name__ == '__main__':
 	# preference_giver = PreferenceGiverv3_DOT(config.ratio)
 
 	###############
-    # EVALUATE PARAMS DEMO_BATCH FOR PREFERENCE LEARNING QUALITY EVALUATION
-    ###############
-    LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, mean_inv_batch, LB_batch_inv, UB_batch_inv = preference_giver.evaluate_quality_params(config, batch_demo)
-    LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, mean_inv, LB_inv, UB_inv = preference_giver.evaluate_quality_params(config, traj_test)
+	# EVALUATE PARAMS DEMO_BATCH FOR PREFERENCE LEARNING QUALITY EVALUATION
+	###############
+	LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, mean_inv_batch, LB_batch_inv, UB_batch_inv = preference_giver.evaluate_quality_params(config, batch_demo)
+	LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, mean_inv, LB_inv, UB_inv = preference_giver.evaluate_quality_params(config, traj_test)
 
 	train_ready = False
 	while not train_ready:
