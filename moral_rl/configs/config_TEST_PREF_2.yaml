@@ -41,7 +41,7 @@ n_best: 100
 n_queries: 50
 nb_query_test: 20
 pref_giver_no_null: True
-Q_on_actions: False
+Q_on_actions: True
 
 query_selection: "compare_EUS"
 # query_selection: "compare_EUS_less_zeros"
@@ -71,7 +71,7 @@ prior: "marius_2"
 
 # mcmc_log: final
 mcmc_log: active
-temperature_mcmc: 10
+temperature_mcmc: 50
 # cov_range: 1
 cov_range: 0.01
 nb_mcmc: 1
