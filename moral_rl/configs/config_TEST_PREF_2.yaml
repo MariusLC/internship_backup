@@ -43,13 +43,13 @@ nb_query_test: 20
 pref_giver_no_null: True
 Q_on_actions: False
 
-# query_selection: "compare_EUS"
+query_selection: "compare_EUS"
 # query_selection: "compare_EUS_less_zeros"
 # query_selection: "compare_MORAL"
 # query_selection: "compare_MORAL_less_zeros"
 # query_selection: "compare_basic_log_lik"
 # query_selection: "compare_basic_log_lik_less_zeros"
-query_selection: "random"
+# query_selection: "random"
 # query_selection: "random_no_double_null"
 # query_selection: "random_less_null"
 
