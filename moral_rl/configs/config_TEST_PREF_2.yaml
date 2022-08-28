@@ -28,7 +28,7 @@ experts_weights: [[0,1,0,1],[0,0,1,1]]
 # experts_weights: [[0,1,0,0],[0,0,1,0],[0,0,1,1]]
 # experts_weights: [[0,1,1,1]]
 # ratio: [1, 1]
-ratio: [1, 2, 3]
+ratio: [1, 3, 1]
 # ratio: [1, 1, 1, 1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 normalization_eth_sett: "v6"
@@ -47,9 +47,9 @@ Q_on_actions: False
 # query_selection: "compare_EUS_less_zeros"
 # query_selection: "compare_MORAL"
 # query_selection: "compare_MORAL_less_zeros"
-query_selection: "compare_basic_log_lik"
+# query_selection: "compare_basic_log_lik"
 # query_selection: "compare_basic_log_lik_less_zeros"
-# query_selection: "random"
+query_selection: "random"
 # query_selection: "random_no_double_null"
 # query_selection: "random_less_null"
 
