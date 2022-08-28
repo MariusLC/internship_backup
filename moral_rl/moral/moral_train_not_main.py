@@ -189,7 +189,8 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
 			wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
 
 			# QUALITY HEURISTIC = SUM SCORE, BATCH DEMO
-			weight_eval_batch_not_norm, weight_eval_batch = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, batch_demo, LB_batch, UB_batch)
+			weight_eval_batch = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, batch_demo)
+			weight_eval_batch = (weight_eval_batch - LB_batch)/(UB_batch - LB_batch)
 			weight_eval_10_batch, weight_eval_10_norm_batch = preference_giver.evaluate_weights_print(10, w_posterior_mean, batch_demo)
 			print("weight_eval_batch = ", weight_eval_batch)
 			print("UB_batch = ", UB_batch)
@@ -248,7 +249,8 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
 			wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
 
 			# QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
-			weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, current_policy_trajectories, LB, UB)
+			weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, current_policy_trajectories)
+			weight_eval = (weight_eval - LB)/(UB - LB)
 			weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, current_policy_trajectories)
 			print("weight_eval = ", weight_eval)
 			print("UB = ", UB)

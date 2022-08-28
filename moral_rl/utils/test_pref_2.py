@@ -76,12 +76,9 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
 
 	# QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
-	# mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, traj_test)
-	# mean_entropy_eval_min = preference_giver.calculate_mean_entropy_eval_min(config.n_best, traj_test)
-	weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
+	weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
+	weight_eval = (weight_eval - LB)/(UB - LB)
 	weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
-	# weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
-	# weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
 	print("weight_eval = ", weight_eval)
 	print("UB = ", UB)
 	print("LB = ", LB)
@@ -94,7 +91,6 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-	# wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
 
 
@@ -112,12 +108,9 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
 
 	# QUALITY HEURISTIC = SUM SCORE, BATCH DEMO
-	# mean_entropy_eval_max = preference_giver.calculate_mean_entropy_eval_max(config.n_best, batch_demo)
-	# mean_entropy_eval_min = preference_giver.calculate_mean_entropy_eval_min(config.n_best, batch_demo)
-	weight_eval_batch = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, batch_demo, LB_batch, UB_batch)
+	weight_eval_batch = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, batch_demo)
+	weight_eval_batch = (weight_eval_batch - LB_batch)/(UB_batch - LB_batch)
 	weight_eval_10_batch, weight_eval_10_norm_batch = preference_giver.evaluate_weights_print(10, w_posterior_mean, batch_demo)
-	# weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, batch_demo)
-	# weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, batch_demo)
 	print("weight_eval_batch = ", weight_eval_batch)
 	print("UB_batch = ", UB_batch)
 	print("LB_batch = ", LB_batch)
@@ -130,7 +123,6 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	wandb.log({'mean_weight_eval_rand_batch': mean_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'min_weight_eval_rand_batch': min_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'max_weight_eval_rand_batch': max_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
-	# wandb.log({'median_weight_eval_rand_batch': median_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'norm_score_vs_rand_batch': norm_score_vs_rand_batch}, step=(i+1)*config.nb_mcmc)
 
 	return w_posterior_mean, w_posterior
