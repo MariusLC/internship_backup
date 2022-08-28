@@ -41,17 +41,17 @@ n_best: 100
 n_queries: 50
 nb_query_test: 20
 pref_giver_no_null: True
-Q_on_actions: False
+Q_on_actions: True
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_EUS_less_zeros"
 # query_selection: "compare_MORAL"
 # query_selection: "compare_MORAL_less_zeros"
-query_selection: "compare_basic_log_lik"
+# query_selection: "compare_basic_log_lik"
 # query_selection: "compare_basic_log_lik_less_zeros"
 # query_selection: "random"
 # query_selection: "random_no_double_null"
-# query_selection: "random_less_null"
+query_selection: "random_less_null"
 
 # posterior_mode: "print"
 # posterior_mode: "moral"
@@ -71,7 +71,7 @@ prior: "marius_2"
 
 # mcmc_log: final
 mcmc_log: active
-temperature_mcmc: 10
+temperature_mcmc: 50
 # cov_range: 1
 cov_range: 0.01
 nb_mcmc: 1
