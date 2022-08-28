@@ -219,8 +219,8 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
 
             # QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
             LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, mean_inv, LB_inv, UB_inv = preference_giver.evaluate_quality_params(config, current_policy_trajectories)
-            weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, traj_test, LB, UB)
-            weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
+            weight_eval = preference_giver.normalized_evaluate_weights(config.n_best, w_posterior_mean, current_policy_trajectories, LB, UB)
+            weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, current_policy_trajectories)
             print("weight_eval = ", weight_eval)
             print("UB = ", UB)
             print("LB = ", LB)
