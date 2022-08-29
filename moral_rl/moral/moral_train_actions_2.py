@@ -137,91 +137,91 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	return w_posterior_mean, w_posterior
 
 
-def run_mcmc(config, preference_learner, w_posterior_mean_uniform, RATIO_NORMALIZED, traj_test, preference_giver):
-	w_posterior_mean_temp = w_posterior_mean_uniform
-	if config.mcmc_type == "parallel":
-		for j in range(config.nb_mcmc):
-			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
-			if j == 0 : 
-				w_posterior = w_posterior_temp
-			else :
-				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
-	elif config.mcmc_type == "successive":
-		for j in range(config.nb_mcmc):
-			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
-			w_posterior = w_posterior_temp
-			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
-			# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
-	elif config.mcmc_type == "concat":
-		for j in range(config.nb_mcmc):
-			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
-			if j == 0 : 
-				w_posterior = w_posterior_temp
-			else :
-				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
-			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
-			# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
+# def run_mcmc(config, preference_learner, w_posterior_mean_uniform, RATIO_NORMALIZED, traj_test, preference_giver):
+# 	w_posterior_mean_temp = w_posterior_mean_uniform
+# 	if config.mcmc_type == "parallel":
+# 		for j in range(config.nb_mcmc):
+# 			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
+# 			if j == 0 : 
+# 				w_posterior = w_posterior_temp
+# 			else :
+# 				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
+# 	elif config.mcmc_type == "successive":
+# 		for j in range(config.nb_mcmc):
+# 			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
+# 			w_posterior = w_posterior_temp
+# 			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
+# 			# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
+# 	elif config.mcmc_type == "concat":
+# 		for j in range(config.nb_mcmc):
+# 			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
+# 			if j == 0 : 
+# 				w_posterior = w_posterior_temp
+# 			else :
+# 				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
+# 			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
+# 			# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
 	
-	# Prints and Logs
-	w_posterior_mean = np.array(w_posterior).mean(axis=0)
-	print("w_posterior_mean before norm = ", w_posterior_mean)
-	if sum(w_posterior_mean) != 0: 
-		w_posterior_mean = w_posterior_mean/(np.linalg.norm(w_posterior_mean) + 1e-15)
-		print(f'New Posterior Mean {w_posterior_mean}')
-	else :
-		print(f'Keep the current Posterior Mean {w_posterior_mean}')
+# 	# Prints and Logs
+# 	w_posterior_mean = np.array(w_posterior).mean(axis=0)
+# 	print("w_posterior_mean before norm = ", w_posterior_mean)
+# 	if sum(w_posterior_mean) != 0: 
+# 		w_posterior_mean = w_posterior_mean/(np.linalg.norm(w_posterior_mean) + 1e-15)
+# 		print(f'New Posterior Mean {w_posterior_mean}')
+# 	else :
+# 		print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
-	obj_rew, vect_rew = estimate_vectorized_rew_2(traj_test)
-	obj_rew_norm_sum = obj_rew / sum(obj_rew)
-	obj_rew_norm_linalg = obj_rew / np.linalg.norm(obj_rew)
-	print("mean objective reward expert = ", obj_rew)
-	print("mean airl vectorized reward expert = ", vect_rew)
+# 	obj_rew, vect_rew = estimate_vectorized_rew_2(traj_test)
+# 	obj_rew_norm_sum = obj_rew / sum(obj_rew)
+# 	obj_rew_norm_linalg = obj_rew / np.linalg.norm(obj_rew)
+# 	print("mean objective reward expert = ", obj_rew)
+# 	print("mean airl vectorized reward expert = ", vect_rew)
 
-	weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
-	weighted_obj_rew_sum = w_posterior_mean * obj_rew_norm_sum[:len(w_posterior_mean)]
-	weighted_obj_rew_linalg = w_posterior_mean * obj_rew_norm_linalg[:len(w_posterior_mean)]
-	weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
+# 	weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
+# 	weighted_obj_rew_sum = w_posterior_mean * obj_rew_norm_sum[:len(w_posterior_mean)]
+# 	weighted_obj_rew_linalg = w_posterior_mean * obj_rew_norm_linalg[:len(w_posterior_mean)]
+# 	weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
 
-	distance_obj_sum = sum([(weighted_obj_rew_sum[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
-	distance_obj_linalg = sum([(weighted_obj_rew_linalg[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
-	distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+# 	distance_obj_sum = sum([(weighted_obj_rew_sum[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+# 	distance_obj_linalg = sum([(weighted_obj_rew_linalg[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+# 	distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 
-	for j in range(len(w_posterior_mean)):
-		wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=0)
-		wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=0)
-	wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=0)
-	wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=0)
-	wandb.log({'distance_airl_to_ratio': distance_airl}, step=0)
+# 	for j in range(len(w_posterior_mean)):
+# 		wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=0)
+# 		wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=0)
+# 	wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=0)
+# 	wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=0)
+# 	wandb.log({'distance_airl_to_ratio': distance_airl}, step=0)
 
-	# NEW WEIGHT QUALITY HEURISTIC
-	weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
-	weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
-	wandb.log({'weight_eval': weight_eval}, step=0)
-	wandb.log({'weight_eval TOP 10': weight_eval_10}, step=0)
-	wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=0)
+# 	# NEW WEIGHT QUALITY HEURISTIC
+# 	weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
+# 	weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
+# 	wandb.log({'weight_eval': weight_eval}, step=0)
+# 	wandb.log({'weight_eval TOP 10': weight_eval_10}, step=0)
+# 	wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=0)
 
-	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
-	weight_eval_rand = []
-	for j in range(100):
-		weights = st.multivariate_normal(mean=np.ones(3)/np.linalg.norm(np.ones(3)), cov=0.01).rvs()
-		weight_eval_rand.append(preference_giver.evaluate_weights(config.n_best, weights, traj_test))
-	mean_weight_eval_rand = np.mean(weight_eval_rand)
-	median_weight_eval_rand = np.median(weight_eval_rand)
-	min_weight_eval_rand = min(weight_eval_rand)
-	max_weight_eval_rand = max(weight_eval_rand)
-	norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
-	print("mean_weight_eval_rand = ", mean_weight_eval_rand)
-	print("min_weight_eval_rand = ", min_weight_eval_rand)
-	print("max_weight_eval_rand = ", max_weight_eval_rand)
-	print("median_weight_eval_rand = ", median_weight_eval_rand)
-	print("norm_score_vs_rand = ", norm_score_vs_rand)
-	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=0)
-	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=0)
-	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=0)
-	wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=0)
-	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=0)
+# 	# SCORE VS RANDOM WEIGHTS TO EVALUATE WEIGHTS QUALITY
+# 	weight_eval_rand = []
+# 	for j in range(100):
+# 		weights = st.multivariate_normal(mean=np.ones(3)/np.linalg.norm(np.ones(3)), cov=0.01).rvs()
+# 		weight_eval_rand.append(preference_giver.evaluate_weights(config.n_best, weights, traj_test))
+# 	mean_weight_eval_rand = np.mean(weight_eval_rand)
+# 	median_weight_eval_rand = np.median(weight_eval_rand)
+# 	min_weight_eval_rand = min(weight_eval_rand)
+# 	max_weight_eval_rand = max(weight_eval_rand)
+# 	norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
+# 	print("mean_weight_eval_rand = ", mean_weight_eval_rand)
+# 	print("min_weight_eval_rand = ", min_weight_eval_rand)
+# 	print("max_weight_eval_rand = ", max_weight_eval_rand)
+# 	print("median_weight_eval_rand = ", median_weight_eval_rand)
+# 	print("norm_score_vs_rand = ", norm_score_vs_rand)
+# 	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=0)
+# 	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=0)
+# 	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=0)
+# 	wandb.log({'median_weight_eval_rand': median_weight_eval_rand}, step=0)
+# 	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=0)
 
-	return w_posterior_mean
+# 	return w_posterior_mean
 
 
 # Use GPU if available
