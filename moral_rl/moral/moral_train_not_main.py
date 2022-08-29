@@ -182,11 +182,11 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
 			# QUALITY HEURISTIC = NB INVERSIONS, BATCH DEMO
 			nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, batch_demo)
 			print("nb_inv_batch = ", nb_inv)
-			wandb.log({'nb_inv_batch': nb_inv}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'nb_inv_batch': nb_inv}, step=t*config.n_workers)
 			# SCORE VS RANDOM WEIGHTS
 			nb_inv_vs_rand = (nb_inv - LB_batch_inv)/(UB_batch_inv - LB_batch_inv)
 			print("nb_inv_vs_rand_batch = ", nb_inv_vs_rand)
-			wandb.log({'nb_inv vs rand_batch': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'nb_inv vs rand_batch': nb_inv_vs_rand}, step=t*config.n_workers)
 
 			# QUALITY HEURISTIC = SUM SCORE, BATCH DEMO
 			weight_eval_batch = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, batch_demo)
@@ -195,16 +195,16 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
 			print("weight_eval_batch = ", weight_eval_batch)
 			print("UB_batch = ", UB_batch)
 			print("LB_batch = ", LB_batch)
-			wandb.log({'weight_eval_batch': weight_eval_batch}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'weight_eval_batch TOP 10': weight_eval_10_batch}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'weight_eval_batch norm TOP 10': weight_eval_10_norm_batch}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'weight_eval_batch': weight_eval_batch}, step=t*config.n_workers)
+			wandb.log({'weight_eval_batch TOP 10': weight_eval_10_batch}, step=t*config.n_workers)
+			wandb.log({'weight_eval_batch norm TOP 10': weight_eval_10_norm_batch}, step=t*config.n_workers)
 			# SCORE VS RANDOM WEIGHTS
 			norm_score_vs_rand_batch = (weight_eval_batch - min_weight_eval_rand_batch) / (max_weight_eval_rand_batch - min_weight_eval_rand_batch)
 			print("norm_score_vs_rand_batch = ", norm_score_vs_rand_batch)
-			wandb.log({'mean_weight_eval_rand_batch': mean_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'min_weight_eval_rand_batch': min_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'max_weight_eval_rand_batch': max_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'norm_score_vs_rand_batch': norm_score_vs_rand_batch}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'mean_weight_eval_rand_batch': mean_weight_eval_rand_batch}, step=t*config.n_workers)
+			wandb.log({'min_weight_eval_rand_batch': min_weight_eval_rand_batch}, step=t*config.n_workers)
+			wandb.log({'max_weight_eval_rand_batch': max_weight_eval_rand_batch}, step=t*config.n_workers)
+			wandb.log({'norm_score_vs_rand_batch': norm_score_vs_rand_batch}, step=t*config.n_workers)
 
 			######
 			# CURRENT POLICY TRAJECTORIES
@@ -242,11 +242,11 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
 			# QUALITY HEURISTIC = NB INVERSIONS, CURRENT POLICY TRAJECTORIES
 			nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, current_policy_trajectories)
 			print("nb_inv = ", nb_inv)
-			wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'nb_inv': nb_inv}, step=t*config.n_workers)
 			# SCORE VS RANDOM WEIGHTS
 			nb_inv_vs_rand = (nb_inv - LB_inv)/(UB_inv - LB_inv)
 			print("nb_inv_vs_rand = ", nb_inv_vs_rand)
-			wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=t*config.n_workers)
 
 			# QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
 			weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, current_policy_trajectories)
@@ -255,16 +255,16 @@ def moral_train_n_experts(c, query_freq, env_steps, generators_filenames, discri
 			print("weight_eval = ", weight_eval)
 			print("UB = ", UB)
 			print("LB = ", LB)
-			wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'weight_eval': weight_eval}, step=t*config.n_workers)
+			wandb.log({'weight_eval TOP 10': weight_eval_10}, step=t*config.n_workers)
+			wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=t*config.n_workers)
 			# SCORE VS RANDOM WEIGHTS
 			norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
 			print("norm_score_vs_rand = ", norm_score_vs_rand)
-			wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
-			wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+			wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=t*config.n_workers)
+			wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=t*config.n_workers)
+			wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=t*config.n_workers)
+			wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=t*config.n_workers)
 
 			# Reset PPO buffer
 			current_policy_demo_batch.reset_trajectories()
