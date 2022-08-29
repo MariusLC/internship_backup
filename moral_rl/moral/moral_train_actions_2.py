@@ -57,18 +57,18 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	else :
 		print(f'Keep the current Posterior Mean {w_posterior_mean}')
 
-	weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
-	weighted_obj_rew_sum = w_posterior_mean * obj_rew_norm_sum[:len(w_posterior_mean)]
-	weighted_obj_rew_linalg = w_posterior_mean * obj_rew_norm_linalg[:len(w_posterior_mean)]
-	weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
+	# weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
+	# weighted_obj_rew_sum = w_posterior_mean * obj_rew_norm_sum[:len(w_posterior_mean)]
+	# weighted_obj_rew_linalg = w_posterior_mean * obj_rew_norm_linalg[:len(w_posterior_mean)]
+	# weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
 
-	distance_obj_sum = sum([(weighted_obj_rew_sum[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
-	distance_obj_linalg = sum([(weighted_obj_rew_linalg[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
-	distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+	# distance_obj_sum = sum([(weighted_obj_rew_sum[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+	# distance_obj_linalg = sum([(weighted_obj_rew_linalg[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+	# distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 
 	for j in range(len(w_posterior_mean)):
 		wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*config.nb_mcmc)
-		wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*config.nb_mcmc)
+		# wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*config.nb_mcmc)
 	wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
@@ -429,7 +429,7 @@ if __name__ == '__main__':
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 	# Calculate new w_posterior with all preferences
-	w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, 0, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, LB_inv, UB_inv, LB_batch_inv, UB_batch_inv)
+	w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean, 0, 0, 0, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, LB_inv, UB_inv, LB_batch_inv, UB_batch_inv)
 	# w_posterior_mean = run_mcmc(config, preference_learner, w_posterior_mean, RATIO_NORMALIZED, traj_test, preference_giver)
 
 	# Reset PPO buffer
