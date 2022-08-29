@@ -49,7 +49,7 @@ non_eth_norm: "v3"
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 non_eth_experts_weights: [1,0,0,0]
 rand: "rand/"
-test: True
+test: False
 
 # PREFERENCES
 Q_on_actions: False
