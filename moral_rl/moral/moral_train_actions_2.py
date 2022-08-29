@@ -11,6 +11,7 @@ from moral.active_learning import *
 from tqdm import tqdm
 import pickle
 from moral.preference_giver import *
+from moral.moral_train_not_main import *
 
 def estimate_vectorized_rew_2(traj_test):
 	mean_returns = np.zeros(len(traj_test[0]["returns"][0]))
