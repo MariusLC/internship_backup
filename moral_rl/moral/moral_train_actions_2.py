@@ -304,7 +304,7 @@ if __name__ == '__main__':
 
 	# If len(batch_demo) < 2000 then UB and LB will be to close to each other
 	assert len(batch_demo) >= 2000
-	batch_demo = evaluate_airl_from_batch(batch_demo, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+	batch_demo = evaluate_airl_from_batch(batch_demo, discriminator_list, c["gamma"], c["non_eth_norm"], c["eth_norm"], non_eth_expert, env_id)
 
 
 	dataset = TrajectoryDataset(batch_size=config.batchsize_ppo_phase_1, n_workers=config.n_workers)
