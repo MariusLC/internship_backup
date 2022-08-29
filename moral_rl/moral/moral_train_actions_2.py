@@ -22,6 +22,121 @@ def estimate_vectorized_rew_2(traj_test):
 	mean_vectorized_rewards /= len(traj_test)
 	return mean_returns, mean_vectorized_rewards
 
+def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, LB_inv, UB_inv, LB_batch_inv, UB_batch_inv):
+	w_posterior_mean_temp = w_posterior_mean_uniform
+	if config.mcmc_type == "parallel":
+		for j in range(config.nb_mcmc):
+			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_uniform, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
+			if j == 0 : 
+				w_posterior = w_posterior_temp
+			else :
+				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
+	elif config.mcmc_type == "successive":
+		for j in range(config.nb_mcmc):
+			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
+			w_posterior = w_posterior_temp
+			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
+			# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
+	elif config.mcmc_type == "concat":
+		for j in range(config.nb_mcmc):
+			w_posterior_temp = preference_learner.mcmc_test(w_posterior_mean_temp, c["prop_w_mode"], c["posterior_mode"], step=i*config.nb_mcmc+j)
+			if j == 0 : 
+				w_posterior = w_posterior_temp
+			else :
+				w_posterior = np.concatenate((w_posterior, w_posterior_temp))
+			w_posterior_mean_temp = w_posterior_temp.mean(axis=0)
+			# w_posterior_mean_temp = w_posterior_mean_temp/(np.linalg.norm(w_posterior_mean_temp) + 1e-15)
+	
+	# Prints and Logs
+	w_posterior_mean = np.array(w_posterior).mean(axis=0)
+	print("w_posterior_mean before norm = ", w_posterior_mean)
+	if sum(w_posterior_mean) != 0: 
+		w_posterior_mean = w_posterior_mean/(np.linalg.norm(w_posterior_mean) + 1e-15)
+		print(f'New Posterior Mean {w_posterior_mean}')
+	else :
+		print(f'Keep the current Posterior Mean {w_posterior_mean}')
+
+	weighted_obj_rew = w_posterior_mean * obj_rew[:len(w_posterior_mean)]
+	weighted_obj_rew_sum = w_posterior_mean * obj_rew_norm_sum[:len(w_posterior_mean)]
+	weighted_obj_rew_linalg = w_posterior_mean * obj_rew_norm_linalg[:len(w_posterior_mean)]
+	weighted_airl_rew = w_posterior_mean * vect_rew[:len(w_posterior_mean)]
+
+	distance_obj_sum = sum([(weighted_obj_rew_sum[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+	distance_obj_linalg = sum([(weighted_obj_rew_linalg[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+	distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
+
+	for j in range(len(w_posterior_mean)):
+		wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*config.nb_mcmc)
+		wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'distance_airl_to_ratio': distance_airl}, step=(i+1)*config.nb_mcmc)
+
+	######
+	# CURRENT POLICY TRAJECTORIES
+	######
+	# QUALITY HEURISTIC = NB INVERSIONS, CURRENT POLICY TRAJECTORIES
+	nb_inv = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, traj_test)
+	print("nb_inv = ", nb_inv)
+	wandb.log({'nb_inv': nb_inv}, step=(i+1)*config.nb_mcmc)
+	# SCORE VS RANDOM WEIGHTS
+	nb_inv_vs_rand = (nb_inv - LB_inv)/(UB_inv - LB_batch_inv)
+	print("nb_inv_vs_rand = ", nb_inv_vs_rand)
+	wandb.log({'nb_inv vs rand': nb_inv_vs_rand}, step=(i+1)*config.nb_mcmc)
+
+	# QUALITY HEURISTIC = SUM SCORE, CURRENT POLICY TRAJECTORIES
+	weight_eval = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, traj_test)
+	weight_eval = (weight_eval - LB)/(UB - LB)
+	weight_eval_10, weight_eval_10_norm = preference_giver.evaluate_weights_print(10, w_posterior_mean, traj_test)
+	print("weight_eval = ", weight_eval)
+	print("UB = ", UB)
+	print("LB = ", LB)
+	wandb.log({'weight_eval': weight_eval}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'weight_eval TOP 10': weight_eval_10}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'weight_eval norm TOP 10': weight_eval_10_norm}, step=(i+1)*config.nb_mcmc)
+	# SCORE VS RANDOM WEIGHTS
+	norm_score_vs_rand = (weight_eval - min_weight_eval_rand) / (max_weight_eval_rand - min_weight_eval_rand)
+	print("norm_score_vs_rand = ", norm_score_vs_rand)
+	wandb.log({'mean_weight_eval_rand': mean_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'min_weight_eval_rand': min_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'max_weight_eval_rand': max_weight_eval_rand}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'norm_score_vs_rand': norm_score_vs_rand}, step=(i+1)*config.nb_mcmc)
+
+
+
+	######
+	# BATCH DEMO
+	######
+	# QUALITY HEURISTIC = NB INVERSIONS, BATCH DEMO
+	nb_inv_batch = preference_giver.evaluate_weights_inversions(config.n_best, w_posterior_mean, batch_demo)
+	print("nb_inv_batch = ", nb_inv_batch)
+	wandb.log({'nb_inv_batch': nb_inv_batch}, step=(i+1)*config.nb_mcmc)
+	# SCORE VS RANDOM WEIGHTS
+	nb_inv_vs_rand_batch = (nb_inv_batch - LB_batch_inv)/(UB_batch_inv - LB_batch_inv)
+	print("nb_inv_vs_rand_batch = ", nb_inv_vs_rand_batch)
+	wandb.log({'nb_inv vs rand_batch': nb_inv_vs_rand_batch}, step=(i+1)*config.nb_mcmc)
+
+	# QUALITY HEURISTIC = SUM SCORE, BATCH DEMO
+	weight_eval_batch = preference_giver.evaluate_weights(config.n_best, w_posterior_mean, batch_demo)
+	weight_eval_batch = (weight_eval_batch - LB_batch)/(UB_batch - LB_batch)
+	weight_eval_10_batch, weight_eval_10_norm_batch = preference_giver.evaluate_weights_print(10, w_posterior_mean, batch_demo)
+	print("weight_eval_batch = ", weight_eval_batch)
+	print("UB_batch = ", UB_batch)
+	print("LB_batch = ", LB_batch)
+	wandb.log({'weight_eval_batch': weight_eval_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'weight_eval_batch TOP 10': weight_eval_10_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'weight_eval_batch norm TOP 10': weight_eval_10_norm_batch}, step=(i+1)*config.nb_mcmc)
+	# SCORE VS RANDOM WEIGHTS
+	norm_score_vs_rand_batch = (weight_eval_batch - min_weight_eval_rand_batch) / (max_weight_eval_rand_batch - min_weight_eval_rand_batch)
+	print("norm_score_vs_rand_batch = ", norm_score_vs_rand_batch)
+	wandb.log({'mean_weight_eval_rand_batch': mean_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'min_weight_eval_rand_batch': min_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'max_weight_eval_rand_batch': max_weight_eval_rand_batch}, step=(i+1)*config.nb_mcmc)
+	wandb.log({'norm_score_vs_rand_batch': norm_score_vs_rand_batch}, step=(i+1)*config.nb_mcmc)
+
+	return w_posterior_mean, w_posterior
+
+
 def run_mcmc(config, preference_learner, w_posterior_mean_uniform, RATIO_NORMALIZED, traj_test, preference_giver):
 	w_posterior_mean_temp = w_posterior_mean_uniform
 	if config.mcmc_type == "parallel":
@@ -179,6 +294,17 @@ if __name__ == '__main__':
 		
 		discriminator_list[i].set_eval()
 
+	print(os.listdir(c["batch_path"]))
+	batch_demo = []
+	for file in os.listdir(c["batch_path"]):
+		batch_demo.extend(pickle.load(open(c["batch_path"]+"/"+str(file), 'rb')))
+		print(str(file) + " with " + str(len(batch_demo)) + " trajectories")
+	print("The batch contains "+str(len(batch_demo))+" trajectories")
+
+	# If len(batch_demo) < 2000 then UB and LB will be to close to each other
+	assert len(batch_demo) >= 2000
+	batch_demo = evaluate_airl_from_batch(batch_demo, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
+
 
 	dataset = TrajectoryDataset(batch_size=config.batchsize_ppo_phase_1, n_workers=config.n_workers)
 	if config.test:
@@ -209,6 +335,10 @@ if __name__ == '__main__':
 	RATIO_linalg_NORMALIZED = c["ratio"]/np.linalg.norm(c["ratio"])
 
 
+	###############
+	# EVALUATE PARAMS DEMO_BATCH FOR PREFERENCE LEARNING QUALITY EVALUATION
+	###############
+	LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, mean_inv_batch, LB_batch_inv, UB_batch_inv = preference_giver.evaluate_quality_params(config, batch_demo)
 
 
 	##########################################################################################
@@ -246,6 +376,8 @@ if __name__ == '__main__':
 	volume_buffer.log_statistics_sum_print(dataset.log_returns_actions())
 	mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean, c["non_eth_norm"], None)
 	volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_actions())
+
+	LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, mean_inv, LB_inv, UB_inv = preference_giver.evaluate_quality_params(config, dataset.trajectories)
 
 	for i in range(c["n_queries"]):
 		if c["query_selection"] == "random":
@@ -296,7 +428,8 @@ if __name__ == '__main__':
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 	# Calculate new w_posterior with all preferences
-	w_posterior_mean = run_mcmc(config, preference_learner, w_posterior_mean, RATIO_NORMALIZED, traj_test, preference_giver)
+	w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean_uniform, 0, obj_rew, vect_rew, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, LB_inv, UB_inv, LB_batch_inv, UB_batch_inv)
+	# w_posterior_mean = run_mcmc(config, preference_learner, w_posterior_mean, RATIO_NORMALIZED, traj_test, preference_giver)
 
 	# Reset PPO buffer
 	dataset.reset_trajectories()
