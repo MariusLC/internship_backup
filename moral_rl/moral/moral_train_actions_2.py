@@ -271,9 +271,6 @@ if __name__ == '__main__':
 	ppo = PPO(state_shape=state_shape, in_channels=in_channels, n_actions=n_actions).to(device)
 	optimizer = torch.optim.Adam(ppo.parameters(), lr=config.lr_ppo)
 
-	# Collect test trajectories to evaluate mcmc weights quality
-	traj_test = pickle.load(open(config.demos_filename, 'rb'))
-
 	# Expert i
 	discriminator_list = []
 	generator_list = []
@@ -305,7 +302,6 @@ if __name__ == '__main__':
 	# If len(batch_demo) < 2000 then UB and LB will be to close to each other
 	assert len(batch_demo) >= 2000
 	batch_demo = evaluate_airl_from_batch(batch_demo, discriminator_list, c["gamma"], c["non_eth_norm"], c["eth_norm"], non_eth_expert, config.env_id)
-
 
 	dataset = TrajectoryDataset(batch_size=config.batchsize_ppo_phase_1, n_workers=config.n_workers)
 	if config.test:
@@ -429,14 +425,13 @@ if __name__ == '__main__':
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 	# Calculate new w_posterior with all preferences
-	w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean, 0, 0, 0, RATIO_NORMALIZED, traj_test, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, LB_inv, UB_inv, LB_batch_inv, UB_batch_inv)
+	w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean, 0, 0, 0, RATIO_NORMALIZED, dataset.trajectories, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, LB_inv, UB_inv, LB_batch_inv, UB_batch_inv)
 	# w_posterior_mean = run_mcmc(config, preference_learner, w_posterior_mean, RATIO_NORMALIZED, traj_test, preference_giver)
 
 	# Reset PPO buffer
 	dataset.reset_trajectories()
 	volume_buffer.reset()
 	volume_buffer.reset_batch() 
-
 
 
 
