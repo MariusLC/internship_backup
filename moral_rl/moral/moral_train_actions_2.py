@@ -67,7 +67,7 @@ def run_mcmc(config, preference_learner, w_posterior_mean_uniform, i, obj_rew, v
 	# distance_airl = sum([(weighted_airl_rew[j] - RATIO_NORMALIZED[j])**2 for j in range(len(RATIO_NORMALIZED))])
 
 	for j in range(len(w_posterior_mean)):
-		wandb.log({'w_posterior_mean['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*config.nb_mcmc)
+		wandb.log({'w_posterior_mean ['+str(j)+"]": w_posterior_mean[j]}, step=(i+1)*config.nb_mcmc)
 		# wandb.log({'weighted_airl_rew ['+str(j)+']': weighted_airl_rew[j]}, step=(i+1)*config.nb_mcmc)
 	# wandb.log({'distance_obj_sum_to_ratio': distance_obj_sum}, step=(i+1)*config.nb_mcmc)
 	# wandb.log({'distance_obj_linalg_to_ratio': distance_obj_linalg}, step=(i+1)*config.nb_mcmc)
