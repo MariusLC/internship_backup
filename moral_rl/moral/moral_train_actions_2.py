@@ -425,7 +425,7 @@ if __name__ == '__main__':
 		preference_learner.log_returns(observed_rew_a, observed_rew_b)
 
 	# Calculate new w_posterior with all preferences
-	w_posterior_mean_temp, w_posterior_temp = run_mcmc(config, preference_learner, w_posterior_mean, 0, 0, 0, RATIO_NORMALIZED, dataset.trajectories, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, LB_inv, UB_inv, LB_batch_inv, UB_batch_inv)
+	w_posterior_mean, w_posterior = run_mcmc(config, preference_learner, w_posterior_mean, 0, 0, 0, RATIO_NORMALIZED, dataset.trajectories, preference_giver, LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, LB_inv, UB_inv, LB_batch_inv, UB_batch_inv)
 	# w_posterior_mean = run_mcmc(config, preference_learner, w_posterior_mean, RATIO_NORMALIZED, traj_test, preference_giver)
 
 	# Reset PPO buffer
