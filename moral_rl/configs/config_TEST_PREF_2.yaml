@@ -28,7 +28,7 @@ experts_weights: [[0,1,0,1],[0,0,1,1]]
 # experts_weights: [[0,1,0,0],[0,0,1,0],[0,0,1,1]]
 # experts_weights: [[0,1,1,1]]
 # ratio: [1, 1]
-ratio: [1, 2, 3]
+ratio: [3, 1, 1]
 # ratio: [1, 1, 1, 1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 normalization_eth_sett: "v6"
@@ -45,35 +45,35 @@ Q_on_actions: False
 
 # query_selection: "compare_EUS"
 # query_selection: "compare_EUS_less_zeros"
-query_selection: "compare_MORAL"
+# query_selection: "compare_MORAL"
 # query_selection: "compare_MORAL_less_zeros"
-# query_selection: "compare_basic_log_lik"
+query_selection: "compare_basic_log_lik"
 # query_selection: "compare_basic_log_lik_less_zeros"
 # query_selection: "random"
 # query_selection: "random_no_double_null"
 # query_selection: "random_less_null"
 
 # posterior_mode: "print"
-posterior_mode: "moral"
+# posterior_mode: "moral"
 # posterior_mode: "basic"
-# posterior_mode: "basic_temperature"
+posterior_mode: "basic_temperature"
 
-prop_w_mode: "moral"
-# prop_w_mode: "normalized_linalg_positive"
+# prop_w_mode: "moral"
+prop_w_mode: "normalized_linalg_positive"
 
 # mcmc_type: successive
 mcmc_type: parallel
 # mcmc_type: concat
 
 # prior: "marius"
-# prior: "marius_2"
-prior: "moral"
+prior: "marius_2"
+# prior: "moral"
 
 # mcmc_log: final
 mcmc_log: active
-temperature_mcmc: 1
-cov_range: 1
-# cov_range: 0.01
+temperature_mcmc: 5
+# cov_range: 1
+cov_range: 0.01
 nb_mcmc: 1
 dimension_pref: 3
 
