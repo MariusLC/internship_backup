@@ -28,7 +28,7 @@ experts_weights: [[0,1,0,1],[0,0,1,1]]
 # experts_weights: [[0,1,0,0],[0,0,1,0],[0,0,1,1]]
 # experts_weights: [[0,1,1,1]]
 # ratio: [1, 1]
-ratio: [1, 2, 3]
+ratio: [1, 1, 1]
 # ratio: [1, 1, 1, 1]
 geneORexpert: 0 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
 normalization_eth_sett: "v6"
@@ -71,7 +71,7 @@ prior: "marius_2"
 
 # mcmc_log: final
 mcmc_log: active
-temperature_mcmc: 5
+temperature_mcmc: 10
 # cov_range: 1
 cov_range: 0.01
 nb_mcmc: 1
