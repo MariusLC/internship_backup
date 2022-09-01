@@ -250,7 +250,7 @@ if __name__ == '__main__':
 	# If len(batch_demo) < 2000 then UB and LB will be to close to each other
 	assert len(batch_demo) >= 2000
 	batch_demo = evaluate_airl_from_batch(batch_demo, discriminator_list, c["gamma"], c["normalization_non_eth_sett"], c["normalization_eth_sett"], non_eth_expert, env_id)
-	
+
 
 	dataset = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
 	if config.test:
@@ -294,48 +294,46 @@ if __name__ == '__main__':
 	LB_batch, UB_batch, mean_weight_eval_rand_batch, min_weight_eval_rand_batch, max_weight_eval_rand_batch, mean_inv_batch, LB_batch_inv, UB_batch_inv = preference_giver.evaluate_quality_params(config, batch_demo)
 	LB, UB, mean_weight_eval_rand, min_weight_eval_rand, max_weight_eval_rand, mean_inv, LB_inv, UB_inv = preference_giver.evaluate_quality_params(config, traj_test)
 
-	train_ready = False
-	while not train_ready:
-		# Environment interaction
-		actions, log_probs = agent_test.act(states_tensor)
-		next_states, rewards, done, info = env.step(actions)
+	# train_ready = False
+	# while not train_ready:
+	# 	# Environment interaction
+	# 	actions, log_probs = agent_test.act(states_tensor)
+	# 	next_states, rewards, done, info = env.step(actions)
 
-		# Fetch AIRL rewards
-		airl_state = torch.tensor(states).to(device).float()
-		airl_next_state = torch.tensor(next_states).to(device).float()
+	# 	# Fetch AIRL rewards
+	# 	airl_state = torch.tensor(states).to(device).float()
+	# 	airl_next_state = torch.tensor(next_states).to(device).float()
 
-		airl_rewards_list = []
-		for j in range(c["nb_experts"]):
-			airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, c["gamma"], c["normalization_eth_sett"]).squeeze(1))
+	# 	airl_rewards_list = []
+	# 	for j in range(c["nb_experts"]):
+	# 		airl_rewards_list.append(discriminator_list[j].forward(airl_state, airl_next_state, c["gamma"], c["normalization_eth_sett"]).squeeze(1))
 
-		for j in range(c["nb_experts"]):
-			airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
-			# airl_rewards_list[j] = airl_rewards_list[j] * (not done)
+	# 	for j in range(c["nb_experts"]):
+	# 		airl_rewards_list[j] = airl_rewards_list[j].detach().cpu().numpy() * [0 if i else 1 for i in done]
+	# 		# airl_rewards_list[j] = airl_rewards_list[j] * (not done)
 
-		airl_rewards_array = np.array(airl_rewards_list)
-		new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
-		train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
+	# 	airl_rewards_array = np.array(airl_rewards_list)
+	# 	new_airl_rewards = [airl_rewards_array[:,i] for i in range(len(airl_rewards_list[0]))]
+	# 	train_ready = dataset.write_tuple_norm(states, actions, None, rewards, new_airl_rewards, done, log_probs)
 
-		# Prepare state input for next time step
-		states = next_states.copy()
-		states_tensor = torch.tensor(states).float().to(device)
+	# 	# Prepare state input for next time step
+	# 	states = next_states.copy()
+	# 	states_tensor = torch.tensor(states).float().to(device)
 
-	# log objective rewards into volume_buffer before normalizing it
-	if config.Q_on_actions:
-		volume_buffer.log_statistics_sum(dataset.log_returns_actions())
-		mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
-		volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_actions())
-	else :
-		volume_buffer.log_statistics_sum(dataset.log_returns_sum())
-		mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
-		volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
+	# # log objective rewards into volume_buffer before normalizing it
+	# if config.Q_on_actions:
+	# 	volume_buffer.log_statistics_sum(dataset.log_returns_actions())
+	# 	mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
+	# 	volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_actions())
+	# else :
+	# 	volume_buffer.log_statistics_sum(dataset.log_returns_sum())
+	# 	mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
+	# 	volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_sum())
 
-	# dataset2 = TrajectoryDataset(batch_size=c["batchsize_ppo"], n_workers=c["n_workers"])
-	# dataset2.trajectories = batch_demo
-	# volume_buffer.log_statistics_sum(dataset2.log_returns_actions())
-	# mean_vectorized_rewards = dataset2.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
-	# volume_buffer.log_rewards_sum(dataset2.log_vectorized_rew_actions())
-	
+	dataset.trajectories = batch_demo
+	volume_buffer.log_statistics_sum(dataset.log_returns_actions())
+	mean_vectorized_rewards = dataset.compute_scalarized_rewards(w_posterior_mean_uniform, c["normalization_non_eth_sett"], None)
+	volume_buffer.log_rewards_sum(dataset.log_vectorized_rew_actions())
 
 	# mean_airl_rew = 
 
