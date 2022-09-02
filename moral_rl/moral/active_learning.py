@@ -706,6 +706,8 @@ class VolumeBuffer:
 
 
 	def sample_return_pair_no_batch_reset(self):
+		print("len(self.observed_logs_sum) : ", len(self.observed_logs_sum))
+		print("len(self.objective_logs_sum) : ", len(self.objective_logs_sum))
 		rand_idx = np.random.choice(np.arange(len(self.observed_logs_sum)), 2, replace=False)
 		new_returns_a = self.observed_logs_sum[rand_idx[0]]
 		new_returns_b = self.observed_logs_sum[rand_idx[1]]
