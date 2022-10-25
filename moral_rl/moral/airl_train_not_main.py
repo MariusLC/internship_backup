@@ -15,14 +15,7 @@ import argparse
 # Device Check
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-
-def airl_train_n_experts(env, env_steps_airl, demos_filename, generators_filenames, discriminators_filenames):
-    for i in range(len(generators_filenames)):
-        airl_train_1_expert(env, env_steps_airl, demos_filename[i], generators_filenames[i], discriminators_filenames[i])
-
-
-
-def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filename, discriminator_filename, prints=False):
+def airl_train_1_expert(c, demos_filename, generator_filename, discriminator_filename, prints=False):
 
     # Load demonstrations
     expert_trajectories = pickle.load(open(demos_filename, 'rb'))
@@ -30,19 +23,7 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
     # Init WandB & Parameters
     wandb.init(
         project='AIRL',
-        config={
-            'env_id': env_id,
-            #'env_steps': 6e6,
-            'env_steps': env_steps_airl,
-            'batchsize_discriminator': 512,
-            'batchsize_ppo': 12,
-            'n_workers': 12,
-            'entropy_reg': 0,
-            'gamma': 0.999,
-            'epsilon': 0.1,
-            'ppo_epochs': 5,
-	    'demos_filename': demos_filename
-            }, 
+        config=c, 
         reinit=True)
     config = wandb.config
 
@@ -86,20 +67,17 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
         airl_advantages = list(airl_advantages.detach().cpu().numpy() * [0 if i else 1 for i in done])
 
         # Save Trajectory
-        # train_ready = dataset.write_tuple(states, actions, airl_rewards, done, log_probs)
-        train_ready = dataset.write_tuple_2(states, actions, airl_rewards, airl_advantages, done, log_probs)
+        train_ready = dataset.write_tuple(states, actions, airl_rewards, done, log_probs)
+        # train_ready = dataset.write_tuple_2(states, actions, airl_rewards, airl_advantages, done, log_probs)
 
         if train_ready:
             # Log Objectives
             objective_logs = np.array(objective_logs).sum(axis=0)
-            for i in range(objective_logs.shape[1]):
-                wandb.log({'Obj_' + str(i): objective_logs[:, i].mean()})
+            objective_logs = np.mean(objective_logs, axis=0)
+            for i, obj in enumerate(objective_logs):
+                wandb.log({'Obj_' + str(i): obj}, step=t*config.n_workers)
             objective_logs = []
 
-
-            ####### TEST IF wandb is the one initilized in ppo_train_not_main or the one in this file
-            # print(config.lambd)
-            #######################
 
             # Update Models
             update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
@@ -132,11 +110,11 @@ def airl_train_1_expert(env_id, env_steps_airl, demos_filename, generator_filena
             # Log Loss Statsitics
             wandb.log({'Discriminator Loss': d_loss,
                        'Fake Accuracy': fake_acc,
-                       'Real Accuracy': real_acc})
-            for ret in dataset.log_returns():
-                wandb.log({'Returns': ret})
-            for adv in dataset.log_advantages():
-                wandb.log({'Advantages': adv})
+                       'Real Accuracy': real_acc}, step=t*config.n_workers)
+            for i, ret in enumerate(dataset.log_rewards()):
+                wandb.log({'Returns': ret}, step=(t//config.n_workers)*config.n_workers+i)
+            wandb.log({'Returns mean': np.mean(dataset.log_rewards())}, step=t*config.n_workers)
+
             dataset.reset_trajectories()
 
 

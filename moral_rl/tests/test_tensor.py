@@ -1,151 +1,177 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+# import torch
+# import torch.nn as nn
+# import torch.nn.functional as F
 import numpy as np
-from envs.gym_wrapper import *
+# from envs.gym_wrapper import *
 
-from tqdm import tqdm
+# from tqdm import tqdm
 import torch
-import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import wandb
-import argparse
-import yaml
-import os
-
-import numpy as np
-import math
-import scipy.stats as st
-
-from moral.active_learning import *
-from moral.preference_giver import *
+# import argparse
+# import yaml
+# import os
 
 import math
+# import scipy.stats as st
+
+# from moral.active_learning import *
+# from moral.preference_giver import *
+
+# import math
 
 from torch.distributions import *
+
+from moral.preference_giver import *
+import itertools
+import random
+from drlhp.preference_model import *
+import time
+
+import matplotlib.pyplot as plt
+
+
+def check_null(ret_a, ret_b):
+	if all(ret_b == 0) and any(ret_a > 0):
+		return 1
+	elif all(ret_a == 0) and any(ret_b > 0):
+		return -1
+	else:
+		return 0.5
+
+def query_pair_no_null(ret_a, ret_b, dimension_pref, RATIO_NORMALIZED):
+	ret_a_copy = np.array(ret_a.copy())[:dimension_pref]+1e-5
+	ret_b_copy = np.array(ret_b.copy())[:dimension_pref]+1e-5
+	ret_a_normalized = ret_a_copy/sum(ret_a_copy)
+	ret_b_normalized = ret_b_copy/sum(ret_b_copy)
+	kl_a = st.entropy(ret_a_normalized, RATIO_NORMALIZED)
+	kl_b = st.entropy(ret_b_normalized, RATIO_NORMALIZED)
+	check = check_null(ret_a, ret_b)
+	if check != 0.5:
+		return check, kl_a, kl_b
+	else :
+		if kl_a < kl_b:
+			preference = 1
+		elif kl_b < kl_a:
+			preference = -1
+		else:
+			preference = 1 if np.random.rand() < 0.5 else -1
+		return preference, kl_a, kl_b
 
 
 if __name__ == '__main__':
 
 
-	# a = torch.tensor(np.array([math.nan, math.nan, math.nan]))
-	# print(a)
-	# if math.isnan(a[0]):
-	# 		print("there is a nan value in result of forward in evaluate_trajectory")
+	# env_dim = 4
+	# model_actions = "generated_data/v3/pref_model/ALLCOMBI_5b_2000e_[3, 1, 0, 2].pt"
+	# preference_model_actions = PreferenceModelTEST(env_dim).to(device)
+	# preference_model_actions.load_state_dict(torch.load(model_actions, map_location=torch.device('cpu')))
+	# model_trajectories = "generated_data/v3/pref_model/trajectories/ALLCOMBI_100q_5b_2000e_[3, 1, 0, 2].pt"
+	# preference_model_trajectories = PreferenceModelTEST(env_dim).to(device)
+	# preference_model_trajectories.load_state_dict(torch.load(model_trajectories, map_location=torch.device('cpu')))
 
-	# nb_samples = 1000
-
-	# non_eth = Bernoulli(torch.tensor([0.1]))
-	# rew_obj_non_eth = np.array([non_eth.sample() for i in range(nb_samples)])
-	# m_non_eth = np.mean(rew_obj_non_eth)
-	# min_non_eth = min(rew_obj_non_eth)
-	# max_non_eth = max(rew_obj_non_eth)
-	# norm1_non_eth = (rew_obj_non_eth - min_non_eth)/(max_non_eth - min_non_eth)
-	# m_norm1_non_eth = np.mean(norm1_non_eth)
-	# std_norm1_non_eth = np.std(norm1_non_eth)
-	# norm2_non_eth = norm1_non_eth/abs(m_non_eth)
-	# m_norm2_non_eth = np.mean(norm2_non_eth)
-	# norm3_non_eth = norm1_non_eth-m_norm1_non_eth/std_norm1_non_eth
-	# m_norm3_non_eth = np.mean(norm3_non_eth)
-	# norm4_non_eth = rew_obj_non_eth / abs(m_non_eth)
-	# m_norm4_non_eth = np.mean(norm4_non_eth)
-
-	# eth = Normal(torch.tensor([-2.0]), torch.tensor([2.0]))
-	# rew_obj_eth = np.array([eth.sample() for i in range(nb_samples)])
-	# m_eth = np.mean(rew_obj_eth)
-	# min_eth = min(rew_obj_eth)
-	# max_eth = max(rew_obj_eth)
-	# norm1_eth = (rew_obj_eth - min_eth)/(max_eth - min_eth)
-	# m_norm1_eth = np.mean(norm1_eth)
-	# m_norm1_eth_test = (m_eth - min_eth)/(max_eth - min_eth)
-	# std_norm1_eth = np.std(norm1_eth)
-	# norm2_eth = norm1_eth/abs(m_norm1_eth)
-	# m_norm2_eth = np.mean(norm2_eth)
-	# m_norm2_eth_test = m_norm1_eth_test/abs(m_norm1_eth_test)
-	# norm3_eth = norm1_eth-m_norm1_eth/std_norm1_eth
-	# m_norm3_eth = np.mean(norm3_eth)
-	# norm4_eth = rew_obj_eth / abs(m_eth)
-	# m_norm4_eth = np.mean(norm4_eth)
-
-	# # print("rew_obj_eth = ", rew_obj_eth)
-	# # print("norm1_eth = ", norm1_eth)
-	# # print("norm2_eth = ", norm2_eth)
-	# # print("norm3_eth = ", norm3_eth)
-	# print("m_eth = ", m_eth)
-	# print("m_norm1_eth = ", m_norm1_eth)
-	# print("m_norm1_eth_test = ", m_norm1_eth_test)
-	# print("m_norm2_eth = ", m_norm2_eth)
-	# print("m_norm2_eth_test = ", m_norm2_eth_test)
-	# print("m_norm3_eth = ", m_norm3_eth)
-	# print("m_norm4_eth = ", m_norm4_eth)
-
-	# # print("\n\rew_obj_non_eth = ", rew_obj_non_eth)
-	# # print("norm1_non_eth = ", norm1_non_eth)
-	# # print("norm2_non_eth = ", norm2_non_eth)
-	# # print("norm3_non_eth = ", norm3_non_eth)
-	# print("m_non_eth = ", m_non_eth)
-	# print("m_norm1_non_eth = ", m_norm1_non_eth)
-	# print("m_norm2_non_eth = ", m_norm2_non_eth)
-	# print("m_norm3_non_eth = ", m_norm3_non_eth)
-	# print("m_norm4_non_eth = ", m_norm4_non_eth)
+	# n_queries = 10
+	# for i in range(n_queries):
+	# 	ret_a = randomlist = random.sample(range(0, 13), 3) + [random.randint(-8, 0)]
+	# 	ret_b = randomlist = random.sample(range(0, 13), 3) + [random.randint(-8, 0)]
+	# 	evaluation_actions_a = preference_model_actions.evaluate_action_detach(ret_a)
+	# 	evaluation_trajectories_a = preference_model_trajectories.evaluate_action_detach(ret_a)
+	# 	evaluation_actions_b = preference_model_actions.evaluate_action_detach(ret_b)
+	# 	evaluation_trajectories_b = preference_model_trajectories.evaluate_action_detach(ret_b)
+	# 	compare_actions_ab = preference_model_actions.compare_trajectory(ret_a, ret_b).item()
+	# 	compare_actions_ba = preference_model_actions.compare_trajectory(ret_b,ret_a).item()
+	# 	compare_trajectories_ab = preference_model_trajectories.compare_trajectory(ret_a, ret_b).item()
+	# 	compare_trajectories_ba = preference_model_trajectories.compare_trajectory(ret_b,ret_a).item()
+	# 	print("ret_a = ",ret_a)
+	# 	print("ret_b = ",ret_b)
+	# 	print("evaluation_actions_a = ", evaluation_actions_a)
+	# 	print("evaluation_trajectories_a = ", evaluation_trajectories_a)
+	# 	print("evaluation_actions_b = ", evaluation_actions_b)
+	# 	print("evaluation_trajectories_b = ", evaluation_trajectories_b)
+	# 	print("compare_actions_ab = ", compare_actions_ab)
+	# 	print("compare_actions_ba = ", compare_actions_ba)
+	# 	print("compare_trajectories_ab = ", compare_trajectories_ab)
+	# 	print("compare_trajectories_ba = ", compare_trajectories_ba)
 
 
-	# test = Normal(torch.tensor([-2.5]), torch.tensor([2.0]))
-	# rew_obj_test = np.array([test.sample() for i in range(nb_samples)])
-	# m_test = np.mean(rew_obj_test)
-	# norm1_test = (rew_obj_test - min_eth)/(max_eth - min_eth)
-	# m_norm1_test = np.mean(norm1_test)
-	# norm2_test = norm1_test/abs(m_eth)
-	# m_norm2_test = np.mean(norm2_test)
-	# norm2_2_test = norm1_test/abs(m_norm1_eth_test)
-	# m_norm2_2_test = np.mean(norm2_2_test)
-	# norm2_3_test = (rew_obj_test - min_eth)/(max_eth - min_eth)/abs(m_norm1_eth_test)
-	# m_norm2_3_test = np.mean(norm2_3_test)
-	# norm2_4_test = (m_test - min_eth)/(max_eth - min_eth)/abs(m_norm1_eth_test)
-	# norm2_5_test = (m_test - min_eth)/(max_eth - min_eth)
-	# print("m_test = ", m_test)
-	# print("m_norm1_test = ", m_norm1_test)
-	# print("m_norm2_test = ", m_norm2_test)
-	# print("m_norm2_2_test = ", m_norm2_2_test)
-	# print("m_norm2_3_test = ", m_norm2_3_test)
-	# print("norm2_4_test = ", norm2_4_test)
-	# print("norm2_5_test = ", norm2_5_test)
+	# order = [3,1,0,2]
+	# preference_giver = EthicalParetoGiverv3_ObjectiveOrder(order)
+	# preference_buffer = PreferenceBufferTest()
+
+	# n_queries = 10
+	# for i in range(n_queries):
+	# 	ret_a = randomlist = random.sample(range(0, 13), 3) + [random.randint(-8, 0)]
+	# 	ret_b = randomlist = random.sample(range(0, 13), 3) + [random.randint(-8, 0)]
+	# 	auto_preference = preference_giver.query_pair(ret_a, ret_b)
+	# 	preference_buffer.add_preference(ret_a, ret_b, auto_preference)
 
 
-	a = np.array([-2., -5., 3])
-	# up
-	up_a = np.sum(a)
-	a_div_up = a/abs(up_a)
-	m_a_div_up = np.sum(a_div_up)
-	# norm_up
-	min_a = min(a)
-	max_a = max(a)
-	norm_a = (a - min_a)/(max_a-min_a)
-	pre_up = (a/abs(up_a) - min_a)/(max_a-min_a)
-	print("faobeo = ", norm_a/sum(norm_a))
-	print("faobeo = ", pre_up)
-	print("faobeo = ", sum(pre_up))
-	up_norm = (up_a - len(a)*min_a)/(max_a-min_a)
-	print("up_norm = ", up_norm)
-	pos_up = norm_a / up_norm
-	print("pos_up = ", pos_up)
-	m_pos_up = np.sum(pos_up)
-	print("m_pos_up = ", m_pos_up)
-	print("test = ", np.sum(a))
 
-	norm_a_div_up = norm_a / abs(up_a)
-	m_norm_a_div_up = np.sum(norm_a_div_up)
-	up_a_norm = (up_a - min_a)/(max_a-min_a)
-	norm_a_div_up_a_norm = norm_a / abs(up_a_norm)
-	m_norm_a_div_up_a_norm = np.sum(norm_a_div_up_a_norm)
+	# w = [0.5, 0.5, 0.5]
+	# nb_samples = 10000
+	# # gaussian_samples = np.random.normal(w, 1, nb_samples)
+	# cov = [[1 for i in range(len(w))] for j in range(len(w))]
+	# cov = np.ones((len(w), len(w)))
+	# print(cov)
+	# # cov = np.eye(len(w))
+	# gaussian_samples = np.random.multivariate_normal(w, cov, nb_samples)
+	# moral_samples = st.multivariate_normal(mean=w, cov=0.5).rvs(size=nb_samples)
 
-	print("up_a = ", up_a)
-	print("a_div_up = ", a_div_up)
-	print("m_a_div_up = ", m_a_div_up)
+	# gaussian_mean = np.mean(gaussian_samples, axis=0)
+	# moral_mean = np.mean(moral_samples,  axis=0)
+	# gaussian_std = np.std(gaussian_samples, axis=0)
+	# moral_std = np.std(moral_samples,  axis=0)
 
-	print("norm_a = ", norm_a)
-	print("norm_a_div_up = ", norm_a_div_up)
-	print("m_norm_a_div_up = ", m_norm_a_div_up)
-	print("up_a_norm = ", up_a_norm)
-	print("norm_a_div_up_a_norm = ", norm_a_div_up_a_norm)
-	print("m_norm_a_div_up_a_norm = ", m_norm_a_div_up_a_norm)
+	# nb_g_positive = 0
+	# nb_m_positive = 0
+	# nb_g_len1 = 0
+	# nb_m_len1 = 0
+	# nb_g_pos_len1 = 0
+	# nb_m_pos_len1 = 0
+	# for i in range(nb_samples):
+	# 	if (gaussian_samples[i]>0).all():
+	# 		nb_g_positive += 1
+	# 		if np.linalg.norm(gaussian_samples[i])<=1:
+	# 			nb_g_pos_len1 += 1
+	# 	if (moral_samples[i]>0).all():
+	# 		nb_m_positive += 1
+	# 		if np.linalg.norm(moral_samples[i])<=1:
+	# 			nb_m_pos_len1 += 1
+	# 	if np.linalg.norm(gaussian_samples[i])<=1:
+	# 		nb_g_len1 += 1
+	# 	if np.linalg.norm(moral_samples[i])<=1:
+	# 		nb_m_len1 += 1
+
+	# print("gaussian_mean = ", gaussian_mean)
+	# print("moral_mean = ", moral_mean)
+	# print("gaussian_std = ", gaussian_std)
+	# print("moral_std = ", moral_std)
+	# print("nb_g_positive = ", nb_g_positive)
+	# print("nb_m_positive = ", nb_m_positive)
+	# print("nb_g_len1 = ", nb_g_len1)
+	# print("nb_m_len1 = ", nb_m_len1)
+	# print("nb_g_pos_len1 = ", nb_g_pos_len1)
+	# print("nb_m_pos_len1 = ", nb_m_pos_len1)
+
+	# for i in range(len(w)):
+	# 	plt.hist(np.histogram(gaussian_samples[i]), bins='auto')
+	# 	plt.show()
+	# 	plt.hist(np.histogram(moral_samples[i]), bins='auto')
+	# 	plt.show()
+
+
+	# q = st.multivariate_normal(mean=w1, cov=1).pdf(w2)
+
+	# for i in range(10000):
+	# 	print(i)
+	# 	if i%2==0:
+	# 		time.sleep(30)
+
+	ret_a = np.array([1,2,3,-4])
+	# ret_b = np.array([0,0,0,0])
+	# ret_b = np.array([0,0,4,0])
+	ret_b = np.array([1,5,1,0])
+	ratio_norm = [0.2, 0.6, 0.2]
+	dim = 3
+	a = query_pair_no_null(ret_a, ret_b, dim, ratio_norm)
+	print(a)

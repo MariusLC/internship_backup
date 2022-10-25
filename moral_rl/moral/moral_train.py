@@ -23,29 +23,20 @@ if __name__ == '__main__':
 
     query_freq = c["query_freq"]
     if c["real_params"]:
-        env_steps = int(c["env_steps"]/12)
+        env_steps = int(c["env_steps"]/c["n_workers"])
         query_freq = int(env_steps/(c["n_queries"]+2))
         # print("env_steps = ", env_steps)
         # print("query_freq = ", query_freq)
 
-    if c["normalization_non_eth_sett"] == "v0": # pas de normalisation de l'obj non ethique (comme dans MORAL de base)
-        non_eth_norm = normalize_v0
-    elif c["normalization_non_eth_sett"] == "v1": # normalisation classique (value - min)/(max - min)
-        non_eth_norm = normalize_v1
-    elif c["normalization_non_eth_sett"] == "v2": # normalisation + standardisation ((value - min)/(max - min))/mean
-        non_eth_norm = normalize_v2
-    elif c["normalization_non_eth_sett"] == "v3": # division par la moyenne des rewards sur une trajectoire
-        non_eth_norm = normalize_v3
-
-
     gene_or_expe_filenames = []
     demos_filenames = []
     discriminators_filenames = []
-    moral_filename = c["data_path"]+c["env_path"]+vanilla_path+c["moral_path"]+str(c["experts_weights"])+c["special_name_agent"]+c["model_ext"]
+    moral_filename = c["data_path"]+c["env"]+"/"+vanilla_path+c["moral_path"]+str(c["experts_weights"])+c["special_name_agent"]+c["model_ext"]
+    non_eth_expert = c["data_path"]+c["env"]+"/"+vanilla_path+str(c["non_eth_experts_weights"])+"/"+c["expe_path"]+c["model_ext"]
     for i in range(c["nb_experts"]):
-        path = c["data_path"]+c["env_path"]+vanilla_path+str(c["experts_weights"][i])+"/"
+        path = c["data_path"]+c["env"]+"/"+vanilla_path+str(c["experts_weights"][i])+"/"
         gene_or_expe_filenames.append(path+gene_or_expert+c["model_ext"])
         demos_filenames.append(path+c["demo_path"]+c["demo_ext"])
         discriminators_filenames.append(path+c["disc_path"]+c["model_ext"])
 
-    moral_train_n_experts(c["env_rad"]+c["env"], c["ratio"], c["experts_weights"], c["env_steps"], query_freq, non_eth_norm, c["normalization_eth_sett"], gene_or_expe_filenames, discriminators_filenames, moral_filename)
+    moral_train_n_experts(c, query_freq, env_steps, gene_or_expe_filenames, discriminators_filenames, moral_filename, non_eth_expert)

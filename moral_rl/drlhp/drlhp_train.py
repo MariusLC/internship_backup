@@ -3,24 +3,28 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from moral.ppo import *
 from tqdm import tqdm
 import torch
-from preference_model import *
+from drlhp.preference_model import *
 from moral.preference_giver import *
 import wandb
 import pickle
 import argparse
+from utils.save_data import *
 
 
 if __name__ == '__main__':
 
-    # Fetch ratio args
-    parser = argparse.ArgumentParser(description='Preference Ratio.')
-    parser.add_argument('--ratio', nargs='+', type=int)
-    args = parser.parse_args()
+    # # Fetch ratio args
+    # parser = argparse.ArgumentParser(description='Preference Ratio.')
+    # parser.add_argument('--ratio', nargs='+', type=int)
+    # args = parser.parse_args()
+
+    ratio = [3,5,3,0]
+    drlhp_filename = "generated_data/v3/drlhp/[3,5,3,0].pt"
 
     # Config
     wandb.init(project='PbRL', config={
         'env_id': 'randomized_v3',
-        'ratio': args.ratio,
+        'ratio': ratio,
         'env_steps': 12e6,
         'batchsize_ppo': 12,
         'batchsize_preference': 12,
@@ -73,11 +77,22 @@ if __name__ == '__main__':
         train_ready = dataset.write_tuple(states, actions, preference_rewards, done, log_probs, rewards)
 
         if train_ready:
-            objective_logs = dataset.log_objectives()
-            for i in range(objective_logs.shape[1]):
-                wandb.log({'Obj_' + str(i): objective_logs[:, i].mean()})
-            for ret in dataset.log_returns():
-                wandb.log({'Returns': ret})
+
+            # objective_logs = dataset.log_objectives()
+            # for i in range(objective_logs.shape[1]):
+            #     wandb.log({'Obj_' + str(i): objective_logs[:, i].mean()})
+            # for ret in dataset.log_rewards():
+            #     wandb.log({'Returns': ret})
+
+            # Log Objectives
+            obj_ret = dataset.log_objectives()
+            obj_ret_logs = np.mean(obj_ret, axis=0)
+            for i, ret in enumerate(obj_ret_logs):
+                wandb.log({'Obj_' + str(i): ret}, step=t*config.n_workers)
+
+            # Log total weighted sum
+            wandb.log({'Returns mean': np.mean(dataset.log_rewards())}, step=t*config.n_workers)
+
 
             update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs,
                           entropy_reg=config.entropy_reg)
@@ -105,8 +120,11 @@ if __name__ == '__main__':
             # Update preference model
             preference_loss = update_preference_model(preference_model, preference_buffer, preference_optimizer,
                                                       config.batchsize_preference)
-            wandb.log({'Preference Loss': preference_loss})
+            wandb.log({'Preference Loss': preference_loss}, step=t*config.n_workers)
 
         # Prepare state input for next time step
         states = next_states.copy()
         states_tensor = torch.tensor(states).float().to(device)
+        save_data(ppo, drlhp_filename)
+
+    save_data(ppo, drlhp_filename)

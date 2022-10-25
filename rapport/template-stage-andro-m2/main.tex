@@ -1,0 +1,395 @@
+\documentclass[a4paper, 12pt]{report}
+
+% Adapté du tempate TER-M1 de l'Université de Paris
+
+%%%%%%%%%%%%
+% Packages %
+%%%%%%%%%%%%
+
+\usepackage[french]{babel}
+%\usepackage{hyperref}
+\usepackage[noheader]{packages/sleek}
+\usepackage{packages/sleek-title}
+\usepackage[french]{packages/sleek-theorems}
+\usepackage{packages/sleek-listings}
+\usepackage{tikz}
+\usepackage[french,linesnumbered,lined]{algorithm2e}
+\SetKwInput{KwResult}{R\'esultat}
+\SetKw{KwInput}{Entr\'ees}
+%%%%%%%%%%%%%%
+% Title-page %
+%%%%%%%%%%%%%%
+
+\logo{./resources/img/logo_science.png}
+\institute{Sorbonne Université}
+\faculty{Master ANDROIDE}
+\title{Titre du stage}
+\subtitle{Stage de Master 2}
+\author{ Réalisé par : \\[0.5cm]
+		\textbf{Prénom \textsc{Nom}    }       \\[1cm]
+		Encadré par :        \\
+		Prénom Nom, Entreprise \\
+		Prénom Nom, LIP6, Sorbonne Université \\[1cm]
+		Référent  :        \\
+		Prénom Nom, LIP6, Sorbonne Université
+		 }
+
+
+
+
+%%%%%%%%%%%%%%%%https://www.overleaf.com/project/6012bd305aee4065605e8f1d
+% Bibliography %
+%%%%%%%%%%%%%%%%
+
+\addbibresource{references.bib}
+
+%%%%%%%%%%
+% Others %
+%%%%%%%%%%
+
+\lstdefinestyle{latex}{
+    language=TeX,
+    style=default,
+    %%%%%
+    commentstyle=\ForestGreen,
+    keywordstyle=\TrueBlue,
+    stringstyle=\VeronicaPurple,
+    emphstyle=\TrueBlue,
+    %%%%%
+    emph={LaTeX, usepackage, textit, textbf, textsc}
+}
+
+\FrameTBStyle{latex}
+
+\def\tbs{\textbackslash}
+
+%%%%%%%%%%%%
+% Document %
+%%%%%%%%%%%%
+
+\begin{document}
+    \maketitle
+    \romantableofcontents
+
+    \chapter{Introduction}
+
+    L'introduction de votre rapport doit décrire la problématique et les objectifs du stage. 
+    Elle doit  préciser où s'est déroulé votre stage, présenter l'entreprise (si ce n'est pas un laboratoire de recherche universitaire). A la fin de ce chapitre, le lecteur doit avoir compris le problème auquel vous vous intéressez et les questions que vous avez étudiées pendant votre stage. 
+    
+    Nous vous rappelons que votre rapport (hors annexes et bibliographie) \textbf{ne doit pas dépasser 20 pages}.
+    
+    Vous devez porter une attention particulière à l'orthographe et la grammaire de votre rapport. Dans la mesure du possible, le rapport doit être rédigé en français. Toutefois, le rapport peut être écrit en anglais pour les étudiants ayant fait leur stage à l'étranger ou étant plus à l'aise en anglais qu'en français. 
+    
+    Des annexes pourront être adjointes au rapport si celles-ci sont nécessaires pour apprécier la qualité du travail fourni (preuves théoriques, expérimentations, description d'interface...).
+Pour un stage orienté recherche, le rapport doit tendre vers un article scientifique.
+    
+    
+Il est rappelé que \textbf{tout travail universitaire doit être réalisé dans le respect intégral de la propriété
+intellectuelle d'autrui}. L'étudiant est autorisé à utiliser des documents mais celui-ci devra très
+précisément signaler le crédit (référence complète du texte cité, de l'image, sources internet incluses)
+à la fois dans le corps du texte et dans la bibliographie. En cas de plagiat avéré, des sanctions
+pourront être prises à l'égard de l'étudiant.
+
+    \chapter{État de l'art}
+    
+    
+   Ce chapitre est dédié à l'état de l'art, c'est-à-dire au positionnement du sujet par rapport à l'existant. Il doit décrire les concepts et méthodes déjà existant(e)s, en lien avec le travail que vous avez réalisé. Vous devez faire référence aux articles décrivant les approches existantes. Pour citer une référence (article, livre, site web,...) nous vous recommandons  l'usage de \href{https://fr.wikipedia.org/wiki/BibTeX}{BibTeX} . Ajoutez les entrées correspondant à vos références dans le fichier \verb+resources/bib/references.bib+. Vous pouvez obtenir les entrées BibTeX sur \href{https://scholar.google.com}{Google Scholar} ou \href{https://dblp.uni-trier.de}{DBLP}. La commande \verb+\cite+ vous permet de citer une (ou plusieurs) référence(s) dans le document, par exemple \cite{pakin2020comprehensive,RusselNorvig}. 
+   
+   Pour construire la bibliographie, lancer d'abord une compilation \verb+pdflatex+ ou \verb+latex+, puis lancer la commande \verb+bibtex+ (en utilisant le ``backend'' \verb+biber+). Enfin,  recompiler le document .tex par \verb+pdflatex+ ou \verb+latex+ deux fois.
+   
+   Nous rappelons que le  \textbf{plagiat et recopie intégrale sont interdits}. Vous ne devez pas recopier ici des parties complètes d'articles. Vous devez reformuler les propos de auteurs et citer explicitement vos sources. 
+    
+    
+    \chapter{Contributions}
+    Ce chapitre faire une description précise des contributions (hypothèses, résultats théoriques et pratiques, réalisations mises en \oe uvre...).  Vous indiquerez vos choix principaux, ainsi que les solutions retenues. 
+	Vous pouvez diviser cette partie du rapport en plusieurs chapitres. En particulier, si une étude expérimentale a été conduite, il est préférable d'y dédier un chapitre. 
+    
+    Dans le cadre d'une étude expérimentale, discutez vos résultats et comparez  votre approche avec l'état de l'art. 
+
+    \chapter{Rédaction en \LaTeX}
+    Dans ce chapitre, nous décrivons quelques bases sur l'utilisation de \LaTeX{} pour la rédaction de votre rapport.
+    Si vous êtes débutant en \LaTeX{}, de nombreux tutoriaux sont disponibles en ligne (notamment \href{https://www.overleaf.com/learn}{ce tutoriel disponible sur Overleaf}). De nombreux symboles mathématiques sont disponibles \LaTeX{}. Certains sont présentés dans ce document, nous vous recommandons également d'utiliser \enquote{The Comprehensive \LaTeX{} Symbol List} \cite{pakin2020comprehensive} pour trouver les symboles dont vous avez besoin.
+    
+    Ce template est basé sur \href{https://fr.overleaf.com/latex/templates/sleek-template/hrksrrdywhfk}{Sleek Template}, un template \LaTeX{} libre qui fournit un certain nombre de commandes pour faciliter la rédaction d'un rapport. Nous décrivons ici une partie qui doit être suffisante, mais vous pouvez aussi vous référer à la documentation en ligne pour découvrir plus de commandes.
+    
+    
+    Le format de la page de garde est généré automatiquement, en fonction de la valeur placée dans les champs suivants : \verb+\logo+, \verb+\institute+, \verb+\faculty+, \verb+\department+, \verb+\title+, \verb+\subtitle+, \verb+\author+, et \verb+\date+.
+
+   
+    
+    \section{Découpage d'un chapitre}
+    Au sein d'un chapitre, les commandes \verb+\section+, \verb+\subsection+ et \verb+subsubsection+, notamment, permettent d'organiser le contenu. De nombreux éléments (notamment les sections, les algorithmes, les définitions,$\dots$) peuvent être étiquetés au moyen de la commande \verb+\label+. Cela permet d'y faire référence, par exemple \verb+\ref{section:liste}+ permet de faire référence à la Section~\ref{section:liste}.
+    
+    \section{Listes}\label{section:liste}
+    Cette section décrit comment réaliser des listes (et donne un exemple de section découpée en sous-sections). Pour chaque type de liste, les éléments sont identifiés par la commande \verb+\item+. Le label peut être modifié, soit individuellement avec \verb+\item[newLabel]+, soit pour tout l'environnement avec l'option \verb+label=newLabel+.
+    
+    
+    \subsection{Listes à puces}
+    Une liste à puce est définie via l'environnement \verb+itemize+ :
+    \begin{itemize}
+        \item un item,
+        \item un autre item,
+        \item[$*$] un dernier item, avec un label modifié.
+    \end{itemize}
+    
+    \subsection{Listes numérotées}
+    Les listes numérotées sont définies avec \verb+enumerate+ :
+    \begin{enumerate}[label=(\alph*)]
+        \item un item,
+        \item un autre item,
+        \item un dernier item.
+    \end{enumerate}
+      Dans ce cas, le nouveau label peut être une expression spéciale (\emph{cf.} Table~\ref{tab:enumerate_special_expressions} en Annexe), comme dans l'exemple précédent qui remplace la numérotation standard par \enquote{(a), (b), (c), ...}.
+    
+    \subsection{Listes descriptives}
+    Une liste descriptive est définie par \verb+description+ :
+    \begin{description}
+        \item[Item 1] Description de l'item 1,
+        \item[Item 2] Description de l'item 2,
+        \item[Item 3] Description de l'item 3.
+    \end{description}
+
+    \subsection{Listes imbriquées}
+    Voici un exemple d'imbrication de listes, qui inclut aussi des personnalisations, et des éléments de mathématiques (voir la Section~\ref{section:maths}).
+    
+    It is also possible to write nested lists. Here follows a very condensed example.
+
+    \begin{itemize}
+        \item Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+        Arcu ac tortor dignissim convallis aenean et tortor. In eu mi bibendum neque egestas congue quisque.
+
+        \item[$+$] Semper quis lectus nulla at volutpat diam ut. Felis eget velit aliquet sagittis id. Blandit aliquam etiam erat velit scelerisque in dictum non consectetur.
+        \begin{equation}\label{equation:exemple}
+            a^2 + b^2 = c^2
+        \end{equation}
+
+        \item Nibh sed pulvinar proin gravida hendrerit lectus. Pretium aenean pharetra magna ac placerat vestibulum lectus mauris. Non consectetur a erat nam at lectus urna duis.
+        \begin{enumerate}[noitemsep, label=\roman*.]
+            \item Nibh tortor id aliquet lectus. Sit amet justo donec enim diam vulputate ut pharetra sit.
+            \setcounter{enumi}{3}
+            \item Condimentum id venenatis a condimentum vitae. Quis eleifend quam adipiscing vitae proin sagittis nisl.
+            \addtocounter{enumi}{15}
+            \item Proin sagittis nisl rhoncus mattis rhoncus urna neque viverra.
+        \end{enumerate}
+
+        \item Elit scelerisque mauris pellentesque pulvinar pellentesque habitant morbi tristique senectus.
+            \begin{description}
+                \item[Ridiculus] mus mauris vitae ultricies leo. Mollis aliquam ut porttitor leo a diam. Velit egestas dui id ornare arcu odio ut sem nulla.
+                \item[Nullam vehicula] ipsum a arcu. Nibh sit amet commodo nulla facilisi nullam. At erat pellentesque adipiscing commodo elit. Libero volutpat sed cras ornare arcu dui.
+            \end{description}
+    \end{itemize}
+
+    \section{Mathématiques}\label{section:maths}
+    Ce template utilise les packages \texttt{amsmath} et \texttt{amssymb}, qui sont standard pour l'écriture d'éléments mathématiques en \LaTeX{}. Quelques commandes personnalisées ont également été définies, comme \verb+\rbk+, \verb+sbk+ et \verb+\cbk+ pour les parenthèses, les crochets et les accolades, \verb+\abs+ pour la valeur absolue, \verb+\norm+ pour la norme, et \verb+\fact+ pour la factorielle. En voici des exemples
+    $$
+        \rbk{\frac{\pi}{2}}, \quad \sbk{\frac{\pi}{2}}, \quad \cbk{\frac{\pi}{2}}, \quad \abs{\frac{\pi}{2}}, \quad \norm{\frac{\pi}{2}}, \quad \fact{n} = \prod_{i = 1}^{n} i
+    $$
+    
+    On peut faire référence à une équation ou une formule mathématique particulière, comme dans l'exemple de l'équation~\ref{equation:exemple}.
+
+
+    
+
+   
+
+    Voici quelques exemples qui illustrent les possibilités du template.
+
+D'abord, une équation non numérotée avec l'environnement \verb+equation*+ :
+    \begin{equation*}
+        e = \sum_{n=0}^\infty \frac{1}{n!}
+    \end{equation*}
+
+Deux sous-équations avec leur propre label (\ref{equation:exemple-a} et \ref{equation:exemple-b}) :
+    \begin{subequations}
+        \begin{align}
+            \frac{\diff x}{\diff t} & = \alpha x - \beta xy\label{equation:exemple-a} \\
+            \frac{\diff y}{\diff t} & = \delta xy - \gamma y\label{equation:exemple-b}
+        \end{align}
+    \end{subequations}
+
+    Un système d'équations :
+    \begin{equation}
+        \left\{
+        \begin{aligned}
+            x & = 2 \times y + z \\
+            y & = 3 \times x^2 - 2 \times z \\
+            z & = x - y
+        \end{aligned}
+        \right.
+    \end{equation}
+
+
+    \section{Figures}
+    \subsection{Inclusion d'images}
+    Les figures, aux formats classiques d'images, peuvent être incluses avec \verb+\includegraphics{}+, notamment \texttt{jpg}, \texttt{png}, \texttt{bmp},$\dots$ Cependant, il est préférable d'utiliser un format vectoriel quand c'est possible (\texttt{pdf} or \texttt{eps}).
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\textwidth]{resources/img/logo_science.png}
+        \noskipcaption{Logo de la faculté des Sciences et d'Ingénierie de SU}
+        \label{fig:logo-up-mi}
+    \end{figure}
+
+    \subsection{Dessin}
+    Pour les plus courageux, il est possible de dessiner directement, notamment avec le package \texttt{tikz}. Voici un exemple de graphe dirigé :
+    
+    \begin{figure}[H]
+        \centering
+        \begin{tikzpicture}[->,>=stealth,shorten >=1pt,auto,node distance=1.5cm,
+                thick,main node/.style={circle,draw,font=\bfseries}]
+        \node[main node] (a1) {$a_1$};
+        \node[main node] (a2) [right of=a1] {$a_2$};
+        \node[main node] (a3) [right of=a2] {$a_3$};
+        \node[main node] (a4) [below of=a2] {$a_4$};
+
+        \path[->] (a2) edge (a1) 
+            (a3) edge (a2)
+            (a4) edge[bend right] (a2)
+            (a2) edge[bend right] (a4);
+        \end{tikzpicture}
+        \noskipcaption{Un graphe dirigé}
+        \label{fig:graphe-dirige}
+    \end{figure}
+    
+    Voir \href{http://math.et.info.free.fr/TikZ/}{Ti$k$Z pour l'impatient} pour plus de détails.
+
+    \section{Tables}
+
+    Voici des exemples de tableaux :
+
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{|r|r|c|l|}
+            \hline
+            \multicolumn{3}{|l|}{a} & qrs  \\ \hline
+             b &  ef &     jkl      & tuvx \\ \hline
+            cd & ghi &     mnop     & wyz  \\ \hline
+        \end{tabular}
+        \caption{Exemple tableau avec une cellule sur plusieurs colonnes}
+        \label{tab:multicol_example}
+    \end{table}
+
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{|l|c|r|}
+            \hline
+            \multirow{3}{2cm}{a} &   b   &    c \\ \cline{2-3}
+                                 &  de   &   fg \\ \cline{2-3}
+                                 &  hij  &  klm \\ \hline
+            nopq                 & rstuv & wxyz \\ \hline
+        \end{tabular}
+        \caption{Exemple tableau avec une cellule sur plusieurs lignes}
+        \label{tab:multirow_example}
+    \end{table}
+
+    \section{Théorèmes}
+    Le template fournit plusieurs environnements de type \og théorème \fg, notamment \verb+thm+ (théorème), \verb+lem+ (lemme), \verb+prop+ (proposition), \verb+proof+ (démonstration), \verb+defn+ (définition), ou \verb+expl+ (exemple).
+
+    \begin{thm}[Inégalité triangulaire]
+        Étant donné un triangle dans un espace euclidien, la somme des longueurs de deux de ses côtés est supérieure ou égale à la longueur du troisième côté.
+    \end{thm}
+
+    \begin{proof}
+        Soient $a$, $b$ et $c$ les longueurs des côtés d'un triangle dans un espace euclidien, et $\alpha$, $\beta$, $\gamma$ leurs angles opposés respectifs. D'après le théorème de Pythagore généralisé, on a
+        \begin{alignat*}{2}
+                                  &  & c^2 & = a^2 + b^2 - 2ab \cos\gamma \\
+                                  &  &     & \leq a^2 + b^2 + 2ab         \\
+                                  &  &     & \leq (a + b)^2               \\
+            \Leftrightarrow \quad &  & c   & \leq a + b
+        \end{alignat*}
+        Par conséquent, dans n'importe quel triangle, la somme des longueurs de deux côtés est toujours supérieure ou égale à la longueur du troisième côté.
+    \end{proof}
+
+    \begin{defn}[Graphe dirigé]
+    Un graphe dirigé est un couple $G = \langle N, E \rangle$ où $N$ est l'ensemble des noeuds, et $E \subseteq N \times N$ est l'ensemble des arcs.
+    \end{defn}
+    
+    \begin{expl}
+    Le graphe $G = \langle N, E\rangle$ avec $N = \{a_1, a_2, a_3, a_4\}$ et $E = \{(a_2, a_1), (a_2, a_4), (a_3, a_2),\linebreak (a_4, a_2)\}$ est montré en Figure~\ref{fig:graphe-dirige}.
+    \end{expl}
+
+    \section{Algorithmes et code}
+    Il est possible d'afficher des algorithmes et extraits de code dans un document \LaTeX.
+    
+    \subsection{Algorithmes en pseudo-code}
+    
+    Voici un exemple d'algorithme écrit avec le package \texttt{algorithm2e}, nous vous invitons à voir sa \href{http://tug.ctan.org/macros/latex/contrib/algorithm2e/doc/algorithm2e.pdf}{documentation} pour plus d'informations. Il est possible de décrire le comportement d'un algorithme en faisant référence aux lignes numérotées, par exemple la ligne~\ref{algo:line-example}.
+    
+\begin{algorithm}[H]
+  \SetAlgoLined
+  \KwInput{une liste d'entiers $l$}\;
+  \KwResult{le plus grand élément de $l$ }
+  $tmpMax = l[0]$\;
+  $i = 1$\;
+  \While{$i < longueur(l)$}{
+    \If{$l[i] > tmpMax$}{
+      $tmpMax = l[i]$\;
+    }
+    $i = i + 1$\; \label{algo:line-example}
+  }
+  return $tmpMax$\;
+  \caption{Recherche de l'élément maximal d'une liste}
+\end{algorithm}
+
+    \subsection{Listings : extraits de code source}
+
+    Le package \texttt{sleek-listings} permet d'afficher des extraits de code source, en respectant la coloration syntaxique pour différents langages : \texttt{c}, \texttt{cpp}, \texttt{matlab}, \texttt{python} and \texttt{java} are implemented, with basic color-maps. Il est possible de personnaliser le style des listings pour chacun de ces langages :
+    \begin{itemize}
+        \item \texttt{\tbs{}NumberStyle\{stylename\}} crée un style \texttt{stylenameNumber} avec les lignes numérotées ;
+        \item \texttt{\tbs{}FrameStyle\{stylename\}} crée un style \texttt{stylenameFrame} avec un cadre autour du listing ;
+        \item \texttt{\tbs{}FrameTBStyle\{stylename\}} crée un style \texttt{stylenameFrameTB} avec une ligne au dessus et en dessous du listing;
+        \item \texttt{\tbs{}FrameNumberStyle\{stylename\}} et \texttt{\tbs{}FrameTBNumberStyle\{stylename\}} combinent les lignes numérotées et le cadre/les lignes.
+    \end{itemize}
+
+    Par exemple, la commande \texttt{\tbs{}FrameTBStyle\{python\}} crée un nouveau style appelé \texttt{pythonFrameTB}, qui donne le rendu suivant pour du code \texttt{Python} :
+
+    \FrameTBStyle{python}
+    \begin{lstlisting}[style=pythonFrameTB, gobble=4]
+    import numpy as np # Unnecessary import
+
+    a, b = 69., .420
+
+    def f(a: float, b: float) -> float:
+        r"""
+        Sum two numbers
+
+        Parameters
+        ----------
+        a: first number
+        b: second number
+
+        Returns
+        -------
+        the sum of 'a' and 'b'
+        """
+
+        return a + b
+
+    c = f(a, b)
+
+    print('{:f} + {:f} equals {:f}'.format(a, b, c))
+    \end{lstlisting}
+
+    
+\chapter{Conclusion}
+La conclusion de votre rapport doit brièvement résumer ce que vous avez fait, en mettant en lumière les points forts et les points faibles de votre travail. Enfin, il faut décrire les perspectives de poursuite qui peuvent être envisagées.
+
+    % Bibliographie
+    
+    
+    \printbibliography
+ 
+ 
+ 
+    % Annexes
+
+    \appendix
+
+    \chapter{Cahier des charges}
+    Décrivez ici le cahier des charges si vous en avez établi un. 
+    
+     \chapter{Preuves détaillées }
+	Le détail des preuves des propositions, théorèmes, etc. cités dans le rapport 
+
+\end{document}

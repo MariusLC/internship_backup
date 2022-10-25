@@ -7,39 +7,14 @@ from tqdm import tqdm
 import wandb
 import argparse
 
-
 # Use GPU if available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-# OLD
-# def ppo_train_n_experts(nb_experts, env, env_rad, lambd_list, lambd_str_list, ppo_filenames, model_path, model_ext):
-#     for i in range(nb_experts):
-#         filename = model_path+ppo_filenames+env+lambd_str_list[i]+model_ext
-#         ppo_train_1_expert(env_rad+env, lambd_list[i], filename)
-
-# NEW
-def ppo_train_n_experts(env, env_steps_ppo, lambd_list, experts_filenames):
-    for i in range(len(lambd_list)):
-        ppo_train_1_expert(env, env_steps_ppo, lambd_list[i], experts_filenames[i])
-
-
-
-def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
+def ppo_train_1_expert(c, filename):
 
     # Init WandB & Parameters
-    wandb.init(project='PPO', config={
-        'env_id': env,
-        #'env_steps': 9e6,
-        'env_steps': env_steps_ppo,
-        'batchsize_ppo': 12,
-        'n_workers': 12,
-        'lr_ppo': 3e-4,
-        'entropy_reg': 0.25,
-        'lambd': lambd,
-        'gamma': 0.999,
-        'epsilon': 0.1,
-        'ppo_epochs': 5
-        }, 
+    wandb.init(project='PPO', 
+        config=c,
         reinit=True)
     config = wandb.config
 
@@ -62,17 +37,21 @@ def ppo_train_1_expert(env, env_steps_ppo, lambd, filename):
     for t in tqdm(range(int(config.env_steps / config.n_workers))):
         actions, log_probs = ppo.act(states_tensor)
         next_states, rewards, done, info = vec_env.step(actions)
-        scalarized_rewards = [sum([config.lambd[i] * r[i] for i in range(len(r))]) for r in rewards]
+        scalarized_rewards = [sum([config.expert_weights[i] * r[i] for i in range(len(r))]) for r in rewards]
 
         train_ready = dataset.write_tuple(states, actions, scalarized_rewards, done, log_probs, rewards, gamma=config.gamma)
 
         if train_ready:
-            update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
+            update_policy(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg)
+            # update_policy_v3(ppo, dataset, optimizer, config.gamma, config.epsilon, config.ppo_epochs, config.entropy_reg, wandb)
+            # Log Objectives
             objective_logs = dataset.log_objectives()
-            for i in range(objective_logs.shape[1]):
-                wandb.log({'Obj_' + str(i): objective_logs[:, i].mean()})
-            for ret in dataset.log_returns():
-                wandb.log({'Returns': ret})
+            objective_logs = np.mean(objective_logs, axis=0)
+            for i, obj in enumerate(objective_logs):
+                wandb.log({'Obj_' + str(i): obj}, step=t*config.n_workers)
+            for i, ret in enumerate(dataset.log_rewards()):
+                wandb.log({'Returns': ret}, step=(t//config.n_workers)*config.n_workers+i)
+            wandb.log({'Returns mean': np.mean(dataset.log_rewards())}, step=t*config.n_workers)
             dataset.reset_trajectories()
 
         # Prepare state input for next time step

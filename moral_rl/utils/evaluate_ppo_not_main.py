@@ -5,14 +5,18 @@ from envs.gym_wrapper import *
 import numpy as np
 
 
-def evaluate_ppo(ppo, config, n_eval=1000):
+def evaluate_from_demos(demos):
+    res = np.array([np.array(demo["returns"]).sum(axis=0) for demo in demos])
+    return res.mean(axis=0), res.std(axis=0)
+
+def evaluate_ppo(ppo, env_id, n_eval=1000):
     """
     :param ppo: Trained policy
-    :param config: Environment config
+    :param env_id: Environment
     :param n_eval: Number of evaluation steps
     :return: mean, std of rewards
     """
-    env = GymWrapper(config.env_id)
+    env = GymWrapper(env_id)
     states = env.reset()
     states_tensor = torch.tensor(states).float().to(device)
 
@@ -20,22 +24,13 @@ def evaluate_ppo(ppo, config, n_eval=1000):
     obj_returns = []
 
     actions_chosen = np.zeros(10)
-    # previous_infos = 0
 
-    for t in range(n_eval):
+    for t in tqdm(range(n_eval)):
         actions, log_probs = ppo.act(states_tensor)
         next_states, reward, done, info = env.step(actions)
         obj_logs.append(reward)
 
-
         actions_chosen[actions] += 1
-        # if actions == 4:
-        #     # print("states_tensor = ", states_tensor.shape)
-        #     # print("next_states = ", next_states.shape)
-        #     print("reward = ", reward)
-        #     print("info = ", info)
-        #     print("previous_infos = ", previous_infos)
-        # previous_infos = info
 
         if done:
             next_states = env.reset()
@@ -52,9 +47,7 @@ def evaluate_ppo(ppo, config, n_eval=1000):
     obj_std = obj_returns.std(axis=0)
 
     print("action chosen = ", actions_chosen)
-
     return list(obj_means), list(obj_std)
-
 
 def evaluate_ppo_discrim(ppo, discrim, config, n_eval=1000):
     """
@@ -72,7 +65,7 @@ def evaluate_ppo_discrim(ppo, discrim, config, n_eval=1000):
     discrim_logs = []
     discrim_returns = []
 
-    for t in range(n_eval):
+    for t in tqdm(range(n_eval)):
         actions, log_probs = ppo.act(states_tensor)
         next_states, reward, done, info = env.step(actions)
         obj_logs.append(reward)

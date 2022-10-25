@@ -1,9 +1,10 @@
 #Paths
 vanilla: False
 data_path: "generated_data/"
-env_path: "v4/"
+env_path: "v5/"
+# env_path: "v3/"
 vanilla_path: "Peschl/"
-expe_path: "expert_test_2"
+expe_path: "expert"
 demo_path: "demonstrations"
 disc_path: "discriminator"
 gene_path: "generator"
@@ -12,15 +13,26 @@ model_ext: ".pt"
 demo_ext: ".pk"
 model_name: "ppo_"
 
+# special_name: "entropy_reg_005"
+special_name: ""
+
+# Config parameters
+batchsize_ppo: 12
+n_workers: 12
+lr_ppo: 0.0003
+entropy_reg: 0.05
+gamma: 0.999
+epsilon: 0.1
+ppo_epochs: 5
 
 # Editable parameters
-env: "v4"
+# env: "v3"
+# env_rad: "randomized_"
+# env_id: "randomized_v3"
+env: "v5"
 env_rad: "randomized_"
-nb_experts: 1
-# experts_weights: [[0,1,0,0]]
-experts_weights: [[0,1]]
-geneORexpert: 1 # 0 for generator and 1 for expert, using ppo agent to calculate utopia during the moral process
-
+env_id: "randomized_v5"
+expert_weights: [0,0,1,1]
 
 #######
 # Peschl Values #
